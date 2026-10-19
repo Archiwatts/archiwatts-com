@@ -2967,5 +2967,5 @@ window.addEventListener('DOMContentLoaded',()=>{
  else{mesh.add(new THREE.LineSegments(geometry,ink));count++;}
  }window.landscapeInk={outlinedTrees:count};
 });
-</script></body>
+</script><script>addEventListener('DOMContentLoaded',()=>{const old=document.getElementById('story-button');if(old){const a=document.createElement('a');a.id='project-story-link';a.className=old.className;a.href='story.html';a.textContent='Project story ↗';a.style.cssText='text-decoration:none;display:inline-flex;align-items:center';if(old.id==='story-button'){a.style.cssText+=';position:fixed;bottom:18px;right:20px;z-index:100;background:#fff;border:1px solid #777;padding:12px 18px;border-radius:24px'}old.replaceWith(a)}else{const a=document.createElement('a');a.id='project-story-link';a.href='story.html';a.textContent='Project story ↗';a.style.cssText='position:fixed;right:18px;bottom:18px;z-index:100;background:#fff;padding:12px;border:1px solid #777;border-radius:20px';document.body.append(a)}});</script></body>
 </html>

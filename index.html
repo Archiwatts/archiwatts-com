@@ -91,7 +91,7 @@ h1{font-size:clamp(28px,3vw,52px);margin:0 0 6px}.crumb{font-size:14px;margin-bo
 }
 @media (prefers-reduced-motion:reduce){.sway,.cls-1,.front .cls-1{animation:none!important}#logo,.view{transition-duration:.01s!important;transition-delay:0s!important}}
 </style>
-</head>
+<link rel="stylesheet" href="portfolio-assets/welcome.css"></head>
 <body data-v="intro">
 <nav id="side" aria-label="Site"><a class="home" id="home" href="#" aria-label="ArchiWatts home"><div id="slot"></div></a><ul id="links"></ul></nav>
 <button id="mb" type="button">Menu</button>
@@ -101,74 +101,6 @@ h1{font-size:clamp(28px,3vw,52px);margin:0 0 6px}.crumb{font-size:14px;margin-bo
 <div id="name"><span id="nameText">ArchiWatts</span></div>
 <p id="hint">Click the logo, or scroll, to enter</p>
 <section class="view" id="vHome" aria-label="Home"><div class="cards" id="cards"></div></section>
-<section class="view" id="vArch" aria-label="Architecture"><div class="crumb"><a href="#" id="toHome">Home</a> / Architecture</div><h1>Architecture</h1><div class="cols" id="cols"></div></section>
-<p id="legal">&copy; ArchiWatts. Images on this site may not be used without explicit permission from the creator of archiwatts.com. Please see the <a href="about/">About</a> page.</p>
-<script>
-/* ====== EDIT THIS: addresses, descriptions and images ====== */
-const L={graphic:"graphic-design/",art:"https://archiwatts-art.me/",about:"about/",contact:"about/#contact",linkedin:"https://www.linkedin.com/in/archiwatts/",artme:"https://art.me/YOUR-NAME"};
-/* img: "" shows a placeholder box. Later put an image address such as "img/architecture.jpg" */
-const CARDS=[
- {id:"arch",title:"Architecture",desc:"Interactive 3D studies, projects, and drawings.",img:"img/architecture-poster.jpg",video:"vid/architecture-reel.mp4",main:1},
- {title:"Graphic Design",desc:"Branding, illustration, and 2D graphic work.",img:"img/graphic-design.jpg",fit:"contain",bg:"#231f20",url:L.graphic},
- {title:"Art",desc:"Experimental 3D art and fine art.",img:"img/art-poster.jpg",video:"vid/art-animation.mp4",url:L.art}];
-const ARCH=[
- {title:"Projects",items:[{label:"Hive",url:"./Hive/Hive.html"},{label:"Tranquil River",url:"./Tranquil-River/Tranquil-River.html"},{label:"Net Zero School",url:"./Net-Zero-School/Net-Zero-School.html"},{label:"Phalanstery",url:"./Phalanstery/Phalanstery.html"}]},
- {title:"3D Models",items:[{label:"3D model 1"},{label:"3D model 2"},{label:"3D model 3"}]},
- {title:"Drawings",items:[{label:"Drawing 1"},{label:"Drawing 2"},{label:"Drawing 3"}]}];
-const NAV=[{label:"Architecture",id:"arch"},{label:"Graphic Design",url:L.graphic},{label:"Art",url:L.art},{label:"About",url:L.about},{label:"Contact",url:L.contact},{label:"LinkedIn",url:L.linkedin},{label:"Art.me",url:L.artme}];
-const EQUAL_WIDTH_NAV=false;
-/* =========================================================== */
-const $=id=>document.getElementById(id),body=document.body,logo=$('logo'),tilt=$('tilt'),slot=$('slot'),links=$('links');
-const ph=(img,t,o={})=>o.video?`<div class="ph im"><video src="${o.video}" poster="${img||''}" autoplay muted loop playsinline preload="metadata" aria-label="${t}"></video></div>`:img?`<div class="ph im"${o.bg?` style="background:${o.bg}"`:''}><img src="${img}" alt="${t}"${o.fit?` style="object-fit:${o.fit}"`:''}></div>`:`<div class="ph">${t} image</div>`;
-$('cards').innerHTML=CARDS.map(c=>`<a class="card${c.main?' main':''}" href="${c.url||'#arch'}" ${c.id?`data-go="${c.id}"`:''}>${ph(c.img,c.title,c)}<div class="cap"><b>${c.title}</b><span>${c.desc}</span></div></a>`).join('');
-$('cols').innerHTML=ARCH.map(c=>`<div class="col"><h2>${c.title}</h2><div class="list">${c.items.map(i=>`<a class="it" href="${i.url||'#'}" ${i.url?'':'aria-disabled="true"'}>${ph(i.img,i.label)}<b>${i.label}</b></a>`).join('')}</div></div>`).join('');
-if(matchMedia('(prefers-reduced-motion:reduce)').matches)document.querySelectorAll('video').forEach(v=>{v.removeAttribute('autoplay');v.pause()});
-NAV.forEach(n=>{const li=document.createElement('li'),a=document.createElement('a'),s=document.createElement('span');s.textContent=n.label;a.appendChild(s);a.href=n.url||'#arch';if(n.id)a.dataset.go=n.id;li.appendChild(a);links.appendChild(li)});
-/* 3D logo: stacked copies of the SVG */
-const src=$('svgsrc').innerHTML;
-for(let z=10;z>=0;z--){const d=document.createElement('div');d.className='layer'+(z?'':' front');d.style.setProperty('--z',z);d.innerHTML=src;if(z)d.setAttribute('aria-hidden','true');tilt.appendChild(d)}
-slot.innerHTML=src;$('svgsrc').remove();
-let entered=false;
-function glide(anim){
-  logo.style.transition=anim?'':'none';logo.style.transform='none';
-  const a=logo.getBoundingClientRect(),t=slot.getBoundingClientRect();
-  logo.style.transform=`translate(${t.left+t.width/2-a.left-a.width/2}px,${t.top+t.height/2-a.top-a.height/2}px) scale(${t.height/a.height})`;
-}
-function dock(anim){if(entered)return;entered=true;body.classList.add('entered');glide(anim);setTimeout(()=>body.classList.add('docked'),anim?1150:0)}
-function go(v){dock(false);body.dataset.v=v;links.querySelectorAll('a').forEach(a=>a.classList.toggle('on',a.dataset.go===v));history.pushState(null,'',v==='arch'?'#arch':location.pathname+location.search)}
-function enter(){
-  if(entered)return;
-  const c=logo.querySelector('.front .cls-1').getBoundingClientRect(),r=$('ring');
-  r.style.left=c.left+c.width/2+'px';r.style.top=c.top+c.height/2+'px';
-  logo.classList.add('flash');r.classList.remove('go');void r.offsetWidth;r.classList.add('go');
-  setTimeout(()=>{logo.classList.remove('flash');dock(true);body.dataset.v='home'},320);
-}
-logo.addEventListener('click',enter);
-logo.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();enter()}});
-document.addEventListener('click',e=>{const a=e.target.closest('[data-go]');if(a){e.preventDefault();go(a.dataset.go)}});
-$('toHome').addEventListener('click',e=>{e.preventDefault();go('home')});
-$('home').addEventListener('click',e=>{e.preventDefault();if(entered)go('home')});
-$('mb').addEventListener('click',()=>body.classList.toggle('mo'));
-let lock=0;
-addEventListener('wheel',e=>{if(!entered&&e.deltaY>20&&Date.now()>lock){lock=Date.now()+1300;enter()}},{passive:true});
-let y0=null;
-addEventListener('touchstart',e=>{y0=e.touches[0].clientY},{passive:true});
-addEventListener('touchend',e=>{if(y0!==null&&!entered&&y0-e.changedTouches[0].clientY>50)enter();y0=null},{passive:true});
-addEventListener('pointermove',e=>{if(entered)return;tilt.style.setProperty('--ry',((e.clientX/innerWidth-.5)*34).toFixed(1)+'deg');tilt.style.setProperty('--rx',((.5-e.clientY/innerHeight)*22).toFixed(1)+'deg')});
-addEventListener('popstate',()=>{dock(false);const v=location.hash==='#arch'?'arch':'home';body.dataset.v=v;links.querySelectorAll('a').forEach(a=>a.classList.toggle('on',a.dataset.go===v))});
-function layout(){
-  const nm=$('name'),t=$('nameText');t.style.letterSpacing='0px';nm.style.textIndent='0px';
-  const ls=Math.max(0,(logo.offsetWidth-t.getBoundingClientRect().width)/(t.textContent.length-1));
-  t.style.letterSpacing=ls+'px';nm.style.textIndent=ls+'px';
-  const sb=innerHeight/2+logo.offsetHeight*.59,ht=$('hint').getBoundingClientRect().top;nm.style.top=Math.max(sb,(sb+ht)/2)+'px';
-  if(EQUAL_WIDTH_NAV){const sp=[...links.querySelectorAll('span')];sp.forEach(s=>s.style.letterSpacing='0px');const w=sp.map(s=>s.getBoundingClientRect().width),m=Math.max(...w);sp.forEach((s,i)=>{s.style.letterSpacing=(m-w[i])/Math.max(1,s.textContent.length-1)+'px'})}
-  if(entered)glide(false);
-}
-addEventListener('resize',layout);
-layout();if(document.fonts)document.fonts.ready.then(layout);
-if(location.hash==='#arch'){dock(false);body.dataset.v='arch';body.classList.add('docked');links.querySelector('[data-go=arch]').classList.add('on')}
-</script>
-</body>
-</html>
-
-
+<section class="view" id="vArch" aria-label="Architecture"><div class="crumb"><a href="#" id="toHome">Home</a> / Architecture</div><h1>Architecture</h1><p class="arch-intro">Explore in three dimensions, read the project stories, or browse the work by medium.</p><div class="cols" id="cols"></div></section>
+<section class="view" id="vAbout" aria-label="About & Contact"><div class="crumb"><a href="#home" data-go="home">Home</a> / About & Contact</div><h1>About & Contact</h1><div class="about-grid"><article><span class="eyebrow">ArchiWatts</span><h2>Architecture, graphics, and art.</h2><p>A portfolio of architectural studies, interactive models, graphic design, and experimental art by Brandon A. Hernandez.</p><p>Explore the work through its drawings, project stories, and navigable spaces. Project-specific collaborations and design credits are listed with each study.</p></article><article id="contact"><span class="eyebrow">Start a conversation</span><h2>Contact & collaborations</h2><p>For project inquiries, collaborations, or permission to reproduce work, connect through LinkedIn.</p><a class="action" href="https://www.linkedin.com/in/archiwatts/">Contact on LinkedIn ↗</a><a class="text-link" href="https://archiwatts-art.me/">Visit the art portfolio ↗</a></article></div></section><p id="legal">&copy; ArchiWatts. Images on this site may not be used without explicit permission from the creator of archiwatts.com. Please see the <a href="#about" data-go="about">About & Contact</a> page.</p>
+<script src="portfolio-assets/welcome.js"></script></body></html>
