@@ -6,8 +6,8 @@
     "intro": "A new ground above the city.",
     "summary": "A capstone proposal at 2301 NW 33rd Avenue, Miami, connecting a neighborhood edge, residences, and a canal-side public realm.",
     "credit": "Brandon A. Hernandez · Capstone proposal",
-    "image": "hive.webp",
-    "second": "hive-deck.webp",
+    "image": "img/Hive/renders/best-render-capstone-front-view.webp",
+    "second": "img/Hive/renders/best-render-capstone-front-view.webp",
     "sections": [
       [
         "The neighborhood and the waterfront",
@@ -30,8 +30,8 @@
     "intro": "A city within a frame.",
     "summary": "A bounded urban composition of towers, courts, water, and an elliptical building, linked by a circular route.",
     "credit": "Design: Jaime Correa · Revit modeling and architectural views: Brandon A. Hernandez",
-    "image": "phalanstery.webp",
-    "second": "phalanstery-court.webp",
+    "image": "img/Phalanstery/renders/best-render-phalanstery-17.webp",
+    "second": "img/Phalanstery/renders/best-render-phalanstery-17.webp",
     "sections": [
       [
         "A collective composition",
@@ -54,8 +54,8 @@
     "intro": "A hidden spring. A timber ribcage.",
     "summary": "Tranquil Oasis explores a sequence of shelter and openness along the turquoise waters of Kikuletwa Hot Springs.",
     "credit": "Brandon A. Hernandez · Design portfolio study",
-    "image": "river.jpg",
-    "second": "river-study.jpg",
+    "image": "img/Tranquil-River/renders/best-render.webp",
+    "second": "img/Tranquil-River/renders/best-render.webp",
     "sections": [
       [
         "A sequence along the water",
@@ -78,8 +78,8 @@
     "intro": "Learning across a connected campus.",
     "summary": "A K–12 school proposal with separate learning buildings connected by paths, ramps, and shared courtyards.",
     "credit": "Design: Brandon Hernandez & Danny Ferrer · Net-zero school proposal",
-    "image": "school.jpg",
-    "second": "school.jpg",
+    "image": "img/Net-Zero-School/renders/view-1-1.webp",
+    "second": "img/Net-Zero-School/renders/view-1-1.webp",
     "sections": [
       [
         "A familiar place, reconsidered",
