@@ -1,0 +1,12 @@
+.portfolio-sidebar{position:fixed;inset:0 auto 0 0;width:210px;padding:20px 16px;background:#cfcfd4;border-right:1px solid #aaa;overflow:auto;z-index:40;font-family:Archivo,Arial,sans-serif}.portfolio-sidebar .brand{display:block;box-sizing:content-box;width:66px;height:91px;padding:8px;margin:0 auto 24px;background:#e7e6e9;border:1px solid #767079;border-radius:8px}.brand svg{width:100%;height:100%}.portfolio-sidebar nav{display:grid;gap:10px}.portfolio-sidebar nav a{display:block;font-size:12px;text-decoration:none;line-height:1.5;padding:7px 6px}.portfolio-sidebar .primary{border:1px solid #999;border-radius:6px;font-weight:bold}.nav-tree,.project-tree{border-left:1px solid #999;margin-left:10px;padding-left:8px}.portfolio-sidebar [aria-current]{color:#a53555;font-weight:bold}.project-tree a{font-size:11px!important}@media(max-width:700px){.portfolio-sidebar{width:150px;padding:14px 10px}.portfolio-sidebar .brand{width:46px;height:63px}.portfolio-sidebar nav a{font-size:11px}.portfolio-sidebar~main{margin-left:150px!important;width:calc(100% - 150px)!important;padding:24px 4%!important}.nav-tree{margin-left:2px;padding-left:4px}.portfolio-sidebar .project-tree{margin-left:2px;padding-left:5px}}
+.tree-menu-button{display:none}
+@media(max-width:700px){
+ .portfolio-sidebar{position:fixed!important;inset:0 0 auto 0!important;width:100%!important;height:92px!important;display:block!important;overflow:visible!important;padding:10px 18px!important;box-sizing:border-box}
+ .portfolio-sidebar .brand{width:40px!important;height:55px!important;margin:0!important;padding:6px!important;min-width:0!important}
+ .portfolio-sidebar .brand svg{height:55px!important}
+ .portfolio-sidebar nav{display:none!important}
+ .portfolio-sidebar.menu-open nav{display:grid!important;position:absolute;left:0;top:92px;width:min(300px,90vw);max-height:calc(100dvh - 110px);overflow:auto;background:#cfcfd4;padding:18px;box-shadow:0 10px 24px #0003;box-sizing:border-box}
+ .tree-menu-button{display:block;position:absolute;right:16px;top:24px;border:2px solid #231f20;border-radius:999px;padding:8px 16px;background:#fff;color:#231f20;font-weight:bold;cursor:pointer}
+ .portfolio-sidebar~main{margin:0!important;width:100%!important;padding:115px 5% 35px!important}
+ .project-facts{grid-template-columns:1fr 1fr;gap:12px}.project-facts div{padding:14px}
+}
