@@ -1,0 +1,10 @@
+/* Original ArchiWatts mark with a crisp edge following its shape. */
+:is(#slot,body.docked #slot,.portfolio-sidebar .brand,.rail .logo,#portfolio-rail .portfolio-logo,.mm-logo){background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important}
+:is(#slot,.portfolio-sidebar .brand,.rail .logo,#portfolio-rail .portfolio-logo,.mm-logo) svg,#logo svg{filter:drop-shadow(.7px 0 0 #fff) drop-shadow(-.7px 0 0 #fff) drop-shadow(0 .7px 0 #fff) drop-shadow(0 -.7px 0 #fff)!important;overflow:visible}
+:is(#slot,.portfolio-sidebar .brand,.rail .logo,#portfolio-rail .portfolio-logo,.mm-logo):focus-visible{outline:2px solid #fff!important;outline-offset:5px!important}
+
+/* Broad navigation glow; keep the large welcome mark unchanged. */
+:is(#slot,.portfolio-sidebar .brand,.rail .logo,#portfolio-rail .portfolio-logo,.mm-logo){position:relative;isolation:isolate;overflow:visible!important}
+:is(#slot,.portfolio-sidebar .brand,.rail .logo,#portfolio-rail .portfolio-logo,.mm-logo)::before{content:"";position:absolute;inset:-25px -33px;z-index:0;pointer-events:none;background:radial-gradient(ellipse at center,#ffffff60 0%,#ffffff36 23%,#ffffff12 49%,transparent 76%);filter:blur(9px);border-radius:50%}
+:is(#slot,.portfolio-sidebar .brand,.rail .logo,#portfolio-rail .portfolio-logo,.mm-logo) svg{position:relative;z-index:1;filter:drop-shadow(0 0 .7px #ffffff66)!important}
+@media(max-width:900px){.mm-logo::before,#slot::before,.portfolio-sidebar .brand::before{inset:-18px -25px;filter:blur(7px)}}
