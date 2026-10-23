@@ -3,104 +3,96 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ArchiWatts</title>
+<title>ArchiWatts | Architecture, graphics, and art</title>
+<meta name="description" content="Portfolio of Brandon A. Hernandez: architectural studies, interactive 3D models, graphic design, and experimental art in Miami.">
+<meta name="theme-color" content="#26242a">
+<link rel="canonical" href="https://archiwatts.com/">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ArchiWatts">
+<meta property="og:title" content="ArchiWatts | Architecture, graphics, and art">
+<meta property="og:description" content="Architectural studies, interactive 3D models, graphic design, and art by Brandon A. Hernandez.">
+<meta property="og:url" content="https://archiwatts.com/">
+<meta property="og:image" content="https://archiwatts.com/img/architecture-poster.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700&display=swap" rel="stylesheet">
-<style>
-:root{--ink:#231f20;--pink:#d84c74;--ease:cubic-bezier(.7,0,.2,1);--side:160px}
-*{box-sizing:border-box}
-html,body{height:100%;margin:0;overflow:hidden;color:var(--ink);font-family:Archivo,system-ui,sans-serif;background:radial-gradient(ellipse at 50% 38%,#f5f5f6 0%,#dadadd 55%,#b8b8bd 100%) fixed}
-a{color:inherit}
-#stage{position:fixed;inset:0 0 0 var(--side);display:grid;place-items:center;perspective:1000px}
-#logo{position:relative;height:min(60vh,60vw,440px);aspect-ratio:293.92/405.26;cursor:pointer;transform-style:preserve-3d;transform-origin:50% 50%;transition:transform 1.2s var(--ease),opacity .5s}
-#logo:focus-visible{outline:3px solid var(--pink);outline-offset:10px}
-.sway,.tilt{position:absolute;inset:0;transform-style:preserve-3d}
-.sway{animation:sway 9s ease-in-out infinite}
-.tilt{transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .25s ease-out}
-.layer{position:absolute;inset:0;transform:translateZ(calc(var(--z)*-4px))}
-.layer svg,#slot svg{width:100%;height:100%;display:block;overflow:visible}
-.layer:not(.front){filter:brightness(calc(1 - var(--z)*.045)) contrast(.9)}
-#shadow{position:absolute;left:12%;right:12%;bottom:-9%;height:7%;border-radius:50%;background:rgba(35,31,32,.18);filter:blur(10px);transform:translateZ(-40px) rotateX(70deg)}
-@keyframes sway{0%,100%{transform:translateY(0) rotateY(-16deg) rotateX(3deg)}50%{transform:translateY(-12px) rotateY(16deg) rotateX(-3deg)}}
-.cls-1{transform-box:fill-box;transform-origin:center;animation:pulse 1.5s ease-in-out infinite}
-.front .cls-1{animation:pulse 1.5s ease-in-out infinite,glow 1.5s ease-in-out infinite}
-@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.55)}}
-@keyframes glow{0%,100%{filter:drop-shadow(0 0 0 rgba(216,76,116,0))}50%{filter:drop-shadow(0 0 18px rgba(216,76,116,.95))}}
-#logo.flash .cls-1{animation:pop .65s ease-out!important;fill:#fff}
-@keyframes pop{0%{transform:scale(1);fill:#fff}25%{transform:scale(3.2);fill:#ffd0dd;filter:drop-shadow(0 0 40px #d84c74)}100%{transform:scale(1);fill:#d84c74}}
-#ring{position:fixed;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;border:4px solid var(--pink);background:rgba(216,76,116,.35);pointer-events:none;opacity:0;z-index:9}
-#ring.go{animation:ring .8s ease-out}
-@keyframes ring{0%{opacity:.9;transform:scale(.3)}100%{opacity:0;transform:scale(26)}}
-#hint,#name{position:fixed;left:var(--side);right:0;text-align:center;transition:opacity .5s;pointer-events:none}
-#hint{bottom:max(60px,env(safe-area-inset-bottom));font-size:15px}
-#legal{position:fixed;right:3vw;bottom:1.2vh;max-width:min(430px,60vw);margin:0;text-align:right;font-size:11px;line-height:1.35;color:#4a4a50;z-index:5}
-#legal a{color:inherit}
-#name{font-weight:700;font-size:clamp(18px,2.4vw,24px);transform:translateY(-50%)}
-.entered #hint,.entered #name{opacity:0}
-.entered .sway{animation:none}.entered .tilt{transform:none}
-.docked #logo{opacity:0;pointer-events:none}
-#side{position:fixed;left:0;top:0;bottom:0;width:var(--side);padding:16px 10px;display:flex;flex-direction:column;gap:24px;z-index:6;background:#cfcfd4}
-.home{display:block;align-self:center}
-#slot{width:66px;height:91px;border:2px dashed var(--pink);border-radius:6px;transition:border-color .4s}
-#slot svg{opacity:0;transition:opacity .5s}
-.docked #slot{border-color:transparent}.docked #slot svg{opacity:1}
-#links{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:11px}
-#links li{width:100%}
-#links a{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;border:1.5px solid rgba(35,31,32,.5);border-radius:6px;background:rgba(255,255,255,.4);font-weight:700;font-size:13px;white-space:nowrap;text-align:left;text-decoration:none;transition:color .2s,background .2s}
-#links a::before{content:"";width:8px;height:8px;border-radius:50%;border:2px solid currentColor;flex:none}
-#links a:hover,#links a:focus-visible,#links a.on{background:var(--ink);color:#fff;outline:none}
-#links a:hover::before,#links a.on::before{background:var(--pink);border-color:var(--pink)}
-#mb{display:none}
-.view{position:fixed;inset:0 0 0 var(--side);overflow:hidden;padding:3vh 3vw max(6.5vh,48px);opacity:0;pointer-events:none;transition:opacity .6s}
-[data-v=home] #vHome,[data-v=arch] #vArch{opacity:1;pointer-events:auto;transition-delay:.9s}
-.cards{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:3vh 3vw;height:100%}
-.card{display:flex;flex-direction:column;min-height:0;background:#fff;border:2px solid var(--ink);border-radius:8px;overflow:hidden;text-decoration:none;transition:transform .3s,border-color .3s}
-.card:hover{transform:translateY(-4px);border-color:var(--pink)}
-.card.main{grid-column:1/3}
-.card .ph{flex:1;min-height:0}
-.cap{padding:1.4vh 1.4vw 1.8vh}.cap b{font-size:clamp(20px,2vw,34px);display:block}.cap span{font-size:clamp(13px,1.1vw,19px);color:#4a4a50}
-.ph{display:flex;align-items:center;justify-content:center;background:#c9c9ce;border:2px dashed #7a7a80;color:#3d3d43;font-size:13px;text-align:center;overflow:hidden}
-.ph.im{border:0}.ph img,.ph video{width:100%;height:100%;object-fit:cover;display:block}
-#vArch{display:flex;flex-direction:column}
-h1{font-size:clamp(28px,3vw,52px);margin:0 0 6px}.crumb{font-size:14px;margin-bottom:2vh}
-.cols{display:flex;gap:2vw;align-items:stretch;flex:1;min-height:0;margin-top:12vh}
-.col{flex:1;display:flex;flex-direction:column;min-height:0;border:2px solid #9a9aa0;border-radius:8px;padding:1.6vh 1.4vw;background:rgba(255,255,255,.55);transition:flex .4s var(--ease),border-color .3s,background .3s}
-.col:hover{flex:1.4;border-color:var(--ink);background:#fff}
-.col h2{flex:none;font-size:clamp(17px,1.5vw,26px);margin:0 0 1.6vh}
-.list{flex:1;min-height:0;overflow-y:auto}
-.it{display:block;margin-bottom:1.6vh;text-decoration:none}.it .ph{height:clamp(110px,16vh,240px)}.it b{display:block;font-size:14px;margin-top:6px}.it:hover b{color:var(--pink)}
-@media (max-width:700px){
-:root{--side:0px}
-#side{width:auto;bottom:auto;background:none;padding:14px}
-#slot{width:46px;height:63px}
-#links{display:none}
-.mo #links{display:flex;position:fixed;left:14px;top:112px;width:220px;background:#cfcfd4;padding:10px;border-radius:8px}
-#mb{display:block;position:fixed;top:14px;right:14px;z-index:7;border:2px solid var(--ink);background:#fff;border-radius:999px;padding:8px 16px;font:700 13px Archivo,system-ui,sans-serif;cursor:pointer}
-.view{padding:130px 20px 90px}
-#legal{left:14px;right:14px;max-width:none;text-align:center;bottom:8px}
-}
-@media (max-width:700px),(max-aspect-ratio:1/1){
-.view{overflow:auto}
-.cards{grid-template-columns:1fr;grid-template-rows:none;height:auto}
-.card.main{grid-column:auto}
-.card .ph{flex:none;height:34vw;min-height:150px}
-#vArch{display:block}
-.cols{flex-direction:column;margin-top:8vh;gap:3vh}
-.col,.col:hover{flex:none}
-.list{overflow:visible}
-}
-@media (prefers-reduced-motion:reduce){.sway,.cls-1,.front .cls-1{animation:none!important}#logo,.view{transition-duration:.01s!important;transition-delay:0s!important}}
-</style>
-<link rel="stylesheet" href="portfolio-assets/welcome.css"><link rel="stylesheet" href="portfolio-assets/site-polish.css"><link rel="stylesheet" href="portfolio-assets/media-v5.css"><link rel="stylesheet" href="portfolio-assets/theme-v6.css"><link rel="stylesheet" href="portfolio-assets/paper-book.css"><link rel="stylesheet" href="portfolio-assets/layout-v8.css"><link rel="stylesheet" href="portfolio-assets/mobile-v9.css"><link rel="stylesheet" href="portfolio-assets/polish-v10.css"><link rel="stylesheet" href="portfolio-assets/polish-v10.css"><style>#home:focus{outline:0}#home:focus-visible,.portfolio-sidebar .brand:focus-visible{outline:2px solid #9e96a5!important;outline-offset:3px}#slot{border-color:#99919f!important}</style><link rel="stylesheet" href="portfolio-assets/brand-v13.css"><link rel="stylesheet" href="portfolio-assets/review-r2.css"></head>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700&family=Archivo+Narrow:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="portfolio-assets/home.css">
+</head>
 <body data-v="intro">
-<nav id="side" aria-label="Site"><a class="home" id="home" href="#" aria-label="ArchiWatts home"><div id="slot"></div></a><ul id="links"></ul></nav>
-<button id="mb" type="button">Menu</button>
-<div id="stage"><div id="logo" role="button" tabindex="0" aria-label="Enter the site"><div id="shadow"></div><div class="sway"><div class="tilt" id="tilt"></div></div></div></div>
+<a class="skip" href="#content">Skip to content</a>
+<header id="side">
+<a class="mark" id="home" href="#home" aria-label="ArchiWatts home"><span></span></a>
+<button id="mb" type="button" aria-expanded="false" aria-controls="links">Menu</button>
+<nav aria-label="Site"><ul id="links"></ul></nav>
+</header>
+
+<div id="stage"><button id="logo" type="button" aria-label="Enter the site"><span id="shadow"></span><span class="sway"><span class="tilt" id="tilt"></span></span></button></div>
 <template id="svgsrc"><svg role="img" aria-label="Logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 293.92 405.26"><defs><style>.cls-1,.cls-9{fill:#d84c74;}.cls-1,.cls-2,.cls-3,.cls-4,.cls-5,.cls-6,.cls-7,.cls-8{stroke:#fff;}.cls-1,.cls-12,.cls-13,.cls-14,.cls-15,.cls-2,.cls-3,.cls-4,.cls-5,.cls-6,.cls-7,.cls-8,.cls-9{stroke-miterlimit:10;}.cls-1,.cls-5{stroke-width:6px;}.cls-10,.cls-2,.cls-3{fill:#231f20;}.cls-15,.cls-2,.cls-4{stroke-width:2px;}.cls-14,.cls-3,.cls-9{stroke-width:3px;}.cls-11,.cls-12,.cls-13,.cls-14,.cls-15,.cls-4,.cls-5,.cls-6,.cls-7,.cls-8{fill:none;}.cls-6{stroke-width:5px;}.cls-13,.cls-8{stroke-width:4px;}.cls-12,.cls-13,.cls-14,.cls-15,.cls-9{stroke:#231f20;}</style></defs><g id="Layer_3" data-name="Layer 3"><circle class="cls-1" cx="154" cy="24.37" r="21.37"/><circle class="cls-2" cx="17.27" cy="169.38" r="16.27"/><circle class="cls-3" cx="67.26" cy="296.96" r="9.04"/><circle class="cls-3" cx="97.65" cy="322.59" r="8.86"/><circle class="cls-3" cx="128.55" cy="351.42" r="8.5"/><circle class="cls-2" cx="194.4" cy="246.22" r="4.25"/><circle class="cls-2" cx="234.37" cy="183.23" r="4.25"/><circle class="cls-4" cx="153.99" cy="24.37" r="5.25"/><circle class="cls-2" cx="97.65" cy="228.8" r="4.25"/><circle class="cls-2" cx="128.75" cy="161.82" r="4.25"/><path class="cls-4" d="M292.52,156.94" transform="translate(-2.18 -3.82)"/><path class="cls-5" d="M172.54,43.52l2.94,2.81,45.48,43,65.35,61.78a20.65,20.65,0,0,1,6.45,15l.35,108.73a20.73,20.73,0,0,1-6.46,15.08l-117,111a18.83,18.83,0,0,1-25.88,0L26.19,289.85a20.67,20.67,0,0,1-6.48-15.05V175.59" transform="translate(-2.18 -3.82)"/><path class="cls-6" d="M156.42,405.85V49.76" transform="translate(-2.18 -3.82)"/><path class="cls-7" d="M-6.68,156.94" transform="translate(-2.18 -3.82)"/><path class="cls-7" d="M131.05,110.53" transform="translate(-2.18 -3.82)"/><path class="cls-5" d="M236.56,173.46V149.39" transform="translate(-2.18 -3.82)"/><path class="cls-4" d="M236.56,173.46" transform="translate(-2.18 -3.82)"/><path class="cls-5" d="M69.44,300.79l2.48-134a5.75,5.75,0,0,1,5.75-5.76,5.54,5.54,0,0,1,2.47.55l148.19,65a5.76,5.76,0,0,0,8.23-5.21v-21" transform="translate(-2.18 -3.82)"/><path class="cls-4" d="M69.44,300.79" transform="translate(-2.18 -3.82)"/><path class="cls-7" d="M130.94,355.24" transform="translate(-2.18 -3.82)"/><path class="cls-6" d="M130.94,179V355.24" transform="translate(-2.18 -3.82)"/><path class="cls-5" d="M175.26,94.29v36.37a2.75,2.75,0,0,1-4,2.43L135,115.86a2.74,2.74,0,0,0-4,2.44s0,41.86.07,33.25" transform="translate(-2.18 -3.82)"/><path class="cls-7" d="M215.26,186.36" transform="translate(-2.18 -3.82)"/><path class="cls-7" d="M246.15,238.33" transform="translate(-2.18 -3.82)"/><circle class="cls-8" cx="234.37" cy="130.94" r="9.04"/><circle class="cls-8" cx="203.97" cy="105.32" r="8.86"/><circle class="cls-8" cx="173.07" cy="76.49" r="8.5"/><circle class="cls-3" cx="38.78" cy="272.21" r="9.04"/><circle class="cls-8" cx="265.52" cy="159.3" r="8.5"/><path class="cls-6" d="M175.29,240.7,51.37,183.48A7.34,7.34,0,0,0,41,189.92V276" transform="translate(-2.18 -3.82)"/><path class="cls-6" d="M267.7,177.05l.42,95.08a7.32,7.32,0,0,1-10.4,6.65s-54.83-25.32-43.85-20.26" transform="translate(-2.18 -3.82)"/><path class="cls-6" d="M99.85,251.52v74.91" transform="translate(-2.18 -3.82)"/><path class="cls-5" d="M206.15,123.45l.14,51.38a6.08,6.08,0,0,1-9,5.33l-88.45-40.9a6.06,6.06,0,0,0-8.24,2.4,5.93,5.93,0,0,0-.75,2.92v72.28" transform="translate(-2.18 -3.82)"/><path class="cls-7" d="M19.46,156.94" transform="translate(-2.18 -3.82)"/><path class="cls-7" d="M292.92,283.48" transform="translate(-2.18 -3.82)"/><path class="cls-7" d="M69.44,300.79" transform="translate(-2.18 -3.82)"/><line class="cls-1" x1="95.21" y1="249.23" x2="100.12" y2="249.23"/><line class="cls-1" x1="94.72" y1="210.69" x2="100.59" y2="210.69"/><line class="cls-1" x1="170.03" y1="238.13" x2="172.2" y2="233.7"/><line class="cls-1" x1="231.43" y1="197.86" x2="237.3" y2="197.86"/><line class="cls-1" x1="263.09" y1="174.6" x2="268" y2="174.6"/><line class="cls-1" x1="231.49" y1="167.55" x2="237.33" y2="167.55"/><line class="cls-1" x1="231.47" y1="147.02" x2="237.31" y2="147.02"/><line class="cls-1" x1="201.08" y1="120.91" x2="206.94" y2="120.91"/><line class="cls-1" x1="170.19" y1="91.82" x2="176.05" y2="91.82"/></g><g id="Layer_9" data-name="Layer 9"><circle class="cls-9" cx="154" cy="24.12" r="21.37"/><circle class="cls-10" cx="17.27" cy="169.13" r="16.27"/><circle class="cls-10" cx="67.26" cy="296.71" r="9.04"/><circle class="cls-10" cx="97.65" cy="322.34" r="8.86"/><circle class="cls-10" cx="128.55" cy="351.17" r="8.5"/><circle class="cls-10" cx="194.4" cy="245.97" r="4.25"/><circle class="cls-10" cx="234.37" cy="182.98" r="4.25"/><circle class="cls-11" cx="153.99" cy="24.12" r="5.25"/><circle class="cls-10" cx="97.65" cy="228.55" r="4.25"/><circle class="cls-10" cx="128.75" cy="161.57" r="4.25"/><path class="cls-12" d="M292.52,156.68" transform="translate(-2.18 -3.82)"/><path class="cls-13" d="M172.54,43.27l2.94,2.81L221,89.1l65.35,61.78a20.65,20.65,0,0,1,6.45,15l.35,108.73a20.69,20.69,0,0,1-6.46,15.07l-117,111a18.83,18.83,0,0,1-25.88,0L26.19,289.6a20.67,20.67,0,0,1-6.48-15.05V175.34" transform="translate(-2.18 -3.82)"/><path class="cls-14" d="M156.42,405.6V49.51" transform="translate(-2.18 -3.82)"/><path class="cls-12" d="M-6.68,156.68" transform="translate(-2.18 -3.82)"/><path class="cls-12" d="M131.05,110.28" transform="translate(-2.18 -3.82)"/><path class="cls-13" d="M236.56,173.21V149.14" transform="translate(-2.18 -3.82)"/><path class="cls-12" d="M236.56,173.21" transform="translate(-2.18 -3.82)"/><path class="cls-13" d="M69.44,300.54l2.48-134a5.77,5.77,0,0,1,5.75-5.77,5.69,5.69,0,0,1,2.47.56l148.19,65a5.76,5.76,0,0,0,8.23-5.21v-21" transform="translate(-2.18 -3.82)"/><path class="cls-12" d="M69.44,300.54" transform="translate(-2.18 -3.82)"/><path class="cls-12" d="M130.94,355" transform="translate(-2.18 -3.82)"/><path class="cls-14" d="M130.94,178.74V355" transform="translate(-2.18 -3.82)"/><path class="cls-13" d="M175.26,94v36.37a2.75,2.75,0,0,1-4,2.43L135,115.61a2.74,2.74,0,0,0-4,2.44s0,41.86.07,33.25" transform="translate(-2.18 -3.82)"/><path class="cls-12" d="M215.26,186.11" transform="translate(-2.18 -3.82)"/><path class="cls-12" d="M246.15,238.08" transform="translate(-2.18 -3.82)"/><circle class="cls-15" cx="234.37" cy="130.69" r="9.04"/><circle class="cls-15" cx="203.97" cy="105.07" r="8.86"/><circle class="cls-15" cx="173.07" cy="76.24" r="8.5"/><circle class="cls-10" cx="38.78" cy="271.95" r="9.04"/><circle class="cls-15" cx="265.52" cy="159.05" r="8.5"/><path class="cls-14" d="M175.29,240.45,51.37,183.23A7.34,7.34,0,0,0,41,189.67v86.11" transform="translate(-2.18 -3.82)"/><path class="cls-14" d="M267.7,176.8l.42,95.08a7.32,7.32,0,0,1-10.4,6.65s-54.83-25.32-43.85-20.26" transform="translate(-2.18 -3.82)"/><path class="cls-14" d="M99.85,251.27v74.91" transform="translate(-2.18 -3.82)"/><path class="cls-13" d="M206.15,123.2l.14,51.38a6.08,6.08,0,0,1-9,5.33L108.84,139a6.06,6.06,0,0,0-8.24,2.39,6,6,0,0,0-.75,2.93v72.28" transform="translate(-2.18 -3.82)"/><path class="cls-12" d="M19.46,156.68" transform="translate(-2.18 -3.82)"/><path class="cls-12" d="M292.92,283.23" transform="translate(-2.18 -3.82)"/><path class="cls-12" d="M69.44,300.54" transform="translate(-2.18 -3.82)"/></g></svg></template>
-<div id="ring"></div>
-<div id="name"><span id="nameText">ArchiWatts</span></div>
+<div id="name">ArchiWatts</div>
 <p id="hint">Click the logo, or scroll, to enter</p>
-<section class="view" id="vHome" aria-label="Home"><div class="cards" id="cards"></div></section>
-<section class="view" id="vArch" aria-label="Architecture"><div class="crumb"><a href="#" id="toHome">Home</a> / Architecture</div><h1>Architecture</h1><p class="arch-intro">Explore in three dimensions, read the project stories, or browse the work by medium.</p><div class="cols" id="cols"></div></section>
-<section class="view" id="vAbout" aria-label="About & Contact"><div class="crumb"><a href="#home" data-go="home">Home</a> / About & Contact</div><h1>About & Contact</h1><div class="about-grid"><article><span class="eyebrow">ArchiWatts</span><h2>Architecture, graphics, and art.</h2><p>A portfolio of architectural studies, interactive models, graphic design, and experimental art by Brandon A. Hernandez.</p><p>Explore the work through its drawings, project stories, and navigable spaces. Project-specific collaborations and design credits are listed with each study.</p></article><article id="contact"><span class="eyebrow">Start a conversation</span><h2>Contact & collaborations</h2><p>For project inquiries, collaborations, or permission to reproduce work, connect through LinkedIn.</p><a class="action" href="https://www.linkedin.com/in/archiwatts/">Contact on LinkedIn ↗</a><a class="text-link" href="https://archiwatts-art.me/">Visit the art portfolio ↗</a></article></div></section><p id="legal">&copy; ArchiWatts. Images on this site may not be used without explicit permission from the creator of archiwatts.com. Please see the <a href="#about" data-go="about">About & Contact</a> page.</p>
-<script src="portfolio-assets/welcome.js"></script><script src="portfolio-assets/site-polish.js"></script><script src="portfolio-assets/new-media-links.js"></script><script src="portfolio-assets/review-r2.js"></script><script src="portfolio-assets/additions-menu.js?v=20261023-museum-studies"></script><script src="portfolio-assets/folder-navigation.js?v=20261023-r2"></script></body></html>
+<p id="intro-legal">&copy; ArchiWatts. Images on this site may not be used without permission from the creator.</p>
+
+<main id="content">
+<section class="view" id="vHome" aria-label="Home" hidden>
+<span class="eyebrow">Brandon A. Hernandez</span>
+<h1 tabindex="-1">Architecture, graphics, and art.</h1>
+<p class="lede">Explore the work in three dimensions, or browse it by medium.</p>
+<div class="cards" id="cards"></div>
+</section>
+
+<section class="view" id="vArch" aria-label="Architecture" hidden>
+<span class="eyebrow">Architecture</span>
+<h1 tabindex="-1">Enter the work.</h1>
+<p class="lede">Four projects you can walk through in 3D, plus drawings, renders, and project stories.</p>
+<nav aria-label="Architecture categories"><ul class="tabs" id="tabs"></ul></nav>
+<div id="panels"></div>
+</section>
+
+<section class="view" id="vAbout" aria-label="About and contact" hidden>
+<span class="eyebrow">About &amp; Contact</span>
+<h1 tabindex="-1">Brandon A. Hernandez</h1>
+<p class="avail">Available for freelance</p>
+<div class="about">
+<article>
+<h2>Architecture, graphics, and art.</h2>
+<p>I am a designer in Miami working across architecture, graphic design, and experimental art. This site collects my architectural studies, interactive models, and project stories.</p>
+<h3>Philosophy</h3>
+<p>A strong designer-client relationship hinges on empathy and understanding. As designers, it’s vital to step into the shoes of our clients and end-users. This empathetic approach allows us to comprehend their needs, desires, and challenges fully. Just as sustainable design is crucial for the environment, universal design is equally important as it ensures that our creations are accessible, functional, and inclusive for all. By putting ourselves in the client’s position, we not only deliver solutions that truly resonate with them but also foster trust, effective communication, and ultimately, a successful collaboration that stands the test of time.</p>
+<h3>Experience</h3>
+<ul class="timeline">
+<li><b>Architectural Associate I</b><span>RS&amp;H · April 2025 – Present</span><em>Developed drawings and models for DD and CD phases of construction. Executed site inspections and as-built field measurements to verify construction quality.</em></li>
+<li><b>Design Build Assistant</b><span>IDB Miami Co. · June 2024 – Feb. 2025</span><em>Developed drawings and models for DD and CD phases of construction. Drafted revision letters and revised drawings in response to city comments.</em></li>
+<li><b>Assistant</b><span>University of Miami, Jaime Correa · Oct. – Dec. 2023</span><em>Assisted with creating and editing illustrations for an upcoming book.</em></li>
+<li><b>Teaching Assistant</b><span>University of Miami, Jaime Correa · Aug. – Oct. 2023</span><em>Assisted with grading assignments and projects, and gave feedback and guidance to students.</em></li>
+<li><b>Teaching Assistant</b><span>University of Miami, Summer Scholars Program · July 2023</span><em>Provided individualized support to students who needed extra help with concepts or assignments.</em></li>
+<li><b>Design Aid</b><span>University of Miami, Capstone Projects Workshop · May – June 2023</span><em>Collaborated with real estate developers, construction managers, and fellow design aids to craft a development proposal.</em></li>
+<li><b>Design Consultant</b><span>Design 360 Unlimited · Aug. – Sep. 2022</span><em>Developed solutions tailored to clients’ specific needs. Implemented revisions required by the building department, engineering, or clients.</em></li>
+<li><b>Draftsman</b><span>Rukan Home · Aug. 2020 – May 2021</span><em>Developed precise drawings from scratch based on written and verbal specifications.</em></li>
+</ul>
+</article>
+<div class="side-col">
+<div class="box" id="contact"><span class="eyebrow">Start a conversation</span>
+<h2>Contact &amp; collaborations</h2>
+<p>For project inquiries, collaborations, or permission to reproduce work, email or connect on LinkedIn.</p>
+<p><a class="mail" href="mailto:hello@estadosdedadecounty.com">hello@estadosdedadecounty.com</a></p>
+<p>Miami, FL</p>
+<a class="btn" href="https://www.linkedin.com/in/archiwatts/" rel="noopener">Contact on LinkedIn ↗</a><a class="btn alt" href="https://archiwatts-art.me/" rel="noopener">Art portfolio ↗</a></div>
+<div class="box"><span class="eyebrow">Education</span>
+<p style="margin-top:8px"><b>Bachelor of Architecture</b>, minor in Graphic Design<br>University of Miami, 2021 – 2024</p>
+<p><b>Associate in Arts in Architecture</b><br>Miami Dade College, 2018 – 2020</p></div>
+<div class="box"><span class="eyebrow">Programs</span>
+<ul class="chips"><li>Revit</li><li>AutoCAD</li><li>Photoshop</li><li>Illustrator</li><li>InDesign</li><li>Office 365</li><li>Grasshopper</li><li>Lumion</li><li>Twinmotion</li><li>SketchUp</li><li>Blender</li><li>Atom</li><li>Python</li><li>Catia v5</li><li>Navisworks</li><li>Procore</li><li>Bluebeam</li><li>Dynamo</li></ul></div>
+<div class="box"><span class="eyebrow">Languages &amp; awards</span>
+<p style="margin-top:8px">English (native) · Spanish (bilingual)</p>
+<p><b>Museum of Outdoor Arts</b>, Design and Build National Competition 2022: Finalist</p></div>
+</div>
+</div>
+</section>
+
+<p class="legal">&copy; ArchiWatts. Images on this site may not be used without explicit permission from the creator of archiwatts.com. For permission requests, see <a href="#about" data-go="about">About &amp; Contact</a>.</p>
+</main>
+<script src="portfolio-assets/home.js"></script>
+</body>
+</html>

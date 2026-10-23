@@ -1,0 +1,1 @@
+window.projectModelParts=[];window.projectModelInfo={"slug":"hive","title":"Hive","glb":"light/hive-light.glb","release":"light-r1","parts":[],"triangles":727973,"drawCalls":12,"light":true,"focusBounds":{"min":[-205,-3,-85],"max":[268,52,232]}};
