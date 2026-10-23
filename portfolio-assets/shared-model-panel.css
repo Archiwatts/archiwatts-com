@@ -13,3 +13,5 @@
 
 @media(min-width:901px){#building-panel.unified-panel,#explorer-sidebar-panel.unified-panel{bottom:48px!important}body>.site-permission{right:20px!important;bottom:5px!important;width:350px!important;max-width:350px!important;margin:0!important;padding:4px 8px!important;background:#292b30e8!important;color:#f4f1f5!important;font-size:8px!important;line-height:1.35!important}}
 #explorer-sidebar-panel.unified-panel{padding:0!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;top:82px!important;right:20px!important;width:350px!important;background:#36383f!important;border-radius:18px!important}
+
+.unified-panel .u-heading{display:flex!important;align-items:center;gap:12px!important}.unified-panel .u-project-logo{display:block;width:38px!important;height:38px!important;object-fit:contain;background:#fafafa;border-radius:6px;padding:3px;flex:none}.unified-panel .u-heading h2{margin-bottom:0!important}

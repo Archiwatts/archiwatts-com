@@ -7,5 +7,5 @@ pad.addEventListener('pointerdown',e=>{if(pointer!==null)return;e.preventDefault
 pad.addEventListener('pointermove',e=>{if(e.pointerId===pointer){e.preventDefault();update(e)}});
 for(const name of ['pointerup','pointercancel','lostpointercapture'])pad.addEventListener(name,reset);
 addEventListener('blur',reset);document.addEventListener('visibilitychange',reset);
-setInterval(()=>{const walk=window.modelWalkBridge?.mode?.()==='walk'||document.body.classList.contains('walk-active')||document.body.classList.contains('walking')||document.querySelector('[data-mm-mode="walk"][aria-pressed="true"]');const show=!!walk&&matchMedia('(max-width:900px)').matches&&!document.body.classList.contains('mm-menu-open')&&!window.guidedWalk?.running?.();pad.dataset.active=String(show);if(!show)reset()},120);
+setInterval(()=>{const walk=window.modelNavigation?.isWalking?.()||window.modelWalkBridge?.mode?.()==='walk'||document.body.classList.contains('walk-active')||document.body.classList.contains('walking')||document.querySelector('[data-mm-mode="walk"][aria-pressed="true"]');const show=!!walk&&matchMedia('(max-width:900px)').matches&&!document.body.classList.contains('mm-menu-open')&&!window.guidedWalk?.running?.();pad.dataset.active=String(show);if(!show)reset()},120);
 })();
