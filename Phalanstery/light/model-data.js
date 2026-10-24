@@ -1,0 +1,1 @@
+window.projectModelParts=[];window.projectModelInfo={"slug":"phalanstery","title":"Phalanstery","glb":"light/Phalanstery-light.glb","release":"light-r1","parts":[],"triangles":653153,"drawCalls":1,"light":true,"focusBounds":{"min":[-490,-3,-490],"max":[490,205,490]}};

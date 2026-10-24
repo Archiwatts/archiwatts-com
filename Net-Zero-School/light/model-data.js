@@ -1,0 +1,1 @@
+window.projectModelParts=[];window.projectModelInfo={"slug":"net-zero-school","title":"Net Zero School","glb":"light/Net-Zero-School-light.glb","release":"light-r1","parts":[],"triangles":853297,"drawCalls":1,"light":true,"focusBounds":{"min":[8,-8,-420],"max":[400,16,75]}};

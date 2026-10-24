@@ -18,7 +18,8 @@ const MORE = [
   {title:'Wheels on Water', sub:'3D model', slug:'wheels-on-water', gallery:'projects/wheels-on-water/index.html'},
   {title:'Bench Boat', sub:'Bench studies · 3D', slug:'bench-boat', gallery:'projects/bench-studies/index.html'},
   {title:'Bench D9', sub:'Bench studies · 3D', slug:'bench-d9', gallery:'projects/bench-studies/index.html'},
-  {title:'North Beach Youth Center', sub:'Youth center · 3D', slug:'north-beach-youth-center', gallery:'projects/north-beach-youth-center/index.html'}
+  {title:'North Beach Youth Center', sub:'Youth center · 3D', slug:'north-beach-youth-center', gallery:'projects/north-beach-youth-center/index.html'},
+  {title:'A Moment in Monument', sub:'Winter Stations 2027 · interactive wall', slug:'winter-station-2027', gallery:'projects/winter-station-2027/index.html'}
 ];
 const STORIES = [
   {title:'Hive', sub:'A new ground above the city.', href:'Hive/story.html', img:'img/Hive/renders/best-render-capstone-front-view.webp'},
@@ -35,7 +36,7 @@ const GALLERIES = [
   {title:'Allure Waterways', sub:'Drawings and studies', href:'projects/allure-of-the-sea/index.html', img:'interactive/allure-waterways/preview.webp'},
   {title:'Museum of Emotions', sub:'Drawings and studies', href:'projects/museum-of-emotions/index.html', img:'interactive/museum-of-emotions/preview.webp'},
   {title:'Wheels on Water', sub:'Drawings and studies', href:'projects/wheels-on-water/index.html', img:'interactive/wheels-on-water/preview.webp'},
-  {title:'Winter Station 2027', sub:'Drawings and studies', href:'projects/winter-station-2027/index.html', badge:'WS'},
+  {title:'Winter Station 2027', sub:'Drawings, presentation, and project PDF', href:'projects/winter-station-2027/index.html', img:'interactive/winter-station-2027/preview.webp'},
   {title:'Computational Design Studies', sub:'Drawings and studies', href:'projects/computational-design-studies/index.html', badge:'CD'}
 ];
 const CATS = [
@@ -195,5 +196,73 @@ addEventListener('pointermove', e => {
   pt = e; if (frame) return;
   frame = requestAnimationFrame(() => { frame = 0; tilt.style.setProperty('--ry', (pt.clientX / innerWidth - .5) * 34 + 'deg'); tilt.style.setProperty('--rx', (.5 - pt.clientY / innerHeight) * 22 + 'deg'); });
 }, {passive: true});
+/* ---------- ambient circuit background: faint traces like the logo, with pink pulses ---------- */
+(() => {
+  const c = $('bg'); if (!c) return;
+  const ctx = c.getContext('2d');
+  const phone = matchMedia('(max-width:760px)').matches;
+  let W = 0, H = 0, D = 1, paths = [], raf = 0, last = 0, running = false;
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  function build() {
+    D = Math.min(devicePixelRatio || 1, 1.5);
+    W = c.width = Math.round(innerWidth * D); H = c.height = Math.round(innerHeight * D);
+    const g = 56 * D, count = phone ? 7 : 16;
+    paths = [];
+    for (let i = 0; i < count; i++) {
+      let x = Math.round(rnd(0, W / g)) * g, y = Math.round(rnd(0, H / g)) * g;
+      const pts = [[x, y]];
+      let diag = Math.random() < .5;
+      const segs = 3 + Math.floor(Math.random() * 3);
+      for (let s = 0; s < segs; s++) {
+        const n = 2 + Math.floor(Math.random() * 5), sx = Math.random() < .5 ? 1 : -1;
+        if (diag) { x += sx * n * g; y += n * g; } else { y += (Math.random() < .5 ? 1 : -1) * n * g; }
+        pts.push([x, y]); diag = !diag;
+      }
+      let len = 0; const L = [0];
+      for (let k = 1; k < pts.length; k++) { len += Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]); L.push(len); }
+      paths.push({pts, L, len, t: Math.random(), v: rnd(.00004, .00009), node: ['ring', 'dot', 'pink'][Math.floor(Math.random() * 3)]});
+    }
+  }
+  function at(p, t) {
+    const d = t * p.len; let k = 1; while (k < p.L.length - 1 && p.L[k] < d) k++;
+    const a = p.pts[k - 1], b = p.pts[k], u = (d - p.L[k - 1]) / (p.L[k] - p.L[k - 1] || 1);
+    return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u];
+  }
+  function draw(dt) {
+    ctx.clearRect(0, 0, W, H);
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    for (const p of paths) {
+      ctx.strokeStyle = 'rgba(242,240,244,.075)'; ctx.lineWidth = 1.6 * D;
+      ctx.beginPath(); p.pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke();
+      const e = p.pts[p.pts.length - 1];
+      ctx.beginPath(); ctx.arc(e[0], e[1], 5 * D, 0, 7);
+      if (p.node === 'pink') { ctx.fillStyle = 'rgba(224,85,124,.35)'; ctx.fill(); }
+      else if (p.node === 'dot') { ctx.fillStyle = 'rgba(242,240,244,.10)'; ctx.fill(); }
+      else { ctx.strokeStyle = 'rgba(242,240,244,.12)'; ctx.stroke(); }
+      p.t = (p.t + p.v * dt) % 1;
+      const [px, py] = at(p, p.t);
+      const g = ctx.createRadialGradient(px, py, 0, px, py, 14 * D);
+      g.addColorStop(0, 'rgba(224,85,124,.75)'); g.addColorStop(1, 'rgba(224,85,124,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(px, py, 14 * D, 0, 7); ctx.fill();
+    }
+  }
+  function frame(now) {
+    raf = 0;
+    if (!running) return;
+    if (now - last >= (phone ? 50 : 33)) { draw(Math.min(now - last, 100)); last = now; }
+    raf = requestAnimationFrame(frame);
+  }
+  function sync() {
+    const should = body.classList.contains('docked') && !document.hidden && !reduced.matches;
+    if (should && !running) { running = true; last = performance.now(); if (!raf) raf = requestAnimationFrame(frame); }
+    else if (!should) { running = false; if (raf) { cancelAnimationFrame(raf); raf = 0; } if (body.classList.contains('docked')) draw(0); }
+  }
+  build();
+  let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { build(); sync(); draw(0); }, 200); });
+  document.addEventListener('visibilitychange', sync);
+  addEventListener('hashchange', sync);
+  new MutationObserver(sync).observe(body, {attributes: true, attributeFilter: ['class']});
+  sync();
+})();
 route();
 })();

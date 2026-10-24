@@ -1,0 +1,1 @@
+window.projectModelParts=[];window.projectModelInfo={"slug":"tranquil-river","title":"Tranquil River","glb":"light/Tranquil-River-light.glb","release":"light-r1","parts":[],"triangles":576100,"drawCalls":1,"light":true,"focusBounds":{"min":[-30,-13,-20],"max":[10,10,29]}};

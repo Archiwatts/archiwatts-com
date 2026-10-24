@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /*/full.html
+
+Sitemap: https://archiwatts.com/sitemap.xml
