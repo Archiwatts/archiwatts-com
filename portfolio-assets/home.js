@@ -5,10 +5,10 @@ const body = document.body;
 
 /* ---------- data ---------- */
 const MAIN = [
-  {id:'Hive', title:'Hive', tag:'Capstone · Miami, Florida', img:'img/Hive/model/overview.png'},
+  {id:'Hive', title:'Hive', tag:'Capstone · Miami, Florida', img:'img/tiles/hive.jpg'},
   {id:'Phalanstery', title:'Phalanstery', tag:'New Harmony · Architectural representation', img:'img/Phalanstery/model/overview.png'},
   {id:'Tranquil-River', title:'Tranquil River', tag:'Kikuletwa Hot Springs · Tanzania', img:'img/Tranquil-River/model/overview.png'},
-  {id:'Net-Zero-School', title:'Net Zero School', tag:'Henry S. West Laboratory School · Coral Gables', img:'img/Net-Zero-School/model/overview.png'}
+  {id:'Net-Zero-School', title:'Net Zero School', tag:'Henry S. West Laboratory School · Coral Gables', img:'img/tiles/net-zero-school.jpg'}
 ];
 const MORE = [
   {title:'Venice Apartments', sub:'3D model · drawings', slug:'venice-apartments', gallery:'projects/venice-redesign/index.html'},
