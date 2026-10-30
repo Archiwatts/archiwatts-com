@@ -256,6 +256,15 @@
     ctx.scene.traverse(function (o) {
       if (o.isMesh && /West_approach/.test(o.name)) { var m = (Array.isArray(o.material) ? o.material[0] : o.material).clone(); m.color.set('#bdb9b1'); m.emissive.set('#45433f'); m.roughness = .9; o.material = m; }
     });
+    // the baked street mesh is black in the light model: lay asphalt over it with ground-planar texture coordinates
+    ctx.scene.traverse(function (o) {
+      if (!o.isMesh || !/site-road/.test(o.name) || !o.geometry.attributes.position || !Tex) return;
+      var g = o.geometry, P = g.attributes.position, n = P.count, UV = new Float32Array(n * 2), e; o.updateWorldMatrix(true, false); e = o.matrixWorld.elements;
+      for (var i = 0; i < n; i++) { var x = P.getX(i), y = P.getY(i), z = P.getZ(i); UV[i * 2] = (e[0] * x + e[4] * y + e[8] * z + e[12]) / 3.2; UV[i * 2 + 1] = (e[2] * x + e[6] * y + e[10] * z + e[14]) / 3.2; }
+      g.setAttribute('uv', new Attr(UV, 2));
+      var m = std.clone(); m.name = 'Hive asphalt'; m.map = asphaltTex(Tex); m.normalMap = null; m.roughnessMap = null; m.vertexColors = false; m.color.set('#ffffff'); m.emissive.set('#4a4640'); m.roughness = .95; m.metalness = 0; m.side = 2;
+      m.polygonOffset = true; m.polygonOffsetFactor = -1; m.polygonOffsetUnits = -1; m.needsUpdate = true; o.material = m;
+    });
     redraw(ctx);
     window.hiveLightLook = Object.assign(window.hiveLightLook || {}, { paving: made });
     if (!Tex || !mats.length) return;
@@ -263,7 +272,7 @@
     Promise.all(['color', 'normal', 'roughness'].map(function (k) { return loadImage(base + k + '.webp'); })).then(function (imgs) {
       var maps = imgs.map(function (im, i) { var t = new Tex(im); t.wrapS = t.wrapT = 1000; t.anisotropy = 4; if (i === 0) t.colorSpace = 'srgb'; t.needsUpdate = true; return t; });
       mats.forEach(function (m) {
-        if (m.name === 'Hive asphalt') { m.map = asphaltTex(Tex); m.normalMap = null; m.roughnessMap = null; m.color.set('#ffffff'); m.emissive.set('#26272a'); }
+        if (m.name === 'Hive asphalt') { m.map = asphaltTex(Tex); m.normalMap = null; m.roughnessMap = null; m.color.set('#ffffff'); m.emissive.set('#4a4640'); }
         else { m.map = maps[0]; m.normalMap = maps[1]; m.roughnessMap = maps[2]; if (m.normalScale) m.normalScale.set(.35, .35); }
         m.needsUpdate = true;
       });
@@ -444,18 +453,20 @@
   }
   function asphaltTex(Tex) {
     var cv = canvas(256, 256), c = cv.getContext('2d'), r = srand(31);
-    c.fillStyle = '#5b5d62'; c.fillRect(0, 0, 256, 256);
-    for (var i = 0; i < 2600; i++) { var g = 70 + r() * 70 | 0; c.fillStyle = 'rgba(' + g + ',' + g + ',' + (g + 4) + ',' + (.25 + r() * .5) + ')'; c.fillRect(r() * 256, r() * 256, 1 + r() * 2, 1 + r() * 2); }
-    for (var k = 0; k < 14; k++) { c.strokeStyle = 'rgba(30,30,32,.35)'; c.lineWidth = 1; c.beginPath(); var x = r() * 256, y = r() * 256; c.moveTo(x, y); for (var s = 0; s < 5; s++) { x += (r() - .5) * 30; y += (r() - .5) * 30; c.lineTo(x, y); } c.stroke(); }
+    c.fillStyle = '#a8a09b'; c.fillRect(0, 0, 256, 256);
+    for (var b = 0; b < 40; b++) { c.fillStyle = 'rgba(' + (150 + r() * 40 | 0) + ',' + (146 + r() * 34 | 0) + ',' + (150 + r() * 36 | 0) + ',.35)'; c.beginPath(); c.ellipse(r() * 256, r() * 256, 18 + r() * 40, 10 + r() * 24, r() * 3, 0, 6.3); c.fill(); }
+    for (var i = 0; i < 1800; i++) { var g = 120 + r() * 80 | 0; c.fillStyle = 'rgba(' + g + ',' + (g - 4) + ',' + (g - 6) + ',' + (.2 + r() * .35) + ')'; c.fillRect(r() * 256, r() * 256, 1 + r() * 2, 1 + r() * 2); }
+    for (var k = 0; k < 14; k++) { c.strokeStyle = 'rgba(96,88,92,.28)'; c.lineWidth = 1; c.beginPath(); var x = r() * 256, y = r() * 256; c.moveTo(x, y); for (var s = 0; s < 5; s++) { x += (r() - .5) * 30; y += (r() - .5) * 30; c.lineTo(x, y); } c.stroke(); }
     var t = makeTex(Tex, cv); t.wrapS = t.wrapT = 1000; return t;
   }
   function laneTex(Tex) {
     var cv = canvas(64, 128), c = cv.getContext('2d');
-    var r = srand(5); c.fillStyle = '#5b5d62'; c.fillRect(0, 0, 64, 128);
-    for (var i = 0; i < 700; i++) { var g = 70 + r() * 70 | 0; c.fillStyle = 'rgba(' + g + ',' + g + ',' + (g + 4) + ',' + (.25 + r() * .5) + ')'; c.fillRect(r() * 64, r() * 128, 1 + r() * 2, 1 + r() * 2); }
-    c.fillStyle = '#cfcac0'; c.fillRect(0, 0, 4, 128); c.fillRect(60, 0, 4, 128);
-    c.fillStyle = '#f4f0e4'; c.fillRect(7, 0, 2, 128); c.fillRect(55, 0, 2, 128);
-    c.fillStyle = '#f1c453'; c.fillRect(30, 8, 4, 48); c.fillRect(30, 72, 4, 48);
+    var r = srand(5); c.fillStyle = '#a8a09b'; c.fillRect(0, 0, 64, 128);
+    for (var b = 0; b < 8; b++) { c.fillStyle = 'rgba(' + (150 + r() * 40 | 0) + ',' + (146 + r() * 34 | 0) + ',' + (150 + r() * 36 | 0) + ',.35)'; c.beginPath(); c.ellipse(r() * 64, r() * 128, 10 + r() * 20, 8 + r() * 18, r() * 3, 0, 6.3); c.fill(); }
+    for (var i = 0; i < 500; i++) { var g = 120 + r() * 80 | 0; c.fillStyle = 'rgba(' + g + ',' + (g - 4) + ',' + (g - 6) + ',' + (.2 + r() * .35) + ')'; c.fillRect(r() * 64, r() * 128, 1 + r() * 2, 1 + r() * 2); }
+    c.fillStyle = '#d9cfbf'; c.fillRect(0, 0, 4, 128); c.fillRect(60, 0, 4, 128);
+    c.fillStyle = '#f4efe2'; c.fillRect(7, 0, 2, 128); c.fillRect(55, 0, 2, 128);
+    c.fillStyle = '#e3b24d'; c.fillRect(30, 8, 4, 48); c.fillRect(30, 72, 4, 48);
     var t = makeTex(Tex, cv); t.wrapS = 1001; t.wrapT = 1000; return t;
   }
   function roadRibbon(ctx, ref, std, Tex, ctrl, halfW) {
@@ -478,7 +489,7 @@
     });
     var N = []; for (var n = 0; n < P.length / 3; n++) N.push(0, 1, 0);
     var g = new BG(); g.setAttribute('position', new Attr(new Float32Array(P), 3)); g.setAttribute('normal', new Attr(new Float32Array(N), 3)); g.setAttribute('uv', new Attr(new Float32Array(UV), 2)); g.setIndex(I);
-    var m = std.clone(); m.name = 'Hive road markings'; m.map = laneTex(Tex); m.normalMap = null; m.roughnessMap = null; m.color.set('#ffffff'); m.emissive.set('#2a2b2e'); m.roughness = .95; m.metalness = 0; m.side = 2;
+    var m = std.clone(); m.name = 'Hive road markings'; m.map = laneTex(Tex); m.normalMap = null; m.roughnessMap = null; m.color.set('#ffffff'); m.emissive.set('#4a4640'); m.roughness = .95; m.metalness = 0; m.side = 2;
     m.transparent = false; m.polygonOffset = true; m.polygonOffsetFactor = -3; m.polygonOffsetUnits = -3; m.needsUpdate = true;
     var mesh = new Mesh(g, m); mesh.name = 'Hive road markings'; mesh.frustumCulled = false; ctx.scene.add(mesh);
   }
