@@ -15,6 +15,7 @@
     else if (tries++ < 500) setTimeout(wait, 150);
   })();
 
+  var PBR_KINDS = window.modelPerformance && window.modelPerformance.mobile ? ['color'] : ['color', 'normal', 'roughness']; // phones skip the normal and roughness maps
   function loadImage(url) {
     return new Promise(function (resolve, reject) {
       var img = new Image();
@@ -62,7 +63,7 @@
     }
     (function next(i) { if (i >= steps.length) return; steps[i](); setTimeout(function () { next(i + 1); }, 40); })(0);    if (!Tex) return;
     var base ='../portfolio-assets/hive-pbr-plaster-';
-    Promise.all(['color', 'normal', 'roughness'].map(function (k) { return loadImage(base + k + '.webp'); })).then(function (imgs) {
+    Promise.all(PBR_KINDS.map(function (k) { return loadImage(base + k + '.webp'); })).then(function (imgs) {
       var maps = imgs.map(function (img, i) {
         var t = new Tex(img);
         t.wrapS = t.wrapT = 1000; // repeat
@@ -117,7 +118,7 @@
       var m = std.clone();
       m.name = 'Pavilion plaster ' + (ci + 1);
       m.color.set(hex);
-      m.map = maps[0]; m.normalMap = maps[1]; m.roughnessMap = maps[2];
+      m.map = maps[0]; m.normalMap = maps[1] || null; m.roughnessMap = maps[2] || null;
       m.roughness = 1; m.metalness = 0; m.side = 2; m.transparent = false; m.opacity = 1;
       if (m.normalScale) m.normalScale.set(.4, .4);
       m.needsUpdate = true;
@@ -269,11 +270,11 @@
     window.hiveLightLook = Object.assign(window.hiveLightLook || {}, { paving: made });
     if (!Tex || !mats.length) return;
     var base = '../portfolio-assets/hive-pbr-concrete-';
-    Promise.all(['color', 'normal', 'roughness'].map(function (k) { return loadImage(base + k + '.webp'); })).then(function (imgs) {
+    Promise.all(PBR_KINDS.map(function (k) { return loadImage(base + k + '.webp'); })).then(function (imgs) {
       var maps = imgs.map(function (im, i) { var t = new Tex(im); t.wrapS = t.wrapT = 1000; t.anisotropy = 4; if (i === 0) t.colorSpace = 'srgb'; t.needsUpdate = true; return t; });
       mats.forEach(function (m) {
         if (m.name === 'Hive asphalt') { m.map = asphaltTex(Tex); m.normalMap = null; m.roughnessMap = null; m.color.set('#ffffff'); m.emissive.set('#4a4640'); }
-        else { m.map = maps[0]; m.normalMap = maps[1]; m.roughnessMap = maps[2]; if (m.normalScale) m.normalScale.set(.35, .35); }
+        else { m.map = maps[0]; m.normalMap = maps[1] || null; m.roughnessMap = maps[2] || null; if (m.normalScale) m.normalScale.set(.35, .35); }
         m.needsUpdate = true;
       });
       redraw(ctx);
@@ -625,6 +626,7 @@
     // box in wall space: u along the wall, d inward from the glass, h up from the floor y
     function box(cx, cz, y, ax, az, nx, nz, u0, u1, d0, d1, h0, h1, col) {
       var c = hexC(col), P = function (u, d, h) { return [cx + ax * u - nx * d, y + h, cz + az * u - nz * d]; };
+      if (curPk) { var k0 = P(u0, d0, h0), k1 = P(u1, d1, h0); if (curPk.has(Math.floor(k0[0] / FPC) + ',' + Math.floor(k0[2] / FPC)) || curPk.has(Math.floor(k1[0] / FPC) + ',' + Math.floor(k1[2] / FPC)) || curPk.has(Math.floor((k0[0] + k1[0]) / 2 / FPC) + ',' + Math.floor((k0[2] + k1[2]) / 2 / FPC))) return; }
       if (curFp) { var q0 = P(u0, d0, h0), q1 = P(u1, d0, h0), q2 = P(u1, d1, h0), q3 = P(u0, d1, h0); if (!inFp(q0[0], q0[2]) || !inFp(q1[0], q1[2]) || !inFp(q2[0], q2[2]) || !inFp(q3[0], q3[2])) return; }
       var corners = [P(u0, d0, h0), P(u1, d0, h0), P(u1, d1, h0), P(u0, d1, h0), P(u0, d0, h1), P(u1, d0, h1), P(u1, d1, h1), P(u0, d1, h1)];
       var faces = [[0, 1, 2, 3, [0, -1, 0]], [4, 7, 6, 5, [0, 1, 0]], [0, 4, 5, 1, [-nx, 0, -nz]], [1, 5, 6, 2, [ax, 0, az]], [2, 6, 7, 3, [nx, 0, nz]], [3, 7, 4, 0, [-ax, 0, -az]]];
@@ -635,12 +637,12 @@
       });
     }
     // Building footprint at each level, rasterised from the real slabs (0.4 m cells), so nothing is ever placed outside the walls.
-    var FP = { L2: new Set(), L3: new Set() }, FPL = { L2: {}, L3: {} }, FPC = .4;
+    var FP = { L2: new Set(), L3: new Set(), L4: new Set() }, FPL = { L2: {}, L3: {}, L4: {} }, PK = { L2: new Set(), L3: new Set(), L4: new Set() }, curPk = null, FPC = .4;
     function rasterSlabs() {
-      var lv = [['L2', 4.2, 4.9], ['L3', 7.2, 7.9]];
+      var lv = [['L2', 4.2, 4.9], ['L3', 7.2, 7.9], ['L4', 10.2, 10.9]];
       ctx.scene.traverse(function (o) {
         if (!o.isMesh || !/^HIVE_.*_static$/.test(o.name) || /context|site|water/.test(o.name)) return; var letter = (/-([a-e])_/.exec(o.name) || [])[1] || 'x';
-        var g = o.geometry, P = g.attributes.position, I = g.index, n = I ? I.count : P.count; o.updateWorldMatrix(true, false); var e = o.matrixWorld.elements;
+        var g = o.geometry, P = g.attributes.position, I = g.index, n = I ? I.count : P.count, isPk = /^HIVE_parking-/.test(o.name); o.updateWorldMatrix(true, false); var e = o.matrixWorld.elements;
         function wp(i) { var x = P.getX(i), y = P.getY(i), z = P.getZ(i); return [e[0] * x + e[4] * y + e[8] * z + e[12], e[1] * x + e[5] * y + e[9] * z + e[13], e[2] * x + e[6] * y + e[10] * z + e[14]]; }
         for (var t = 0; t < n; t += 3) {
           var a = wp(I ? I.getX(t) : t), b = wp(I ? I.getX(t + 1) : t + 1), c = wp(I ? I.getX(t + 2) : t + 2), cy = (a[1] + b[1] + c[1]) / 3, set = null;
@@ -649,7 +651,7 @@
           var mnx = Math.min(a[0], b[0], c[0]), mxx = Math.max(a[0], b[0], c[0]), mnz = Math.min(a[2], b[2], c[2]), mxz = Math.max(a[2], b[2], c[2]);
           for (var iz = Math.floor(mnz / FPC); iz <= Math.floor(mxz / FPC); iz++) for (var ix = Math.floor(mnx / FPC); ix <= Math.floor(mxx / FPC); ix++) {
             var px = (ix + .5) * FPC, pz = (iz + .5) * FPC, d1 = (px - b[0]) * (a[2] - b[2]) - (a[0] - b[0]) * (pz - b[2]), d2 = (px - c[0]) * (b[2] - c[2]) - (b[0] - c[0]) * (pz - c[2]), d3 = (px - a[0]) * (c[2] - a[2]) - (c[0] - a[0]) * (pz - a[2]);
-            if (!(((d1 < 0) || (d2 < 0) || (d3 < 0)) && ((d1 > 0) || (d2 > 0) || (d3 > 0)))) { set.add(ix + ',' + iz); setB.add(ix + ',' + iz); }
+            if (!(((d1 < 0) || (d2 < 0) || (d3 < 0)) && ((d1 > 0) || (d2 > 0) || (d3 > 0)))) { set.add(ix + ',' + iz); setB.add(ix + ',' + iz); if (isPk) PK[lvl].add(ix + ',' + iz); }
           }
         }
       });
@@ -695,7 +697,7 @@
     offices.slice(0, 40).forEach(function (o) { OFFICE_FLOORS.forEach(function (fy) { bands.push({ o: o, y: fy, desks: [] }); }); });
     var cardCount = cards.length + bands.length;
     bands.forEach(function (b, bi) {
-      var lvS = b.y < 6 ? FPL.L2 : FPL.L3; curFp = lvS[b.o.letter] || (b.y < 6 ? FP.L2 : FP.L3);
+      var lvS = b.y < 6 ? FPL.L2 : FPL.L3; curFp = lvS[b.o.letter] || (b.y < 6 ? FP.L2 : FP.L3); curPk = b.y < 6 ? PK.L2 : PK.L3;
       var o = b.o, y = b.y, w = o.w, ax = o.ax, az = o.az, nx = o.nx, nz = o.nz, per = Math.max(2, Math.min(12, Math.floor((w - 1.5) / 2.4))), rr3 = srand(9000 + bi * 29);
       var bx = function (u0, u1, d0, d1, h0, h1, col) { box(o.cx, o.cz, y, ax, az, nx, nz, u0, u1, d0, d1, h0, h1, col); };
       for (var row = 0; row < 2; row++) for (var i = 0; i < per; i++) {
@@ -705,7 +707,7 @@
         bx(u - .2, u + .1, d + .05, d + .3, .8, .83, i % 2 ? '#eaa0b6' : '#f6f1e6');
         bx(u - .25, u + .25, d + 1.0, d + 1.45, 0, .5, i % 3 === 0 ? '#eaa0b6' : '#e8dfcc'); bx(u - .25, u + .25, d + 1.0, d + 1.08, .5, .95, '#e8dfcc');
         if (i % 2 === 1) bx(u - .02 - .75, u + .02 - .75, d - .2, d + .95, 0, 1.2, '#e8dfcc');
-        if (inFp(o.cx + ax * u - nx * (d + 1.2), o.cz + az * u - nz * (d + 1.2))) b.desks.push([u, d + 1.2]);
+        if (inFp(o.cx + ax * u - nx * (d + 1.2), o.cz + az * u - nz * (d + 1.2)) && !curPk.has(Math.floor((o.cx + ax * u - nx * (d + 1.2)) / FPC) + ',' + Math.floor((o.cz + az * u - nz * (d + 1.2)) / FPC))) b.desks.push([u, d + 1.2]);
       }
       // meeting table, filing, plants, and a ceiling light bar over each row
       var mu = (rr3() - .5) * Math.max(0, w - 6);
@@ -714,7 +716,32 @@
       bx(-w / 2 + .3, -w / 2 + .9, 6.2, 6.9, 0, 1.6, '#e8dfcc'); bx(w / 2 - .9, w / 2 - .3, 6.2, 6.9, 0, 1.6, '#e8dfcc');
       bx(-w / 2 + .5, -w / 2 + .9, .3, .7, 0, .5, '#b6dca8'); bx(w / 2 - .9, w / 2 - .5, .3, .7, 0, .5, '#b6dca8');
       [1.9, 4.5].forEach(function (cd) { bx(-w / 2 + 1, w / 2 - 1, cd, cd + .22, OFFICE_H - .12, OFFICE_H, '#f6f1e6'); });
-    });    var cg = new BG(); cg.setAttribute('position', new Attr(new Float32Array(IP), 3)); cg.setAttribute('normal', new Attr(new Float32Array(IN), 3)); cg.setAttribute('color', new Attr(new Float32Array(IC), 3)); cg.setIndex(II);
+    });
+    // garage floors: parked cars on a slot grid aligned to each wing, in place of any furniture
+    curPk = null; var CAR_BODY = ['#d9c7b0', '#9fb7c9', '#e3b8a8', '#c9d3b0', '#bdb6c9', '#e8dfcc', '#a9b3b8'], carRnd = srand(8123), carCount = 0, carCap = mobile ? 36 : 150;
+    [['L2', 4.55], ['L3', 7.55], ['L4', 10.55]].forEach(function (lv) {
+      var set = PK[lv[0]], cells = []; set.forEach(function (k) { var s = k.split(','); cells.push([(+s[0] + .5) * FPC, (+s[1] + .5) * FPC]); }); if (cells.length < 40) return;
+      var mx = 0, mz = 0; cells.forEach(function (c) { mx += c[0]; mz += c[1]; }); mx /= cells.length; mz /= cells.length;
+      var sxx = 0, szz = 0, sxz = 0; cells.forEach(function (c) { var dx = c[0] - mx, dz = c[1] - mz; sxx += dx * dx; szz += dz * dz; sxz += dx * dz; });
+      var th = .5 * Math.atan2(2 * sxz, sxx - szz), ux = Math.cos(th), uz = Math.sin(th), vx = -uz, vz = ux;
+      var minU = 1e9, maxU = -1e9, minV = 1e9, maxV = -1e9; cells.forEach(function (c) { var u = (c[0] - mx) * ux + (c[1] - mz) * uz, v = (c[0] - mx) * vx + (c[1] - mz) * vz; minU = Math.min(minU, u); maxU = Math.max(maxU, u); minV = Math.min(minV, v); maxV = Math.max(maxV, v); });
+      curFp = set; var lvCars = 0; // cars stay inside the garage floor
+      for (var v = minV + 1.5, row = 0; v < maxV - 1; v += 5.4, row++) { if (row % 3 === 2) { v += 3.0; continue; }
+        for (var u = minU + 1.4; u < maxU - 1; u += 2.7) {
+          if (lvCars >= carCap || carRnd() < .22) continue;
+          var cx = mx + ux * u + vx * v, cz = mz + uz * u + vz * v, ok = true;
+          [[-1, -2.4], [1, -2.4], [1, 2.4], [-1, 2.4], [0, 0]].forEach(function (p) { if (!set.has(Math.floor((cx + ux * p[0] + vx * p[1]) / FPC) + ',' + Math.floor((cz + uz * p[0] + vz * p[1]) / FPC))) ok = false; });
+          if (!ok) continue; carCount++; lvCars++;
+          var body = CAR_BODY[Math.floor(carRnd() * CAR_BODY.length)], len = 2.3 + carRnd() * .25, bw = .85;
+          // wall space: a = u axis (car width), n = v axis (car length)
+          var cb = function (u0, u1, d0, d1, h0, h1, col) { box(cx, cz, lv[1], ux, uz, -vx, -vz, u0, u1, d0, d1, h0, h1, col); };
+          cb(-bw, bw, -len, len, .22, .8, body); cb(-bw + .08, bw - .08, -len * .55, len * .35, .8, 1.3, '#cfd8dc'); cb(-bw + .1, bw - .1, -len * .5, len * .3, 1.3, 1.34, body);
+          cb(-bw - .03, -bw + .08, -len * .8, -len * .5, 0, .3, '#4a4640'); cb(bw - .08, bw + .03, -len * .8, -len * .5, 0, .3, '#4a4640'); cb(-bw - .03, -bw + .08, len * .5, len * .8, 0, .3, '#4a4640'); cb(bw - .08, bw + .03, len * .5, len * .8, 0, .3, '#4a4640');
+        }
+      }
+    });
+    curFp = null; window.hiveLightLook = Object.assign(window.hiveLightLook || {}, { cars: carCount, parkCells: [PK.L2.size, PK.L3.size, PK.L4.size] });
+    var cg = new BG(); cg.setAttribute('position', new Attr(new Float32Array(IP), 3)); cg.setAttribute('normal', new Attr(new Float32Array(IN), 3)); cg.setAttribute('color', new Attr(new Float32Array(IC), 3)); cg.setIndex(II);
     var interiorMat = std.clone(); interiorMat.name = 'Hive sketch interiors'; interiorMat.map = null; interiorMat.normalMap = null; interiorMat.roughnessMap = null; interiorMat.color.set('#ffffff'); interiorMat.emissive.set('#d99a4c'); interiorMat.emissiveIntensity = .55; interiorMat.vertexColors = true; interiorMat.roughness = 1; interiorMat.metalness = 0; interiorMat.side = 2; interiorMat.needsUpdate = true;
     var cardMesh = new Mesh(cg, interiorMat); cardMesh.name = 'Hive interiors'; cardMesh.frustumCulled = false; ctx.scene.add(cardMesh);
 
