@@ -51,9 +51,18 @@
     step('paving', function () { addPaving(ctx, mesh, std, Tex); });
     step('glass', function () { restoreGlass(ctx); });
     if (Tex) {
-      step('road markings', function () { roadRibbon(ctx, mesh, std, Tex); roadRibbon(ctx, mesh, std, Tex, [[-76, 87.5], [-32, 121], [13, 153]], 5.5); });
+      step('road markings', function () {
+        // the north-west street as drawn on the plan (the baked street in the model sits further out, so it is hidden)
+        ctx.scene.traverse(function (o) { if (o.isMesh && /site-road/.test(o.name)) o.visible = false; });
+        // every street and the road through the site, taken straight from the ground plan drawing (curbs, lanes, crosswalks)
+        addRoadDecal(ctx, mesh, std, Tex); addRoadCurbs(ctx, mesh, std); addStreetLights(ctx, mesh, std, Tex);
+        // the streets of the neighbourhood carry on from the drawing's edges (OpenStreetMap, registered to the FBX city)
+        addContextRoads(ctx, mesh, std, Tex);
+        roadOutlines(ctx, mesh, std, Tex); });
       step('water', function () { waterT = animateWater(ctx, std, Tex); });
-      step('pools', function () { addPool(ctx, mesh, std); addPool(ctx, mesh, std, [[94.6, 127.3], [106.3, 136.9], [111.9, 130.3], [99.6, 120.4]]); });
+      step('pools', function () { addPool(ctx, mesh, std, null, true);addPool(ctx, mesh, std, [[94.6, 127.3], [106.3, 136.9], [111.9, 130.3], [99.6, 120.4]]);
+        // block D's deck: the FBX model's own pool opening (15.2 x 9.1 m)
+        addPool(ctx, mesh, std, [[-24.6, 71.05], [-12.76, 80.65], [-18.36, 87.88], [-30.19, 78.28]]); });
       step('deck floor', function () { addDeckFloor(ctx, mesh, std); });
       step('extra buildings', function () { addContextExtra(ctx, mesh, std); });
       step('shore', function () { addShore(ctx, mesh, std); });
@@ -461,27 +470,257 @@
     var t = makeTex(Tex, cv); t.wrapS = t.wrapT = 1000; return t;
   }
   function laneTex(Tex) {
-    var cv = canvas(64, 128), c = cv.getContext('2d');
-    var r = srand(5); c.fillStyle = '#a8a09b'; c.fillRect(0, 0, 64, 128);
-    for (var b = 0; b < 8; b++) { c.fillStyle = 'rgba(' + (150 + r() * 40 | 0) + ',' + (146 + r() * 34 | 0) + ',' + (150 + r() * 36 | 0) + ',.35)'; c.beginPath(); c.ellipse(r() * 64, r() * 128, 10 + r() * 20, 8 + r() * 18, r() * 3, 0, 6.3); c.fill(); }
-    for (var i = 0; i < 500; i++) { var g = 120 + r() * 80 | 0; c.fillStyle = 'rgba(' + g + ',' + (g - 4) + ',' + (g - 6) + ',' + (.2 + r() * .35) + ')'; c.fillRect(r() * 64, r() * 128, 1 + r() * 2, 1 + r() * 2); }
-    c.fillStyle = '#d9cfbf'; c.fillRect(0, 0, 4, 128); c.fillRect(60, 0, 4, 128);
-    c.fillStyle = '#f4efe2'; c.fillRect(7, 0, 2, 128); c.fillRect(55, 0, 2, 128);
-    c.fillStyle = '#e3b24d'; c.fillRect(30, 8, 4, 48); c.fillRect(30, 72, 4, 48);
+    var W = 128, H = 256, cv = canvas(W, H), c = cv.getContext('2d');
+    var r = srand(5); c.fillStyle = '#a39a95'; c.fillRect(0, 0, W, H);
+    // mottled patches of newer and older asphalt
+    for (var b = 0; b < 26; b++) { c.fillStyle = 'rgba(' + (140 + r() * 50 | 0) + ',' + (136 + r() * 44 | 0) + ',' + (140 + r() * 46 | 0) + ',.32)'; c.beginPath(); c.ellipse(r() * W, r() * H, 8 + r() * 26, 6 + r() * 20, r() * 3, 0, 6.3); c.fill(); }
+    // worn wheel tracks in each lane
+    [.26, .74].forEach(function (cx) { [-.07, .07].forEach(function (dx) { var gr = c.createLinearGradient((cx + dx - .05) * W, 0, (cx + dx + .05) * W, 0); gr.addColorStop(0, 'rgba(70,64,66,0)'); gr.addColorStop(.5, 'rgba(70,64,66,.3)'); gr.addColorStop(1, 'rgba(70,64,66,0)'); c.fillStyle = gr; c.fillRect((cx + dx - .05) * W, 0, .1 * W, H); }); });
+    // aggregate grain
+    for (var i = 0; i < 3800; i++) { var g = 105 + r() * 110 | 0; c.fillStyle = 'rgba(' + g + ',' + (g - 4) + ',' + (g - 6) + ',' + (.2 + r() * .4) + ')'; c.fillRect(r() * W, r() * H, 1 + r() * 1.6, 1 + r() * 1.6); }
+    // hairline cracks and a few repair seams
+    c.lineCap = 'round';
+    for (var k = 0; k < 9; k++) { c.strokeStyle = 'rgba(58,52,54,' + (.28 + r() * .25) + ')'; c.lineWidth = .8 + r() * .6; c.beginPath(); var x = r() * W, y = r() * H; c.moveTo(x, y); for (var s = 0; s < 6; s++) { x += (r() - .5) * 26; y += 6 + r() * 16; c.lineTo(x, y); } c.stroke(); }
+    c.strokeStyle = 'rgba(52,48,50,.38)'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(0, 70); c.lineTo(W, 74); c.moveTo(0, 190); c.lineTo(W, 186); c.stroke();
+    // edge stripes and center dashes
+    c.fillStyle = '#d9cfbf'; c.fillRect(0, 0, 8, H); c.fillRect(W - 8, 0, 8, H);
+    c.fillStyle = '#f4efe2'; c.fillRect(14, 0, 4, H); c.fillRect(W - 18, 0, 4, H);
+    c.fillStyle = '#e3b24d'; c.fillRect(60, 16, 8, 96); c.fillRect(60, 144, 8, 96);
     var t = makeTex(Tex, cv); t.wrapS = 1001; t.wrapT = 1000; return t;
   }
-  function roadRibbon(ctx, ref, std, Tex, ctrl, halfW) {
+  function curbTex(Tex) {
+    var S = 128, cv = canvas(S, S), c = cv.getContext('2d'), r = srand(11);
+    c.fillStyle = '#e4d9c3'; c.fillRect(0, 0, S, S);
+    for (var b = 0; b < 14; b++) { c.fillStyle = 'rgba(' + (205 + r() * 30 | 0) + ',' + (195 + r() * 28 | 0) + ',' + (170 + r() * 30 | 0) + ',.35)'; c.fillRect(r() * S, r() * S, 20 + r() * 40, 20 + r() * 40); }
+    for (var i = 0; i < 700; i++) { var g = 150 + r() * 90 | 0; c.fillStyle = 'rgba(' + g + ',' + (g - 8) + ',' + (g - 24) + ',' + (.18 + r() * .3) + ')'; c.fillRect(r() * S, r() * S, 1 + r() * 2, 1 + r() * 2); }
+    c.strokeStyle = 'rgba(96,86,70,.55)'; c.lineWidth = 2; c.beginPath(); c.moveTo(0, 1); c.lineTo(S, 1); c.moveTo(S / 2, 0); c.lineTo(S / 2, S / 2); c.moveTo(1, S / 2); c.lineTo(S, S / 2); c.moveTo(0, S - 1); c.lineTo(S, S - 1); c.moveTo(S / 4, S / 2); c.lineTo(S / 4, S); c.moveTo(S * .75, S / 2); c.lineTo(S * .75, S); c.stroke();
+    var t = makeTex(Tex, cv); t.wrapS = t.wrapT = 1000; return t;
+  }
+  /* Road decal: an image built from the ground plan drawing (light/road-decal.webp). The asphalt is the area the plan's curb lines
+     enclose, with the plan's own lines on it: curbs in ink, lane lines and crosswalks in paint. Laid in the plan's registration. */
+  /* Ground height under the roads: the baked site paving is not flat (it rises towards the buildings), so the road decal, curbs and
+     sidewalks are draped on it. The paving triangles are rasterised into a height grid. */
+  var GROUND = null;
+  function groundFn(ctx) {
+    if (GROUND) return GROUND;
+    var X0 = -270, Z0 = -130, CS = .75, NX = 720, NZ = 480, Hh = new Float32Array(NX * NZ); for (var q = 0; q < Hh.length; q++) Hh[q] = NaN;
+    ctx.scene.traverse(function (o) {
+      if (!o.isMesh || !/^Hive site paving( shore)?$/.test(o.name || '')) return;
+      var g = o.geometry, p = g.attributes.position, ix = g.index, n = ix ? ix.count : p.count; o.updateWorldMatrix(true, false); var e = o.matrixWorld.elements;
+      function V(i) { var x = p.getX(i), y = p.getY(i), z = p.getZ(i); return [e[0] * x + e[4] * y + e[8] * z + e[12], e[1] * x + e[5] * y + e[9] * z + e[13], e[2] * x + e[6] * y + e[10] * z + e[14]]; }
+      for (var t = 0; t < n; t += 3) {
+        var a = V(ix ? ix.getX(t) : t), b = V(ix ? ix.getX(t + 1) : t + 1), c = V(ix ? ix.getX(t + 2) : t + 2);
+        var minx = Math.max(0, Math.floor((Math.min(a[0], b[0], c[0]) - X0) / CS)), maxx = Math.min(NX - 1, Math.ceil((Math.max(a[0], b[0], c[0]) - X0) / CS)), minz = Math.max(0, Math.floor((Math.min(a[2], b[2], c[2]) - Z0) / CS)), maxz = Math.min(NZ - 1, Math.ceil((Math.max(a[2], b[2], c[2]) - Z0) / CS));
+        var d = (b[2] - c[2]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[2] - c[2]); if (Math.abs(d) < 1e-9) continue;
+        for (var zz = minz; zz <= maxz; zz++) for (var xx = minx; xx <= maxx; xx++) {
+          var px = X0 + (xx + .5) * CS, pz = Z0 + (zz + .5) * CS, l1 = ((b[2] - c[2]) * (px - c[0]) + (c[0] - b[0]) * (pz - c[2])) / d, l2 = ((c[2] - a[2]) * (px - c[0]) + (a[0] - c[0]) * (pz - c[2])) / d, l3 = 1 - l1 - l2;
+          if (l1 < -.02 || l2 < -.02 || l3 < -.02) continue; var y = l1 * a[1] + l2 * b[1] + l3 * c[1], k = zz * NX + xx; if (!(Hh[k] >= y)) Hh[k] = y;
+        }
+      }
+    });
+    for (var pass = 0; pass < 8; pass++) { var cp = Hh.slice(); for (var z2 = 1; z2 < NZ - 1; z2++) for (var x2 = 1; x2 < NX - 1; x2++) { var k2 = z2 * NX + x2; if (!isNaN(cp[k2])) continue; var s = 0, c3 = 0; [k2 - 1, k2 + 1, k2 - NX, k2 + NX].forEach(function (j) { if (!isNaN(cp[j])) { s += cp[j]; c3++; } }); if (c3) Hh[k2] = s / c3; } }
+    GROUND = function (x, z) {
+      var fx = (x - X0) / CS - .5, fz = (z - Z0) / CS - .5, x0 = Math.floor(fx), z0 = Math.floor(fz); if (x0 < 0 || z0 < 0 || x0 >= NX - 1 || z0 >= NZ - 1) return 0;
+      var tx = fx - x0, tz = fz - z0, v = function (a, b) { var h = Hh[b * NX + a]; return isNaN(h) ? 0 : Math.max(-.2, h); };
+      return v(x0, z0) * (1 - tx) * (1 - tz) + v(x0 + 1, z0) * tx * (1 - tz) + v(x0, z0 + 1) * (1 - tx) * tz + v(x0 + 1, z0 + 1) * tx * tz;
+    };
+    return GROUND;
+  }
+  var DECAL = { x0: 198, y0: 91, w: 1514, h: 864, S: 3.855, OX: 857, OY: 271 };
+  function addRoadDecal(ctx, ref, std, Tex) {
+    var Mesh = ref.constructor, BG = ref.geometry.constructor, Attr = bufferAttributeClass(ref.geometry), D = DECAL;
+    var cx = function (px) { return (px - D.OX) / D.S; }, cz = function (py) { return (py - D.OY) / D.S; };
+    var G = groundFn(ctx), xa = cx(D.x0), xb = cx(D.x0 + D.w), za = cz(D.y0), zb = cz(D.y0 + D.h), NXc = Math.ceil((xb - xa) / 2), NZc = Math.ceil((zb - za) / 2), P = [], UV = [], NN = [], I = [];
+    for (var zi = 0; zi <= NZc; zi++) for (var xi = 0; xi <= NXc; xi++) { var wx = xa + (xb - xa) * xi / NXc, wz = za + (zb - za) * zi / NZc; P.push(wx, G(wx, wz) + .06, wz); UV.push(xi / NXc, 1 - zi / NZc); NN.push(0, 1, 0); }
+    for (var zj = 0; zj < NZc; zj++) for (var xj = 0; xj < NXc; xj++) { var i0 = zj * (NXc + 1) + xj; I.push(i0, i0 + 1, i0 + NXc + 1, i0 + 1, i0 + NXc + 2, i0 + NXc + 1); }
+    var g = new BG(); g.setAttribute('position', new Attr(new Float32Array(P), 3)); g.setAttribute('normal', new Attr(new Float32Array(NN), 3)); g.setAttribute('uv', new Attr(new Float32Array(UV), 2)); g.setIndex(I);    var m = std.clone(); m.name = 'Hive sketch road decal'; m.map = null; m.normalMap = null; m.roughnessMap = null; m.vertexColors = false; m.color.set('#ffffff'); if (m.emissive) m.emissive.set('#4a4640'); m.roughness = .95; m.metalness = 0; m.side = 2;
+    m.transparent = true; m.depthWrite = false; m.polygonOffset = true; m.polygonOffsetFactor = -4; m.polygonOffsetUnits = -4; m.needsUpdate = true;
+    var mesh = new Mesh(g, m); mesh.name = 'Hive road decal'; mesh.frustumCulled = false; mesh.renderOrder = 2; ctx.scene.add(mesh);
+    var img = new Image(); img.onload = function () { var t = new Tex(img); t.wrapS = t.wrapT = 1001; t.anisotropy = 8; t.colorSpace = 'srgb'; t.needsUpdate = true; m.map = t; m.needsUpdate = true; redraw(ctx); };
+    img.src = 'light/road-decal.webp?v=16';
+  }
+  /* Curbs and ink outline as real geometry. light/road-outline.json holds the curb lines traced from the plan (world metres, with the
+     side that faces away from the road). Each line becomes a dark ink strip and a raised pale curb with a vertical face. */
+  function addRoadCurbs(ctx, ref, std) {
+    var Mesh = ref.constructor, BG = ref.geometry.constructor, Attr = bufferAttributeClass(ref.geometry);
+    var G = groundFn(ctx);
+    fetch('light/road-outline.json?v=3').then(function (r) { return r.json(); }).then(function (D) {
+      var ink = { P: [], I: [] }, top = { P: [], I: [] }, face = { P: [], I: [] };
+      function strip(o, a, b, y0, y1, ya, yb) { // quad between two lines: a(i) -> b(i), heights y0 for a, y1 for b
+        var k = o.P.length / 3; o.P.push(a[0], y0, a[1], b[0], y1, b[1]); return k; }
+      D.lines.forEach(function (ln) {
+        var p = ln.p, n = p.length, out = [];
+        for (var i = 0; i < n; i++) {
+          var a = p[Math.max(0, i - 1)], b = p[Math.min(n - 1, i + 1)], dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz) || 1; out.push([-dz / l * ln.s, dx / l * ln.s]);
+        }
+        var base = { ink: ink.P.length / 3, top: top.P.length / 3, face: face.P.length / 3 };
+        for (var j = 0; j < n; j++) {
+          var q = p[j], u = out[j], gq = G(q[0], q[1]);
+          // ink: a thin dark strip centred on the curb line
+          ink.P.push(q[0] - u[0] * .2, gq + .11, q[1] - u[1] * .2, q[0] + u[0] * .22, gq + .11, q[1] + u[1] * .22);
+          // curb top, on the outside of the line
+          top.P.push(q[0] + u[0] * .22, gq + .2, q[1] + u[1] * .22, q[0] + u[0] * 2.7, G(q[0] + u[0] * 2.7, q[1] + u[1] * 2.7) + .2, q[1] + u[1] * 2.7);
+          // vertical face from the road surface up to the curb top
+          face.P.push(q[0] + u[0] * .22, gq + .06, q[1] + u[1] * .22, q[0] + u[0] * .22, gq + .2, q[1] + u[1] * .22);
+          if (j) { var kk = j * 2; [[ink, base.ink], [top, base.top], [face, base.face]].forEach(function (z) { var s = z[1] + kk; z[0].I.push(s - 2, s - 1, s, s - 1, s + 1, s); }); }
+        }
+      });
+      function mesh(o, name, col, emi) {
+        if (!o.P.length) return; var N = []; for (var i = 0; i < o.P.length / 3; i++) N.push(0, 1, 0);
+        var g = new BG(); g.setAttribute('position', new Attr(new Float32Array(o.P), 3)); g.setAttribute('normal', new Attr(new Float32Array(N), 3)); g.setIndex(o.I);
+        var m = std.clone(); m.name = name; m.map = null; m.normalMap = null; m.roughnessMap = null; m.vertexColors = false; m.color.set(col); if (m.emissive) m.emissive.set(emi); m.roughness = 1; m.metalness = 0; m.side = 2;
+        m.polygonOffset = true; m.polygonOffsetFactor = -10; m.polygonOffsetUnits = -10; m.needsUpdate = true;
+        var mm = new Mesh(g, m); mm.name = name; mm.frustumCulled = false; mm.renderOrder = 3; ctx.scene.add(mm);
+      }
+      mesh(face, 'Hive sketch curb face', '#bfb49c', '#6b6350'); mesh(top, 'Hive sketch sidewalk', '#e8dec8', '#8c826c'); mesh(ink, 'Hive sketch road line', '#2a2724', '#2a2724');
+      redraw(ctx);
+    }).catch(function (e) { console.warn('Road curbs unavailable', e); });
+  }
+  /* Street lamps along the roads (positions found from the plan: just outside the curb, staggered). Each is a pole, an arm over the road,
+     a glowing head and a soft pool of light on the asphalt. */
+  var LAMPS = [[-159,11.7,2.25],[-146.3,37.1,-0.89],[-116,46.2,2.26],[-103.2,71.6,-0.88],[-15.3,-41.2,2.1],[27.5,-6,2.29],[61.2,21.5,2.29],[94.9,49.3,2.4],[146.8,91.8,2.19],[208.8,82.5,-2.36],[175.6,98.6,0.72],[176.4,122.2,-2.98],[171.2,171.7,-3.11],[-164.2,142.7,-1.88],[-143.7,122.4,1.26],[-119.6,123,-2.27],[-107.1,97.3,0.88],[-50.3,30.4,0.66],[-18.2,-10.4,0.66],[9.9,-21.5,-2.48]];
+  function addStreetLights(ctx, ref, std, Tex) {
+    var Mesh = ref.constructor, BG = ref.geometry.constructor, Attr = bufferAttributeClass(ref.geometry);
+    var poles = { P: [], N: [], I: [] }, heads = { P: [], N: [], I: [] }, glow = { P: [], U: [], N: [], I: [] };
+    function box(o, cx, cy, cz, sx, sy, sz, ang) {
+      var c = Math.cos(ang), s = Math.sin(ang), hx = sx / 2, hy = sy / 2, hz = sz / 2;
+      function V(lx, ly, lz) { return [cx + lx * c - lz * s, cy + ly, cz + lx * s + lz * c]; }
+      var F = [[[1, 0, 0], [[hx, -hy, -hz], [hx, hy, -hz], [hx, hy, hz], [hx, -hy, hz]]], [[-1, 0, 0], [[-hx, -hy, hz], [-hx, hy, hz], [-hx, hy, -hz], [-hx, -hy, -hz]]], [[0, 1, 0], [[-hx, hy, -hz], [-hx, hy, hz], [hx, hy, hz], [hx, hy, -hz]]], [[0, -1, 0], [[-hx, -hy, hz], [-hx, -hy, -hz], [hx, -hy, -hz], [hx, -hy, hz]]], [[0, 0, 1], [[-hx, -hy, hz], [hx, -hy, hz], [hx, hy, hz], [-hx, hy, hz]]], [[0, 0, -1], [[hx, -hy, -hz], [-hx, -hy, -hz], [-hx, hy, -hz], [hx, hy, -hz]]]];
+      F.forEach(function (f) { var k = o.P.length / 3, n = f[0], nx = n[0] * c - n[2] * s, nz = n[0] * s + n[2] * c; f[1].forEach(function (q) { var v = V(q[0], q[1], q[2]); o.P.push(v[0], v[1], v[2]); o.N.push(nx, n[1], nz); }); o.I.push(k, k + 1, k + 2, k, k + 2, k + 3); });
+    }
+    LAMPS.forEach(function (l) {
+      var x = l[0], z = l[1], a = l[2], dx = Math.cos(a), dz = Math.sin(a);
+      box(poles, x, 4.1, z, .26, 8.2, .26, a); box(poles, x, .35, z, .6, .7, .6, a);
+      box(poles, x + dx * 1.2, 8.05, z + dz * 1.2, 2.5, .16, .16, a);
+      box(heads, x + dx * 2.35, 7.88, z + dz * 2.35, 1.1, .2, .5, a);
+      var gx = x + dx * 4.2, gz = z + dz * 4.2, r = 9, k = glow.P.length / 3;
+      glow.P.push(gx - r, .27, gz - r, gx + r, .27, gz - r, gx + r, .27, gz + r, gx - r, .27, gz + r); glow.U.push(0, 0, 1, 0, 1, 1, 0, 1); for (var q = 0; q < 4; q++) glow.N.push(0, 1, 0); glow.I.push(k, k + 2, k + 1, k, k + 3, k + 2);
+    });
+    if (!LAMPS.length) return;
+    function mesh(o, name, set, uv) {
+      var g = new BG(); g.setAttribute('position', new Attr(new Float32Array(o.P), 3)); g.setAttribute('normal', new Attr(new Float32Array(o.N), 3)); if (uv) g.setAttribute('uv', new Attr(new Float32Array(o.U), 2)); g.setIndex(o.I);
+      var m = std.clone(); m.name = name; m.map = null; m.normalMap = null; m.roughnessMap = null; m.vertexColors = false; m.metalness = 0; m.roughness = .9; m.side = 2; set(m); m.needsUpdate = true;
+      var mm = new Mesh(g, m); mm.name = name; mm.frustumCulled = false; ctx.scene.add(mm); return m;
+    }
+    mesh(poles, 'Hive sketch lamp pole', function (m) { m.color.set('#3a3733'); if (m.emissive) m.emissive.set('#1c1a18'); });
+    mesh(heads, 'Hive sketch lamp head', function (m) { m.color.set('#fff0c4'); if (m.emissive) { m.emissive.set('#ffd27a'); m.emissiveIntensity = .9; } m.toneMapped = false; });
+    var cv = canvas(128, 128), c2 = cv.getContext('2d'), gr = c2.createRadialGradient(64, 64, 2, 64, 64, 64);
+    gr.addColorStop(0, 'rgba(255,226,150,.85)'); gr.addColorStop(.35, 'rgba(255,214,130,.38)'); gr.addColorStop(1, 'rgba(255,205,120,0)'); c2.fillStyle = gr; c2.fillRect(0, 0, 128, 128);
+    var gt = new Tex(cv); gt.colorSpace = 'srgb'; gt.needsUpdate = true;
+    mesh(glow, 'Hive sketch lamp glow', function (m) { m.map = gt; m.emissiveMap = gt; m.color.set('#000000'); if (m.emissive) m.emissive.set('#ffffff'); m.transparent = true; m.opacity = .32; m.depthWrite = false; m.toneMapped = false; m.polygonOffset = true; m.polygonOffsetFactor = -8; m.polygonOffsetUnits = -8; }, true);
+  }
+  /* Ink outline and pale curb along both edges of every road, left out where another road crosses. */
+  var ROAD_REG = [];
+  function polyDist(p, pts) {
+    var best = 1e9;
+    for (var i = 0; i < pts.length - 1; i++) {
+      var ax = pts[i][0], az = pts[i][1], dx = pts[i + 1][0] - ax, dz = pts[i + 1][1] - az, l2 = dx * dx + dz * dz || 1, t = Math.max(0, Math.min(1, ((p[0] - ax) * dx + (p[1] - az) * dz) / l2));
+      best = Math.min(best, Math.hypot(p[0] - (ax + dx * t), p[1] - (az + dz * t)));
+    }
+    return best;
+  }
+  function roadOutlines(ctx, ref, std, Tex) {
+    var Mesh = ref.constructor, BG = ref.geometry.constructor, Attr = bufferAttributeClass(ref.geometry);
+    var ink = { P: [], I: [] }, curb = { P: [], I: [] };
+    function quad(o, a, b, n, side, off0, off1, y) {
+      var k = o.P.length / 3;
+      o.P.push(a[0] + n[0][0] * side * off0, y, a[1] + n[0][1] * side * off0, a[0] + n[0][0] * side * off1, y, a[1] + n[0][1] * side * off1,
+        b[0] + n[1][0] * side * off0, y, b[1] + n[1][1] * side * off0, b[0] + n[1][0] * side * off1, y, b[1] + n[1][1] * side * off1);
+      o.I.push(k, k + 1, k + 2, k + 1, k + 3, k + 2);
+    }
+    ROAD_REG.forEach(function (r, ri) {
+      var pts = r.pts;
+      function nrm(i) { var q = pts[Math.min(pts.length - 1, i + 1)], o = pts[Math.max(0, i - 1)], dx = q[0] - o[0], dz = q[1] - o[1], l = Math.hypot(dx, dz) || 1; return [-dz / l, dx / l]; }
+      [-1, 1].forEach(function (side) {
+        for (var i = 0; i < pts.length - 1; i++) {
+          var a = pts[i], b = pts[i + 1], n = [nrm(i), nrm(i + 1)], mid = [(a[0] + b[0]) / 2 + n[0][0] * side * r.half, (a[1] + b[1]) / 2 + n[0][1] * side * r.half], crossed = false;
+          ROAD_REG.forEach(function (o, oi) { if (oi !== ri && polyDist(mid, o.pts) < o.half + .6) crossed = true; });
+          if (crossed) continue;
+          quad(ink, a, b, n, side, r.half - .2, r.half + .2, .2);
+          quad(curb, a, b, n, side, r.half + .2, r.half + 1.1, .17);
+        }
+      });
+    });
+    function mk(o, name, col, emi, tex) {
+      if (!o.P.length) return;
+      var N = []; for (var n = 0; n < o.P.length / 3; n++) N.push(0, 1, 0);
+      var g = new BG(); g.setAttribute('position', new Attr(new Float32Array(o.P), 3)); g.setAttribute('normal', new Attr(new Float32Array(N), 3)); g.setIndex(o.I);
+      if (tex) { var UV = []; for (var u = 0; u < o.P.length; u += 3) UV.push(o.P[u] / 1.6, o.P[u + 2] / 1.6); g.setAttribute('uv', new Attr(new Float32Array(UV), 2)); }
+      var m = std.clone(); m.name = name; m.map = tex || null; m.normalMap = null; m.roughnessMap = null; m.vertexColors = false; m.color.set(col); if (m.emissive) m.emissive.set(emi); m.roughness = 1; m.metalness = 0; m.side = 2;
+      m.polygonOffset = true; m.polygonOffsetFactor = -6; m.polygonOffsetUnits = -6; m.needsUpdate = true;
+      var mesh = new Mesh(g, m); mesh.name = name; mesh.frustumCulled = false; ctx.scene.add(mesh);
+    }
+    mk(curb, 'Hive sketch road curb', '#ffffff', '#6a6254', curbTex(Tex));
+    mk(ink, 'Hive sketch road outline', '#2b2825', '#2b2825');
+  }
+  /* Context streets around the site, from OpenStreetMap registered to the FBX city (light/ctx-roads.json: centrelines with half widths,
+     and for each side a 0/1 per segment telling where the curb runs and where another street crosses). One asphalt mesh with the lane
+     line, one ink edge mesh and one curb mesh, in the same style as the site's streets. */
+  function addContextRoads(ctx, ref, std, Tex) {
+    var Mesh = ref.constructor, BG = ref.geometry.constructor, Attr = bufferAttributeClass(ref.geometry);
+    fetch('light/ctx-roads.json?v=1').then(function (r) { return r.json(); }).then(function (R) {
+      var asph = { P: [], UV: [], I: [] }, ink = { P: [], I: [] }, curb = { P: [], I: [] };
+      function quad(o, a, b, na, nb, sg, d0, d1, y) {
+        var k = o.P.length / 3;
+        o.P.push(a[0] + na[0] * sg * d0, y, a[1] + na[1] * sg * d0, a[0] + na[0] * sg * d1, y, a[1] + na[1] * sg * d1, b[0] + nb[0] * sg * d0, y, b[1] + nb[1] * sg * d0, b[0] + nb[0] * sg * d1, y, b[1] + nb[1] * sg * d1);
+        o.I.push(k, k + 1, k + 2, k + 1, k + 3, k + 2);
+      }
+      R.forEach(function (r) {
+        var p = r.p, h = r.h, len = 0, base = asph.P.length / 3;
+        function nrm(i) { var a = p[Math.max(0, i - 1)], b = p[Math.min(p.length - 1, i + 1)], dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz) || 1; return [-dz / l, dx / l]; }
+        for (var i = 0; i < p.length; i++) {
+          var n = nrm(i); if (i) len += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]);
+          asph.P.push(p[i][0] + n[0] * h, .14, p[i][1] + n[1] * h, p[i][0] - n[0] * h, .14, p[i][1] - n[1] * h); asph.UV.push(0, len / 12, 1, len / 12);
+          if (i) { var k = base + i * 2; asph.I.push(k - 2, k - 1, k, k - 1, k + 1, k); }
+          if (i < p.length - 1) { var nb = nrm(i + 1);
+            if (r.l.charAt(i) === '1') { quad(ink, p[i], p[i + 1], n, nb, 1, h - .2, h + .2, .2); quad(curb, p[i], p[i + 1], n, nb, 1, h + .2, h + 1.6, .17); }
+            if (r.r.charAt(i) === '1') { quad(ink, p[i], p[i + 1], n, nb, -1, h - .2, h + .2, .2); quad(curb, p[i], p[i + 1], n, nb, -1, h + .2, h + 1.6, .17); } }
+        }
+      });
+      function mk(o, name, set, uv) {
+        if (!o.P.length) return; var N = []; for (var q = 0; q < o.P.length / 3; q++) N.push(0, 1, 0);
+        var g = new BG(); g.setAttribute('position', new Attr(new Float32Array(o.P), 3)); g.setAttribute('normal', new Attr(new Float32Array(N), 3));
+        if (uv) g.setAttribute('uv', new Attr(new Float32Array(uv), 2)); g.setIndex(o.I);
+        var m = std.clone(); m.name = name; m.normalMap = null; m.roughnessMap = null; m.vertexColors = false; m.roughness = .95; m.metalness = 0; m.side = 2; set(m, g); m.needsUpdate = true;
+        var mm = new Mesh(g, m); mm.name = name; mm.frustumCulled = false; ctx.scene.add(mm);
+      }
+      mk(asph, 'Hive road markings', function (m) { m.map = laneTex(Tex); m.color.set('#ffffff'); m.emissive.set('#4a4640'); m.polygonOffset = true; m.polygonOffsetFactor = -3; m.polygonOffsetUnits = -3; }, asph.UV);
+      var cu = []; for (var u = 0; u < curb.P.length; u += 3) cu.push(curb.P[u] / 1.6, curb.P[u + 2] / 1.6);
+      mk(curb, 'Hive sketch road curb', function (m) { m.map = curbTex(Tex); m.color.set('#ffffff'); m.emissive.set('#6a6254'); m.roughness = 1; m.polygonOffset = true; m.polygonOffsetFactor = -6; m.polygonOffsetUnits = -6; }, cu);
+      mk(ink, 'Hive sketch road outline', function (m) { m.map = null; m.color.set('#2b2825'); m.emissive.set('#2b2825'); m.roughness = 1; m.polygonOffset = true; m.polygonOffsetFactor = -6; m.polygonOffsetUnits = -6; });
+      redraw(ctx);
+    }).catch(function (e) { console.warn('Context roads unavailable', e); });
+  }
+  /* Straight runs with rounded corners: the polyline's vertices are corners, each one filleted with radius R (meters). */
+  function filletPath(V, R) {
+    var out = [V[0]];
+    for (var i = 1; i < V.length - 1; i++) {
+      var a = V[i - 1], b = V[i], c = V[i + 1], d1 = [b[0] - a[0], b[1] - a[1]], d2 = [c[0] - b[0], c[1] - b[1]], l1 = Math.hypot(d1[0], d1[1]), l2 = Math.hypot(d2[0], d2[1]);
+      var u1 = [d1[0] / l1, d1[1] / l1], u2 = [d2[0] / l2, d2[1] / l2], turn = Math.acos(Math.max(-1, Math.min(1, u1[0] * u2[0] + u1[1] * u2[1])));
+      var t = Math.min(R * Math.tan(turn / 2), l1 * .48, l2 * .48), E = [b[0] - u1[0] * t, b[1] - u1[1] * t], X = [b[0] + u2[0] * t, b[1] + u2[1] * t];
+      for (var s = 0; s <= 12; s++) { var k = s / 12, m = 1 - k; out.push([m * m * E[0] + 2 * m * k * b[0] + k * k * X[0], m * m * E[1] + 2 * m * k * b[1] + k * k * X[1]]); }
+    }
+    out.push(V[V.length - 1]);
+    // keep long straight runs from being a single quad so the texture and shading stay even
+    var dense = [out[0]];
+    for (var j = 1; j < out.length; j++) { var p = out[j - 1], q = out[j], n = Math.max(1, Math.ceil(Math.hypot(q[0] - p[0], q[1] - p[1]) / 6)); for (var w = 1; w <= n; w++) dense.push([p[0] + (q[0] - p[0]) * w / n, p[1] + (q[1] - p[1]) * w / n]); }
+    return dense;
+  }
+  function roadRibbon(ctx, ref, std, Tex, ctrl, halfW, round) {
     var Mesh = ref.constructor, BG = ref.geometry.constructor, Attr = bufferAttributeClass(ref.geometry);
     var pts = [], P0 = ctrl || ROAD;
+    if (round) { pts = filletPath(P0, round); P0 = [P0[0], P0[0]]; }
     for (var i = 0; i < P0.length - 1; i++) {
+      if (round) break;
       var a = P0[Math.max(0, i - 1)], b = P0[i], c = P0[i + 1], d = P0[Math.min(P0.length - 1, i + 2)];
       for (var s = 0; s < 8; s++) {
         var t = s / 8, t2 = t * t, t3 = t2 * t;
         pts.push([.5 * ((2 * b[0]) + (-a[0] + c[0]) * t + (2 * a[0] - 5 * b[0] + 4 * c[0] - d[0]) * t2 + (-a[0] + 3 * b[0] - 3 * c[0] + d[0]) * t3), .5 * ((2 * b[1]) + (-a[1] + c[1]) * t + (2 * a[1] - 5 * b[1] + 4 * c[1] - d[1]) * t2 + (-a[1] + 3 * b[1] - 3 * c[1] + d[1]) * t3)]);
       }
     }
-    pts.push(P0[P0.length - 1]);
+    if (!round) pts.push(P0[P0.length - 1]);
     var P = [], UV = [], I = [], len = 0, half = halfW || 5.4;
+    ROAD_REG.push({ pts: pts, half: half });
     pts.forEach(function (p, i) {
       var q = pts[Math.min(pts.length - 1, i + 1)], o = pts[Math.max(0, i - 1)], dx = q[0] - o[0], dz = q[1] - o[1], l = Math.hypot(dx, dz) || 1, nx = -dz / l, nz = dx / l;
       if (i) len += Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]);
@@ -495,14 +734,21 @@
     var mesh = new Mesh(g, m); mesh.name = 'Hive road markings'; mesh.frustumCulled = false; ctx.scene.add(mesh);
   }
   function animateWater(ctx, std, Tex) {
-    var water = null; ctx.scene.traverse(function (o) { if (o.isMesh && /canal|water/i.test(o.name) && o.name.indexOf('Amenity') < 0) water = o; });
-    if (!water) return null;
-    var g = water.geometry, pos = g.attributes.position, Attr = bufferAttributeClass(g); water.updateWorldMatrix(true, false);
-    var e = water.matrixWorld.elements, uv = new Float32Array(pos.count * 2);
-    for (var i = 0; i < pos.count; i++) { var x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i); uv[i * 2] = (e[0] * x + e[4] * y + e[8] * z + e[12]) / 14; uv[i * 2 + 1] = (e[2] * x + e[6] * y + e[10] * z + e[14]) / 14; }
-    g.setAttribute('uv', new Attr(uv, 2));
+    // every canal mesh (the FBX canal and the stretches carried on from the map load as separate pieces) gets the same hatch
+    var waters = []; ctx.scene.traverse(function (o) { if (o.isMesh && /canal|water/i.test(o.name) && o.name.indexOf('Amenity') < 0) waters.push(o); });
+    if (!waters.length) return null;
+    // with the FBX context the grade has no channel cut along most of the canal, so the water surface is set just above it (-0.02 m)
+    var fbx = false; ctx.scene.traverse(function (o) { if (o.isMesh && o.material && o.material.name === 'FBX context') fbx = true; });
+    var top = -1e9; if (fbx) waters.forEach(function (w) { w.geometry.computeBoundingBox(); w.updateWorldMatrix(true, false); top = Math.max(top, w.geometry.boundingBox.clone().applyMatrix4(w.matrixWorld).max.y); });
+    var lift = fbx ? -.02 - top : 1.15;
     var tex = waterTex(Tex), m = std.clone(); m.name = 'Hive canal hatch'; m.map = tex; m.normalMap = null; m.roughnessMap = null; m.color.set('#ffffff'); m.emissive.set('#22474a'); m.roughness = .5; m.metalness = 0; m.side = 2; m.needsUpdate = true;
-    water.material = m; water.position.y += 1.15;
+    waters.forEach(function (water) {
+      var g = water.geometry, pos = g.attributes.position, Attr = bufferAttributeClass(g); water.updateWorldMatrix(true, false);
+      var e = water.matrixWorld.elements, uv = new Float32Array(pos.count * 2);
+      for (var i = 0; i < pos.count; i++) { var x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i); uv[i * 2] = (e[0] * x + e[4] * y + e[8] * z + e[12]) / 14; uv[i * 2 + 1] = (e[2] * x + e[6] * y + e[10] * z + e[14]) / 14; }
+      g.setAttribute('uv', new Attr(uv, 2));
+      water.material = m; water.position.y += lift;
+    });
     return tex;
   }
 
@@ -717,28 +963,19 @@
       bx(-w / 2 + .5, -w / 2 + .9, .3, .7, 0, .5, '#b6dca8'); bx(w / 2 - .9, w / 2 - .5, .3, .7, 0, .5, '#b6dca8');
       [1.9, 4.5].forEach(function (cd) { bx(-w / 2 + 1, w / 2 - 1, cd, cd + .22, OFFICE_H - .12, OFFICE_H, '#f6f1e6'); });
     });
-    // garage floors: parked cars on a slot grid aligned to each wing, in place of any furniture
-    curPk = null; var CAR_BODY = ['#d9c7b0', '#9fb7c9', '#e3b8a8', '#c9d3b0', '#bdb6c9', '#e8dfcc', '#a9b3b8'], carRnd = srand(8123), carCount = 0, carCap = mobile ? 36 : 150;
-    [['L2', 4.55], ['L3', 7.55], ['L4', 10.55]].forEach(function (lv) {
-      var set = PK[lv[0]], cells = []; set.forEach(function (k) { var s = k.split(','); cells.push([(+s[0] + .5) * FPC, (+s[1] + .5) * FPC]); }); if (cells.length < 40) return;
-      var mx = 0, mz = 0; cells.forEach(function (c) { mx += c[0]; mz += c[1]; }); mx /= cells.length; mz /= cells.length;
-      var sxx = 0, szz = 0, sxz = 0; cells.forEach(function (c) { var dx = c[0] - mx, dz = c[1] - mz; sxx += dx * dx; szz += dz * dz; sxz += dx * dz; });
-      var th = .5 * Math.atan2(2 * sxz, sxx - szz), ux = Math.cos(th), uz = Math.sin(th), vx = -uz, vz = ux;
-      var minU = 1e9, maxU = -1e9, minV = 1e9, maxV = -1e9; cells.forEach(function (c) { var u = (c[0] - mx) * ux + (c[1] - mz) * uz, v = (c[0] - mx) * vx + (c[1] - mz) * vz; minU = Math.min(minU, u); maxU = Math.max(maxU, u); minV = Math.min(minV, v); maxV = Math.max(maxV, v); });
-      curFp = set; var lvCars = 0; // cars stay inside the garage floor
-      for (var v = minV + 1.5, row = 0; v < maxV - 1; v += 5.4, row++) { if (row % 3 === 2) { v += 3.0; continue; }
-        for (var u = minU + 1.4; u < maxU - 1; u += 2.7) {
-          if (lvCars >= carCap || carRnd() < .22) continue;
-          var cx = mx + ux * u + vx * v, cz = mz + uz * u + vz * v, ok = true;
-          [[-1, -2.4], [1, -2.4], [1, 2.4], [-1, 2.4], [0, 0]].forEach(function (p) { if (!set.has(Math.floor((cx + ux * p[0] + vx * p[1]) / FPC) + ',' + Math.floor((cz + uz * p[0] + vz * p[1]) / FPC))) ok = false; });
-          if (!ok) continue; carCount++; lvCars++;
-          var body = CAR_BODY[Math.floor(carRnd() * CAR_BODY.length)], len = 2.3 + carRnd() * .25, bw = .85;
-          // wall space: a = u axis (car width), n = v axis (car length)
-          var cb = function (u0, u1, d0, d1, h0, h1, col) { box(cx, cz, lv[1], ux, uz, -vx, -vz, u0, u1, d0, d1, h0, h1, col); };
-          cb(-bw, bw, -len, len, .22, .8, body); cb(-bw + .08, bw - .08, -len * .55, len * .35, .8, 1.3, '#cfd8dc'); cb(-bw + .1, bw - .1, -len * .5, len * .3, 1.3, 1.34, body);
-          cb(-bw - .03, -bw + .08, -len * .8, -len * .5, 0, .3, '#4a4640'); cb(bw - .08, bw + .03, -len * .8, -len * .5, 0, .3, '#4a4640'); cb(-bw - .03, -bw + .08, len * .5, len * .8, 0, .3, '#4a4640'); cb(bw - .08, bw + .03, len * .5, len * .8, 0, .3, '#4a4640');
-        }
-      }
+    // garage floors: parked cars, each one centred in a real stall of the FBX (between two painted stripes, nose in or out),
+    // about one stall in nine taken; [x, floor y, z, stall heading]
+    var STALLS = [[-1.49,0,68.56,0.682],[-3.22,0,70.69,0.682],[-20.08,0,71.14,0.682],[-25.27,0,77.53,0.682],[-26.99,0,79.66,0.682],[-31.29,0,54.97,0.682],[-41.66,0,67.75,0.682],[-30.49,0,62.7,0.682],[-33.95,0,66.95,0.682],[-27.99,4.57,59.61,0.682],[-26.23,7.62,78.72,0.682],[-28.8,7.62,51.89,0.682],[-46.09,7.62,73.19,0.682],[-56.5,7.62,64.75,0.682],[-63.41,7.62,73.27,0.682],[-41.83,4.57,76.66,0.682],[-54.77,4.57,62.61,0.682],[-51.27,4.57,79.59,0.682],[-61.69,4.57,71.13,0.682],[-53.04,4.57,60.48,0.682],[-65.15,4.57,75.39,0.682],[-39.14,0,73.34,0.682],[-30.56,7.62,32.8,0.682],[-19.35,4.57,48.97,0.682],[-23.65,7.62,24.27,0.682],[-5.92,7.62,74,0.682],[-26.66,7.62,99.56,0.682],[-30.12,7.62,103.83,0.682],[-0.73,4.57,67.62,0.682],[-24.94,4.57,97.44,0.682],[-26.66,4.57,99.56,0.682],[1.01,4.57,65.48,0.682],[2.73,4.57,63.36,0.682],[-28.38,4.57,101.69,0.682],[-30.12,4.57,103.83,0.682],[-23.2,4.57,95.31,0.682],[10.55,7.62,3.42,0.682],[23.49,7.62,17.46,0.682],[33.44,7.62,25.54,0.682],[31.7,7.62,27.66,0.682],[5.37,7.62,9.82,0.682],[9.63,7.62,13.28,0.682],[3.63,7.62,11.95,0.682],[1.91,7.62,14.07,0.682],[26.52,7.62,34.05,0.682],[4.43,7.62,19.66,0.682],[14.85,7.62,28.12,0.682],[20.04,4.57,21.73,0.682],[29.98,4.57,29.8,0.682],[7.89,4.57,15.4,0.682],[6.17,4.57,17.54,0.682],[26.52,4.57,34.05,0.682],[14.85,4.57,28.12,0.682],[-0.75,4.57,26.05,0.682],[9.66,4.57,34.5,0.682],[-19.31,10.67,70.19,0.682],[-21.04,10.67,72.33,0.682],[-33.98,10.67,58.28,0.682],[-39.17,10.67,64.67,0.682],[-51.31,10.67,58.36,0.682],[1.01,10.67,65.48,0.682],[154.99,0,132,0.133],[154.26,0,137.44,0.133],[116.63,0,114.8,-0.889],[114.5,0,113.06,-0.889],[103.86,0,104.41,-0.889],[101.72,0,102.69,-0.889],[107.66,0,138.91,-0.889],[115.34,0,129.44,-0.889],[113.22,0,127.72,-0.889],[102.56,0,119.07,-0.889],[100.44,0,117.34,-0.889],[153.53,7.62,142.87,0.133],[152.44,7.62,151.03,0.133],[152.44,0,151.03,0.133],[121.78,7.62,95.41,-0.889],[126.03,7.62,98.87,-0.889],[97.72,7.62,102.06,0.682],[103.56,7.62,116.16,0.682],[94.91,7.62,126.8,0.682],[119.96,7.62,125.94,0.682],[109.59,7.62,138.7,0.682],[147.32,10.67,116.16,-0.889],[128.16,10.67,100.59,-0.889],[98.34,10.67,101.31,0.682],[91.41,10.67,109.83,0.682],[86.53,10.67,96.5,0.682],[96.65,10.67,124.66,0.682],[126.88,10.67,117.41,0.682],[84.5,10.67,118.34,0.682],[1.43,0,104.63,0.682],[25.91,0,107.1,-0.889],[15.26,7.62,98.45,-0.889],[19.52,7.62,101.91,-0.889],[-12.87,7.62,100.94,0.682],[6.46,7.62,118,-0.889],[14.97,7.62,124.93,-0.889],[25.59,7.62,129.72,1.467],[52.84,7.62,126.41,0.682],[47.65,7.62,132.8,0.682],[33.86,7.62,142.32,1.467],[22.95,7.62,143.45,1.467],[11.03,7.62,138.99,-0.889],[2.5,7.62,132.06,-0.889],[54.56,7.62,124.28,0.682],[56.3,7.62,122.14,0.682],[26.13,0,88.47,-0.889],[28.26,0,90.19,-0.889],[-4.22,10.67,90.3,0.682],[-2.5,10.67,88.16,0.682],[7.88,10.67,75.38,0.682],[6.38,10.67,98.52,0.682],[15.26,10.67,98.45,-0.889],[21.66,10.67,103.65,-0.889],[23.79,10.67,105.38,-0.889],[30.17,10.67,110.56,-0.889],[34.44,10.67,114.02,-0.889],[36.56,10.67,115.75,-0.889],[38.7,10.67,117.47,-0.889],[-12.87,10.67,100.94,0.682],[0.06,10.67,112.82,-0.889],[8.59,10.67,119.73,-0.889],[10.71,10.67,121.47,-0.889],[12.84,10.67,123.19,-0.889],[28.32,10.67,129.44,1.467],[36.86,10.67,124.81,0.682],[52.84,10.67,126.41,0.682],[49.38,10.67,130.66,0.682],[0.38,10.67,130.34,-0.889],[101.19,4.57,97.8,0.682]];
+    curPk = null; curFp = null; var CAR_BODY = ['#d9c7b0', '#9fb7c9', '#e3b8a8', '#c9d3b0', '#bdb6c9', '#e8dfcc', '#a9b3b8'], carRnd = srand(8123), carCount = 0;
+    STALLS.forEach(function (st, si) {
+      if (mobile && si % 3) return;
+      var h = st[3], fx = carRnd() < .5 ? 1 : -1, lx = Math.cos(h) * fx, lz = Math.sin(h) * fx, cx = st[0], cz = st[2];
+      var body = CAR_BODY[Math.floor(carRnd() * CAR_BODY.length)], len = 2.2 + carRnd() * .2, bw = .85;
+      // wall space: a = across the stall (car width), d = along the stall (car length)
+      var cb = function (u0, u1, d0, d1, h0, h1, col) { box(cx, cz, st[1] + .02, -lz, lx, -lx, -lz, u0, u1, d0, d1, h0, h1, col); };
+      cb(-bw, bw, -len, len, .22, .8, body); cb(-bw + .08, bw - .08, -len * .55, len * .35, .8, 1.3, '#cfd8dc'); cb(-bw + .1, bw - .1, -len * .5, len * .3, 1.3, 1.34, body);
+      cb(-bw - .03, -bw + .08, -len * .8, -len * .5, 0, .3, '#4a4640'); cb(bw - .08, bw + .03, -len * .8, -len * .5, 0, .3, '#4a4640'); cb(-bw - .03, -bw + .08, len * .5, len * .8, 0, .3, '#4a4640'); cb(bw - .08, bw + .03, len * .5, len * .8, 0, .3, '#4a4640');
+      carCount++;
     });
     curFp = null; window.hiveLightLook = Object.assign(window.hiveLightLook || {}, { cars: carCount, parkCells: [PK.L2.size, PK.L3.size, PK.L4.size] });
     var cg = new BG(); cg.setAttribute('position', new Attr(new Float32Array(IP), 3)); cg.setAttribute('normal', new Attr(new Float32Array(IN), 3)); cg.setAttribute('color', new Attr(new Float32Array(IC), 3)); cg.setIndex(II);
@@ -977,8 +1214,10 @@
     window.hiveLightLook = Object.assign(window.hiveLightLook || {}, { deckTriangles: I.length / 3 });
   }
   /* Three small buildings inside the site (traced from the plan sheets) that the model was missing. */
-  var CTX_EXTRA = [{"poly":[[31.73,57.67],[48.94,71.68],[31.91,92.43],[14.61,78.25]],"h":8},{"poly":[[61.31,63.12],[68.05,68.66],[53.7,85.95],[52.31,84.82],[43.23,97.19],[38.13,93.64],[47.3,80.76],[48.16,80.5]],"h":8},{"poly":[[76.87,75.66],[83.61,81.02],[69.78,98.49],[62.86,93.13]],"h":8}];
+  var CTX_EXTRA = [{"h":8,"poly":[[33.2,43.15],[50.76,57.5],[33.2,78.6],[15.91,64.42]]},{"h":8,"poly":[[61.74,49.89],[68.4,55.51],[54.04,72.98],[52.75,71.85],[43.32,84.48],[38.13,80.85],[47.47,67.44],[48.16,68.05]]},{"h":8,"poly":[[75.66,63.99],[82.66,69.52],[68.4,87.33],[61.39,81.63]]}];
   function addContextExtra(ctx, ref, std) {
+    // the FBX model brings its own site context; these traced stand-ins are only for the earlier model
+    var fbx = false; ctx.scene.traverse(function (o) { if (o.isMesh && o.material && o.material.name === 'FBX context') fbx = true; }); if (fbx) return;
     var Mesh = ref.constructor, BG = ref.geometry.constructor, Attr = bufferAttributeClass(ref.geometry), P = [], N = [], I = [];
     function earClip(poly) { var idx = poly.map(function (_, i) { return i; }), out = [], guard = 0, area = 0; for (var i = 0; i < poly.length; i++) { var a = poly[i], b = poly[(i + 1) % poly.length]; area += a[0] * b[1] - b[0] * a[1]; } if (area < 0) idx.reverse();
       function cross(o, a, b) { return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]); }
@@ -993,14 +1232,15 @@
     var m = std.clone(); m.name = 'Hive context massing'; m.map = null; m.normalMap = null; m.roughnessMap = null; m.color.set('#d9d3c8'); m.emissive.set('#2f2d29'); m.roughness = 1; m.metalness = 0; m.side = 2; m.needsUpdate = true;
     var mesh = new Mesh(g, m); mesh.name = 'HIVE_miami-context_extra'; mesh.frustumCulled = false; ctx.scene.add(mesh);
   }
-  function addPool(ctx, ref, std, corners) {
+  function addPool(ctx, ref, std, corners, raised) {
     var Mesh = ref.constructor, BG = ref.geometry.constructor, Attr = bufferAttributeClass(ref.geometry);
     corners = corners || [[21.147, 139.571], [36.304, 137.998], [36.776, 142.545], [21.62, 144.12]];
     var cx = 0, cz = 0;
     corners.forEach(function (c) { cx += c[0] * .25; cz += c[1] * .25; });
     var dx = corners[1][0] - corners[0][0], dz = corners[1][1] - corners[0][1];
     var s = Math.sqrt(dx * dx + dz * dz), rx = dx / s, rz = dz / s, ax = -rz, az = rx;
-    var width = 4.572, deck = 13.716, base = 10.82, waterY = 13.56;
+    // the pool fills its own outline (the second pool's opening is 8.7 m wide; a fixed 4.57 m left a dark gap down to the garage)
+    var width = Math.hypot(corners[2][0] - corners[1][0], corners[2][1] - corners[1][1]), deck = 13.716, base = 10.82, waterY = 13.56;
     var yaw = Math.atan2(-rz, rx);
     var wallH = deck - .07 - base;
     var basinMat = std.clone(); basinMat.name = 'Pool basin'; basinMat.color.set('#c5dfe0'); basinMat.roughness = .78; basinMat.metalness = 0; basinMat.side = 2; basinMat.map = null; basinMat.normalMap = null; basinMat.roughnessMap = null; basinMat.needsUpdate = true;
@@ -1018,6 +1258,15 @@
       box('Pool basin / long side', 0, base + wallH / 2, v * (width / 2 - .12), s - .1, wallH, .15);
       box('Pool basin / end wall', v * (s / 2 - .12), base + wallH / 2, 0, .15, wallH, width - .1);
     });
+    // a pool whose deck has no opening is raised: a coping ring stands on the deck and the water sits inside it
+    if (raised) {
+      waterY = deck + .15;
+      box('Pool coping / floor', 0, deck + .02, 0, s + .5, .1, width + .5);
+      [-1, 1].forEach(function (v) {
+        box('Pool coping / long side', 0, deck + .17, v * (width / 2 + .1), s + .5, .3, .4);
+        box('Pool coping / end wall', v * (s / 2 + .1), deck + .17, 0, .4, .3, width + .5);
+      });
+    }
     // water surface: a flat quad facing up
     var pw = (s - .35) / 2, pd = (width - .35) / 2;
     var wg = new BG();

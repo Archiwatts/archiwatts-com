@@ -1,7 +1,9 @@
 /* Line-and-wash render style for the light model pages.
    Views: Watercolor (adobe washes + ink outline), Sketch (black-and-white wash), Massing (white model + outline), Diagram, Realistic.
    Washes are done in the material shader (no extra textures); the ink outline is a layer of screen-space line strokes built from
-   precomputed feature edges (light/edges.bin). Configure with window.SKETCH_STYLE = { edges: 'light/edges', mode: 'watercolor' }. */
+   precomputed feature edges (light/edges.bin). Configure with window.SKETCH_STYLE = { edges: 'light/edges', mode: 'watercolor' }.
+   Line weight follows the zoom: the width is worldW metres on the model, kept between minW and maxW pixels, and edges shorter than
+   minPx pixels on screen are dropped. Set these for a model much smaller or larger than the Hive's. */
 (function () {
   var CFG = window.SKETCH_STYLE; if (!CFG) return;
   function ready() { return window.newProjectViewer && window.newProjectViewer.ready && window.daylightContext && window.daylightContext.scene; }
@@ -11,7 +13,8 @@
     else if (tries++ < 600) setTimeout(wait, 150);
   })();
   function redraw(ctx) { if (ctx.controls && ctx.controls.dispatchEvent) ctx.controls.dispatchEvent({ type: 'change' }); }
-  var SKIP = /^Hive (sketch|canal hatch|road markings|planting bed)|Hive sketch|Hive plan overlay|Amenity pool water/;
+  // the Hive panel skin keeps its own blue-grey and gold (the sepia wash would turn every panel tan)
+  var SKIP = /^Hive (sketch|canal hatch|road markings|planting bed)|Hive sketch|Hive plan overlay|Amenity pool water|^Hive (hex|balcony|window) panel$|^Hive hex mesh panel$|^Phal (water hatch|life sprites)$|^Tranquil (pond water|life sprites)$|^Tranquil diagram /;
   var MODES = {
     realistic: { style: 0, bg: null, edges: false, paper: 0, ink: [.18, .165, .15] },
     watercolor: { style: 1, bg: 0xf4ecdc, edges: true, paper: .55, ink: [.18, .165, .15] },
@@ -33,8 +36,8 @@
       '  vec3 sand = vec3(.84,.80,.72) * (.94 + .10 * skN(vSkW.xz * .6)); gl_FragColor.rgb = mix(c0, sand, dk); }\n' +
       'if (uStyle > .5) { vec3 col = gl_FragColor.rgb; float l = dot(col, vec3(.299,.587,.114)); float st = uStyle; if (uCtx > .5) st = 3.0;\n' +
       '  float wob = (skN(vSkW.xz*.30 + vSkW.y*.21)-.5)*.16 + (skN(vSkW.xz*1.9)-.5)*.06;\n' +
-      '  float lq = floor((l+wob)*uBands+.5)/uBands; lq = mix(l, lq, .8); vec3 o;\n' +
-      '  if (st < 1.5) { o = skRamp(lq) + (col - l) * uChroma; }\n' +
+      '  float lq = floor((l+wob)*uBands+.5)/uBands; lq = mix(l, lq, .5); vec3 o;\n' +
+      '  if (st < 1.5) { float gr = (skN(gl_FragCoord.xy * .45) - .5) * .05 + (skN(vSkW.xz * 3.1 + vSkW.y) - .5) * .035; o = skRamp(clamp(lq + gr, 0., 1.)) + (col - l) * uChroma; }\n' +
       '  else if (st < 2.5) { float g = mix(.30,.985,lq); o = vec3(g, g*.985, g*.955); }\n' +
       '  else { float b = floor(l*3.+.5)/3.; float g = mix(.70,1.0,clamp(b+.1,0.,1.)); o = vec3(g, g*.99, g*.965); }\n' +
       '  gl_FragColor.rgb = o; }\n';
@@ -59,12 +62,18 @@
     }
     patchAll(); (function again(n) { if (n > 30) return; setTimeout(function () { patchAll(); again(n + 1); }, 1500); })(0);
     // ---- ink outline: screen-space strokes built from precomputed edges ----
-    var edgeMeshes = [], edgeMat = null, edgeU = { uRes: { value: [1, 1] }, uWorldW: { value: mobile ? .4 : .36 }, uMinW: { value: 3 }, uMaxW: { value: 9 }, uMinPx: { value: mobile ? 12 : 5 }, uInk: { value: [.18, .165, .15] }, uQMin: { value: [0, 0, 0] }, uQRange: { value: [1, 1, 1] } };
+    var edgeMeshes = [], edgeMat = null, edgeU = { uRes: { value: [1, 1] }, uWorldW: { value: CFG.worldW || (mobile ? .4 : .36) }, uMinW: { value: 3 }, uMaxW: { value: 9 }, uMinPx: { value: CFG.minPx != null ? CFG.minPx : (mobile ? 12 : 5) }, uInk: { value: [.18, .165, .15] }, uQMin: { value: [0, 0, 0] }, uQRange: { value: [1, 1, 1] } };
     function buildEdges(meta, bin) {
       var Mesh = null, BG = null, Attr = null;
       scene.traverse(function (o) { if (!Mesh && o.isMesh && o.geometry && o.geometry.index) { Mesh = o.constructor; BG = o.geometry.constructor; var C = o.geometry.index.constructor; Attr = Object.getPrototypeOf(C); } });
-      // find a BufferAttribute class that accepts typed arrays of any type
-      scene.traverse(function (o) { if (Attr && Attr.name === 'BufferAttribute') return; if (o.isMesh && o.geometry && o.geometry.attributes.normal) Attr = o.geometry.attributes.normal.constructor; });
+      // find a BufferAttribute class that takes a typed array as is: probe each candidate (minified names can't be trusted, and
+      // compressed models give interleaved attributes, which hold no array of their own)
+      function plain(C) { try { var a = new Int16Array(4), p = new C(a, 2); return p.array === a && p.itemSize === 2; } catch (e) { return false; } }
+      if (Attr && !plain(Attr)) Attr = null;
+      scene.traverse(function (o) {
+        if (Attr || !o.isMesh || !o.geometry) return; var g = o.geometry;
+        [g.index && g.index.constructor, g.index && Object.getPrototypeOf(g.index.constructor), g.attributes.normal && g.attributes.normal.constructor, g.attributes.position && g.attributes.position.constructor].forEach(function (C) { if (!Attr && typeof C === 'function' && plain(C)) Attr = C; });
+      });
       if (!Mesh || !std) return;
       var q = new Int16Array(bin), range = [0, 1, 2].map(function (i) { return meta.max[i] - meta.min[i]; });
       edgeU.uQMin.value = meta.min; edgeU.uQRange.value = range;
@@ -74,13 +83,14 @@
         shader.vertexShader = 'attribute vec3 other; attribute vec4 meta; uniform vec2 uRes; uniform float uWorldW; uniform float uMinW; uniform float uMaxW; uniform float uMinPx; uniform vec3 uQMin; uniform vec3 uQRange; varying vec3 vSk; varying float vSide;\n' + shader.vertexShader
           .replace('#include <project_vertex>',
             'vec3 pa = (position + 32767.0) / 65534.0 * uQRange + uQMin; vec3 pb = (other + 32767.0) / 65534.0 * uQRange + uQMin;\n' +
-            'vec4 a4 = modelViewMatrix * vec4(pa, 1.0), b4 = modelViewMatrix * vec4(pb, 1.0); a4.z += 0.07; b4.z += 0.07; vec4 mvPosition = a4; float endf = meta.y; float sd = meta.x * 2.0 - 1.0;\n' +
+            'vec4 a4 = modelViewMatrix * vec4(pa, 1.0), b4 = modelViewMatrix * vec4(pb, 1.0); a4.z += 0.07; b4.z += 0.07; float endf = meta.y; vec4 mvPosition = endf < .5 ? a4 : b4;  // each end clips at its own point (section box)\n' +
+            ' float sd = meta.x * 2.0 - 1.0;\n' +
             'float nz = -0.25; bool gone = (a4.z > nz && b4.z > nz);\n' +
             'if (!gone) { if (a4.z > nz) a4 = a4 + (b4 - a4) * ((nz - a4.z) / (b4.z - a4.z)); else if (b4.z > nz) b4 = b4 + (a4 - b4) * ((nz - b4.z) / (a4.z - b4.z)); }\n' +
             'vec4 ca = projectionMatrix * a4, cb = projectionMatrix * b4;\n' +
             'vec2 sa = ca.xy / ca.w, sb = cb.xy / cb.w; vec2 dir = (sb - sa) * uRes; float dl = length(dir); dir = dl > 1e-5 ? dir / dl : vec2(1.0, 0.0);\n' +
             'vec2 nrm = vec2(-dir.y, dir.x); vec4 cc = endf < .5 ? ca : cb; float dep = max(.5, endf < .5 ? -a4.z : -b4.z);\n' +
-            'float focal = projectionMatrix[1][1] * uRes.y * .5; float wpx = clamp(uWorldW * (meta.w > .5 ? 1.25 : 1.0) * focal / dep, uMinW, uMaxW);\n' +
+            'float focal = projectionMatrix[1][1] * uRes.y * .5; float wpx = clamp(uWorldW * (meta.w > .5 ? 1.25 : 1.0) * focal / dep, uMinW, uMaxW); wpx = min(wpx, max(uMinW, dl * .06));\n' +
             'cc.xy += nrm * sd * wpx / uRes * cc.w;\n' +
             'if (gone || dl * .5 < uMinPx) cc = vec4(2.0, 2.0, 2.0, 1.0);\n' +            'gl_Position = cc; vSk = vec3(meta.z / 255.0, endf, meta.w); vSide = sd;')
           .replace('#include <begin_vertex>', 'vec3 transformed = vec3(position);');
@@ -103,7 +113,8 @@
         }
         var g = new BG(); g.setAttribute('position', new Attr(P, 3)); g.setAttribute('other', new Attr(O, 3)); g.setAttribute('meta', new Attr(M, 4)); g.setIndex(I);
         var mesh = new Mesh(g, edgeMat); mesh.name = m.name + ' lines'; mesh.frustumCulled = false; mesh.userData.skEdge = true; mesh.renderOrder = 3;
-        mesh.onBeforeRender = function (renderer) { var c = renderer.domElement; edgeU.uRes.value = [c.width, c.height]; var pr = c.width / Math.max(1, c.clientWidth); edgeU.uMinW.value = (mobile ? 2.2 : 3) * pr; edgeU.uMaxW.value = (mobile ? 5.5 : 9) * pr; };
+        mesh.onBeforeRender = function (renderer) { if (std && edgeMat.clippingPlanes !== std.clippingPlanes) edgeMat.clippingPlanes = std.clippingPlanes;   // the section box cuts the lines with the model
+          var c = renderer.domElement; edgeU.uRes.value = [c.width, c.height]; var pr = c.width / Math.max(1, c.clientWidth); edgeU.uMinW.value = (CFG.minW || (mobile ? 1.3 : 1.5)) * pr; edgeU.uMaxW.value = (CFG.maxW || (mobile ? 3.6 : 5.5)) * pr; };
         edgeMeshes.push(mesh); scene.add(mesh);
       });
     }

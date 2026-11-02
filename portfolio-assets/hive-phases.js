@@ -3,7 +3,8 @@
    Phase 1: blocks A and D. Phase 2: blocks C and E. Phase 3: block B (from the project's phase diagrams, Hive.pdf pp. 14-15). */
 (function () {
   var PHASES = [{ n: 'Phase 1', blocks: 'ad', note: 'Neighborhood edge: supermarket and CVS, offices, parking and residences.' }, { n: 'Phase 2', blocks: 'ce', note: 'Waterfront: residences and commercial frontage.' }, { n: 'Phase 3', blocks: 'b', note: 'Connector: completes the amenity deck, with more residences and retail.' }];
-  var COLORS = { residential: '#e3b24d', retail: '#e8706a', office: '#72a8dc', parking: '#7c7c80', common: '#bfcca6', structure: '#d9d2c2', pavilions: '#d9d2c2' }, PALE = '#efe4c8';
+  // the panel skin stays on in the diagram, a lighter residential yellow so the hexagons read over the residential floors they wrap
+  var COLORS = { residential: '#e3b24d', retail: '#e8706a', office: '#72a8dc', parking: '#7c7c80', common: '#bfcca6', structure: '#d9d2c2', pavilions: '#d9d2c2', facade: '#f0d48c' }, PALE = '#efe4c8';
   function ready() { return window.newProjectViewer && window.newProjectViewer.ready && window.daylightContext && window.daylightContext.scene; }
   var tries = 0;
   (function wait() { if (ready()) { try { run(); } catch (e) { console.warn('Hive phases skipped', e); } } else if (tries++ < 600) setTimeout(wait, 150); })();
@@ -15,16 +16,23 @@
       var m = stdMat().clone(); m.name = 'Hive phase ' + k; m.map = null; m.normalMap = null; m.roughnessMap = null; m.vertexColors = false; m.color.set(hex); m.emissive.set(hex); m.emissiveIntensity = .22; m.roughness = 1; m.metalness = 0;
       if (glass) { m.transparent = true; m.opacity = .55; m.depthWrite = false; } m.side = 2; m.needsUpdate = true; return (cache[k] = m);
     }
-    function meshes() { var out = []; scene.traverse(function (o) { if (o.isMesh && !(o.userData && o.userData.skEdge)) { var mm = /^HIVE_([a-z]+)-([a-e])_(\w+)/.exec(o.name || ''); if (mm && !/context|water/.test(mm[1])) out.push([o, mm[1], mm[2], mm[3]]); } }); return out; }
+    function meshes() {
+      var out = [];
+      scene.traverse(function (o) {
+        if (!o.isMesh || (o.userData && o.userData.skEdge)) return; var mm = /^HIVE_([a-z]+)-([a-e])_(\w+)/.exec(o.name || '');
+        if (mm && !/context|water/.test(mm[1])) out.push([o, /_aluminum$/.test(o.name) ? 'facade' : mm[1], mm[2], mm[3]]);
+        else if (/^Mesh_\d+/.test(o.name || '')) out.push([o, 'facade', '', '']);   // earlier model: panel instances without a block
+      });
+      return out;
+    }
     function apply(flag) {
       on = !!flag;
       meshes().forEach(function (x) {
         var o = x[0]; if (!orig.has(o)) orig.set(o, o.material);
         if (!on) { o.material = orig.get(o); return; }
-        var inPhase = phase === 0 || PHASES[phase - 1].blocks.indexOf(x[2]) >= 0, hex = inPhase ? (COLORS[x[1]] || PALE) : PALE;
-        o.material = flat(hex, x[3] === 'glass');
+        var inPhase = phase === 0 || (x[2] && PHASES[phase - 1].blocks.indexOf(x[2]) >= 0), hex = inPhase ? (COLORS[x[1]] || PALE) : PALE;
+        o.material = flat(hex, /^glass/.test(x[3]));   // repeated names load as _glass_1, _glass_2
       });
-      scene.traverse(function (o) { if (o.isMesh && (/^Mesh_\d+/.test(o.name || '') || /_aluminum$/.test(o.name || ''))) o.visible = !on; });
       row.hidden = !on; ctx.controls.dispatchEvent({ type: 'change' });
     }
     function setPhase(p) { phase = p; [].forEach.call(row.querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', String(+b.dataset.p === p)); }); note.textContent = p ? PHASES[p - 1].note : 'All three phases together.'; if (on) apply(true); }

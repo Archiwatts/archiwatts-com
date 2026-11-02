@@ -6,9 +6,18 @@
   function ready() { return window.newProjectViewer && window.newProjectViewer.ready && window.daylightContext && window.daylightContext.scene && document.querySelector('.pp [data-p="plans"]'); }
   var tries = 0;
   (function wait() { if (ready()) { try { run(); } catch (e) { console.warn('Plan overlays skipped', e); } } else if (tries++ < 800) setTimeout(wait, 200); })();
+  // a BufferAttribute class that accepts plain typed arrays (the model's own attributes may be interleaved or quantized)
+  function attrClass(g) {
+    var found = null, nor = g.attributes.normal;
+    [nor && nor.constructor, g.index && Object.getPrototypeOf(g.index.constructor), g.index && g.index.constructor].forEach(function (C) {
+      if (found || typeof C !== 'function') return;
+      try { var probe = new C(new Float32Array(4), 2); if (probe.array && probe.itemSize === 2 && probe.getX(0) === 0) found = C; } catch (er) {}
+    });
+    return found;
+  }
   function run() {
     var ctx = window.daylightContext, scene = ctx.scene, Mesh = null, BG = null, Attr = null, Tex = null, std = null, quads = {}, opacity = .85, current = null;
-    scene.traverse(function (o) { if (!o.isMesh || !o.geometry) return; var m = Array.isArray(o.material) ? o.material[0] : o.material; if (!Mesh && o.geometry.index) { Mesh = o.constructor; BG = o.geometry.constructor; } if (!Attr && o.geometry.attributes.normal) Attr = o.geometry.attributes.normal.constructor; if (!Tex && m && m.map) Tex = m.map.constructor; if (!std && m && m.isMeshStandardMaterial && !m.isMeshPhysicalMaterial) std = m; });
+    scene.traverse(function (o) { if (!o.isMesh || !o.geometry) return; var m = Array.isArray(o.material) ? o.material[0] : o.material; if (!Mesh && o.geometry.index) { Mesh = o.constructor; BG = o.geometry.constructor; } if (!Attr) Attr = attrClass(o.geometry); if (!Tex && m && m.map) Tex = m.map.constructor; if (!std && m && m.isMeshStandardMaterial && !m.isMeshPhysicalMaterial) std = m; });
     function build(key, height) {
       var reg = D.registration[key], r = reg.a * reg.a + reg.b * reg.b, P = [[0, 0], [reg.width, 0], [reg.width, reg.height], [0, reg.height]].map(function (q) { var l = q[0], h = q[1]; return [(reg.a * (l - reg.tx) + reg.b * (h - reg.ty)) / r, height + .075, (-reg.b * (l - reg.tx) + reg.a * (h - reg.ty)) / r]; });
       var g = new BG(); g.setAttribute('position', new Attr(new Float32Array([].concat.apply([], P)), 3)); g.setAttribute('normal', new Attr(new Float32Array([0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0]), 3)); g.setAttribute('uv', new Attr(new Float32Array([0, 1, 1, 1, 1, 0, 0, 0]), 2)); g.setIndex([0, 1, 2, 0, 2, 3]);
