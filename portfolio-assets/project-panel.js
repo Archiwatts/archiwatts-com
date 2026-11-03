@@ -35,7 +35,7 @@
     // keep the full-detail link, restyled as the last action
     var full = panel.querySelector('a.full-detail'), fullP = full && full.closest('p'); if (fullP) fullP.classList.add('pp-keep');
     var layers = (C.layers || []).map(function (l) { return { n: l.n, re: new RegExp(l.re, 'i'), on: true, meshes: null }; });
-    var ctxRe = C.context ? new RegExp(C.context, 'i') : null, ctxMeshes = null, ctxOrig = new Map();
+    var ctxRe = C.context ? new RegExp(C.context, 'i') : null, ctxMeshes = null, ctxOrig = new Map(), PALE_CTX = null;
     function meshesFor(re) { var out = []; ctx.scene.traverse(function (o) { if (!o.isMesh) return; for (var p = o; p; p = p.parent) if (p.name && re.test(p.name)) { out.push(o); return; } }); return out; }
     var root = document.createElement('div'); root.className = 'pp';
     root.innerHTML =
@@ -68,28 +68,54 @@
     var sel = q('#pp-context');
     if (sel) sel.addEventListener('change', function () {
       if (!ctxMeshes) ctxMeshes = meshesFor(ctxRe);
+      if (!PALE_CTX) ctxMeshes.some(function (o) { var m = o.material; if (m && m.color && !(o.userData && o.userData.skEdge)) { PALE_CTX = new m.color.constructor('#ecebe7'); return true; } });
+      // Faded keeps the context solid but washed out towards a pale ground (see-through boxes read as a wire mesh), and its ink
+      // outlines go with it in Faded and Hidden, so the eye goes to the project; the project's own colours are left alone
       ctxMeshes.forEach(function (o) {
+        if (o.userData && o.userData.skEdge) { o.userData.layerOn = sel.value === 'solid'; o.visible = sel.value === 'solid' && (!window.sketchStyle || window.sketchStyle.mode() !== 'realistic'); return; }
         var m = Array.isArray(o.material) ? o.material[0] : o.material; if (!m) return;
-        if (!ctxOrig.has(m)) ctxOrig.set(m, { t: m.transparent, o: m.opacity, d: m.depthWrite });
+        if (!ctxOrig.has(m)) ctxOrig.set(m, { c: m.color && m.color.clone(), e: m.emissive && m.emissive.clone() });
         var s = ctxOrig.get(m);
-        if (sel.value === 'hidden') o.visible = false;
-        else { o.visible = true; if (sel.value === 'faded') { m.transparent = true; m.opacity = .3; m.depthWrite = false; } else { m.transparent = s.t; m.opacity = s.o; m.depthWrite = s.d; } m.needsUpdate = true; }
+        if (sel.value === 'hidden') { o.visible = false; return; }
+        o.visible = true;
+        if (sel.value === 'faded') { if (m.color && s.c) m.color.copy(s.c).lerp(PALE_CTX, .72); if (m.emissive) m.emissive.copy(PALE_CTX).multiplyScalar(.45); }
+        else { if (s.c) m.color.copy(s.c); if (s.e) m.emissive.copy(s.e); }
       });
       redraw(ctx);
     });
-    var fb = window.projectModelInfo && window.projectModelInfo.focusBounds;
-    qa('.views button').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var v = b.dataset.v;
-        if (v === 'fit') { var f = document.getElementById('fit-button'); if (f) f.click(); return; }
-        if (v === 'top') { var t = document.getElementById('top-button'); if (t) t.click(); return; }
-        if (!fb) return;
-        var c = [0, 1, 2].map(function (i) { return (fb.min[i] + fb.max[i]) / 2; }), size = Math.max(fb.max[0] - fb.min[0], fb.max[2] - fb.min[2]);
-        var dir = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] }[v];
-        ctx.controls.target.set(c[0], c[1], c[2]); ctx.camera.position.set(c[0] + dir[0] * size * .8, c[1] + size * .32, c[2] + dir[1] * size * .8);
-        ctx.controls.update(); redraw(ctx);
-      });
-    });
+    /* Standard views. Plan, north, south, east and west are flat: a long lens from far away, so the model reads like a plan or an
+       elevation (straight lines stay straight, no perspective), which also gives a clean look at a section-box cut.
+       3D goes back to the normal lens and the overview. North is -z, as on the site plans. */
+    var fb = window.projectModelInfo && window.projectModelInfo.focusBounds, cam = ctx.camera, lens0 = null, FLAT = 5;
+    function setView(v) {
+      if (lens0 === null) lens0 = { fov: cam.fov, near: cam.near, far: cam.far };
+      if (v === 'fit' || v === '3d' || !fb) {
+        cam.fov = lens0.fov; cam.near = lens0.near; cam.far = lens0.far; cam.updateProjectionMatrix();
+        var f = document.getElementById('fit-button'); if (f) f.click(); else { ctx.controls.update(); redraw(ctx); }
+      } else {
+        var c = [0, 1, 2].map(function (i) { return (fb.min[i] + fb.max[i]) / 2; }), sx = fb.max[0] - fb.min[0], sy = fb.max[1] - fb.min[1], sz = fb.max[2] - fb.min[2];
+        var span = v === 'top' ? Math.max(sx, sz) : (v === 'n' || v === 's' ? Math.max(sx, sy * 1.6) : Math.max(sz, sy * 1.6));
+        var d = span * .62 / Math.tan(FLAT * Math.PI / 360), off = { top: [0, d, d * 1e-4], n: [0, 0, -d], s: [0, 0, d], e: [d, 0, 0], w: [-d, 0, 0] }[v];
+        cam.fov = FLAT; cam.near = Math.max(lens0.near, d * .02); cam.far = Math.max(lens0.far, d * 3); cam.updateProjectionMatrix();
+        ctx.controls.target.set(c[0], c[1], c[2]); cam.position.set(c[0] + off[0], c[1] + off[1], c[2] + off[2]); ctx.controls.update(); redraw(ctx);
+      }
+      [].forEach.call(document.querySelectorAll('.pp-viewbar button'), function (x) { x.setAttribute('aria-pressed', String(x.dataset.v === (v === 'fit' ? '3d' : v))); });
+    }
+    qa('.views button').forEach(function (b) { b.addEventListener('click', function () { setView(b.dataset.v); }); });
+    // the same views as a row at the top of the project controls, so they are one tap away
+    if (C.viewbar !== false) {
+      var vcss = document.createElement('style');
+      vcss.textContent = '.pp-viewbar{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:8px 0 4px;padding:4px;background:#26242a;border:1.5px solid #4d4953;border-radius:12px}' +
+        '.pp-viewbar button{font:700 12px Archivo,system-ui,sans-serif;color:#f2f0f4;background:transparent;border:0;border-radius:8px;min-height:36px;padding:0;cursor:pointer}.pp-viewbar button:hover{background:#3a3640}.pp-viewbar button[aria-pressed=true]{background:#e0557c;color:#1c1b1e}';
+      document.head.appendChild(vcss);
+      var bar = document.createElement('div'); bar.className = 'pp-viewbar'; bar.setAttribute('role', 'group'); bar.setAttribute('aria-label', 'Views');
+      bar.innerHTML = [['3d', '3D', 'Back to the 3D view'], ['top', 'Plan', 'Flat plan from above'], ['n', 'N', 'Flat elevation from the north'], ['s', 'S', 'Flat elevation from the south'], ['e', 'E', 'Flat elevation from the east'], ['w', 'W', 'Flat elevation from the west']]
+        .map(function (b, i) { return '<button type="button" data-v="' + b[0] + '" title="' + b[2] + '" aria-pressed="' + (i === 0) + '">' + b[1] + '</button>'; }).join('');
+      // just under the "Project controls" heading (or at the very top of the panel)
+      var head = [].filter.call(panel.querySelectorAll('*'), function (el) { return !el.children.length && /^project controls$/i.test((el.textContent || '').trim()); })[0];
+      if (head) head.after(bar); else panel.prepend(bar);
+      bar.addEventListener('click', function (e) { var b = e.target.closest('button[data-v]'); if (b) setView(b.dataset.v); });
+    }
     q('#pp-sheets').addEventListener('click', function () { var b = document.getElementById('drawings-button') || document.getElementById('sheets-button'); if (b) b.click(); else q('#pp-sheets').textContent = 'No drawings added yet'; });
     count();
   }

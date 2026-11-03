@@ -55,28 +55,17 @@
 
     fetch('light/life.json?v=1').then(function (r) { return r.json(); }).then(function (L) {
       var rnd = srand(1907);
-      /* ---- sprites: walking figures and swimmers, drawn in ink on one small atlas; quads turn to face the camera every frame ---- */
-      var cv = canvas(512, 128), c = cv.getContext('2d'), CELLS = 4, INK = '#2a2724';
-      var coats = ['#c8432f', '#2e4f7a', '#e4cf9a', '#6f8b5a'];
-      for (var k = 0; k < 3; k++) {   // three walkers
-        var ox = k * 128, col = coats[k];
-        c.fillStyle = col; c.strokeStyle = INK; c.lineWidth = 4; c.lineJoin = c.lineCap = 'round';
-        c.beginPath(); c.arc(ox + 64, 22, 12, 0, Math.PI * 2); c.fillStyle = '#e9d6bd'; c.fill(); c.stroke();
-        c.beginPath(); c.moveTo(ox + 46, 40); c.lineTo(ox + 82, 40); c.lineTo(ox + 78, 84); c.lineTo(ox + 50, 84); c.closePath(); c.fillStyle = col; c.fill(); c.stroke();
-        c.beginPath(); c.moveTo(ox + 56, 84); c.lineTo(ox + 50 + k * 3, 124); c.moveTo(ox + 72, 84); c.lineTo(ox + 78 - k * 3, 124); c.stroke();
-      }
-      // swimmer: head and arms above a ripple
-      c.strokeStyle = INK; c.lineWidth = 4; c.beginPath(); c.ellipse(448, 108, 52, 12, 0, 0, Math.PI * 2); c.strokeStyle = 'rgba(230,248,244,.95)'; c.stroke();
-      c.strokeStyle = INK; c.beginPath(); c.arc(448, 92, 12, 0, Math.PI * 2); c.fillStyle = '#e9d6bd'; c.fill(); c.stroke();
-      c.beginPath(); c.moveTo(430, 102); c.lineTo(410, 84); c.moveTo(466, 102); c.lineTo(486, 96); c.stroke();
-      var atlas = tex(cv);
+      /* ---- sprites: the Hive's sketch people (shared sketch-people.js) walking and swimming; quads turn to the camera every frame ---- */
+      var SP = window.SketchPeople, atlas = tex(SP.atlas());
+      if (atlas) { atlas.wrapS = atlas.wrapT = 1001; }
       var nW = mobile ? 50 : 150, nS = mobile ? 10 : 26, N = nW + nS;
       var P = new Float32Array(N * 12), UV = new Float32Array(N * 8), NN = new Float32Array(N * 12), I = [];
       for (var q = 0; q < N; q++) { for (var v = 0; v < 4; v++) NN[q * 12 + v * 3 + 1] = 1; I.push(q * 4, q * 4 + 1, q * 4 + 2, q * 4, q * 4 + 2, q * 4 + 3); }
-      var sg = new BG(), pa = new Attr(P, 3); sg.setAttribute('position', pa); sg.setAttribute('normal', new Attr(NN, 3)); sg.setAttribute('uv', new Attr(UV, 2)); sg.setIndex(I);
-      var sm = std.clone(); sm.name = 'Phal life sprites'; sm.map = atlas; sm.emissiveMap = atlas; sm.color.set('#000000'); sm.emissive.set('#ffffff'); sm.normalMap = null; sm.roughnessMap = null; sm.metalness = 0; sm.roughness = 1; sm.side = 2; sm.alphaTest = .45; sm.toneMapped = false; sm.needsUpdate = true;
+      var sg = new BG(), pa = new Attr(P, 3), ua = new Attr(UV, 2); sg.setAttribute('position', pa); sg.setAttribute('normal', new Attr(NN, 3)); sg.setAttribute('uv', ua); sg.setIndex(I);
+      var sm = std.clone(); sm.name = 'Phal life sprites'; sm.map = atlas; sm.emissiveMap = atlas; sm.color.set('#000000'); sm.emissive.set('#ffffff'); sm.normalMap = null; sm.roughnessMap = null; sm.metalness = 0; sm.roughness = 1; sm.side = 2; sm.alphaTest = .45; sm.transparent = false; sm.opacity = 1; sm.toneMapped = false; sm.needsUpdate = true;
       var sprites = new Mesh(sg, sm); sprites.name = 'Phal life sprites'; sprites.frustumCulled = false; scene.add(sprites);
-      function cell(i, k) { var u0 = k / CELLS, u1 = (k + 1) / CELLS, o = i * 8; UV[o] = u0; UV[o + 1] = 0; UV[o + 2] = u1; UV[o + 3] = 0; UV[o + 4] = u1; UV[o + 5] = 1; UV[o + 6] = u0; UV[o + 7] = 1; }
+      // c = [u0, v0, u1, v1] from SketchPeople; flip mirrors a figure walking leftwards on screen
+      function setCell(i, c, flip) { var o = i * 8, a = flip ? c[2] : c[0], b = flip ? c[0] : c[2]; UV[o] = a; UV[o + 1] = c[1]; UV[o + 2] = b; UV[o + 3] = c[1]; UV[o + 4] = b; UV[o + 5] = c[3]; UV[o + 6] = a; UV[o + 7] = c[3]; }
 
       /* ---- walkers: a random walk on the 3 m grid of walkable ground ---- */
       var WS = L.walkStep, wset = new Set(), wpts = [];
@@ -89,14 +78,14 @@
         for (var j = 0; j < opts.length; j++) { r -= opts[j].w; if (r <= 0) return opts[j]; } return opts[0];
       }
       var walkers = [];
-      for (var w = 0; w < nW; w++) { var s0 = wpts[Math.floor(rnd() * wpts.length)]; walkers.push({ a: s0, b: s0, t: 1, dir: null, sp: .9 + rnd() * .6, k: w % 3, pause: rnd() * 3 }); cell(w, w % 3); }
+      for (var w = 0; w < nW; w++) { var s0 = wpts[Math.floor(rnd() * wpts.length)]; walkers.push({ a: s0, b: s0, t: 1, dir: null, sp: .9 + rnd() * .6, type: Math.floor(rnd() * SP.types), dist: rnd() * 3, pause: rnd() * 3 }); }
       /* ---- swimmers and boats: the 10 m grid of open water ---- */
       var AS = L.waterStep, aset = new Set(), apts = [];
       for (var j2 = 0; j2 < L.water.length; j2 += 2) { aset.add(L.water[j2] + ',' + L.water[j2 + 1]); apts.push([L.water[j2], L.water[j2 + 1]]); }
       // stay inside the frame (the sea beyond it is left quiet)
       apts = apts.filter(function (p) { return Math.abs(p[0]) < 440 && Math.abs(p[1]) < 440; });
       var swimmers = [];
-      for (var sI = 0; sI < nS; sI++) { var p0 = apts[Math.floor(rnd() * apts.length)]; swimmers.push({ a: p0, b: p0, t: 1, dir: null, sp: .5 + rnd() * .3 }); cell(nW + sI, 3); }
+      for (var sI = 0; sI < nS; sI++) { var p0 = apts[Math.floor(rnd() * apts.length)]; swimmers.push({ a: p0, b: p0, t: 1, dir: null, sp: .5 + rnd() * .3, phase: rnd() * 6 }); }
       // rowboats: a hull and a rower, as plain boxes in one moving mesh each
       var hullM = std.clone(); hullM.name = 'Phal life boat'; hullM.map = null; hullM.normalMap = null; hullM.roughnessMap = null; hullM.color.set('#6b4a2c'); hullM.emissive.set('#2a1c10'); hullM.metalness = 0; hullM.roughness = .8; hullM.needsUpdate = true;
       function boatGeo() {
@@ -117,8 +106,19 @@
       anim.push(function (time, dt) {
         ctx.camera.updateMatrixWorld(); var e = ctx.camera.matrixWorld.elements, rx = e[0], rz = e[2], rl = Math.hypot(rx, rz) || 1; rx /= rl; rz /= rl;
         function quad(i, x, y, z, w, h) { var o = i * 12, hw = w / 2; P[o] = x - rx * hw; P[o + 1] = y; P[o + 2] = z - rz * hw; P[o + 3] = x + rx * hw; P[o + 4] = y; P[o + 5] = z + rz * hw; P[o + 6] = x + rx * hw; P[o + 7] = y + h; P[o + 8] = z + rz * hw; P[o + 9] = x - rx * hw; P[o + 10] = y + h; P[o + 11] = z - rz * hw; }
-        walkers.forEach(function (o, i) { if (o.pause > 0) { o.pause -= dt; } else { var p = advance(o, wset, WS, dt); o.x = p[0]; o.z = p[1]; if (rnd() < .002) o.pause = 1 + rnd() * 4; } quad(i, o.x === undefined ? o.a[0] : o.x, L.walkY, o.z === undefined ? o.a[1] : o.z, 1.1, 2.2); });
-        swimmers.forEach(function (o, i) { var p = advance(o, aset, AS, dt); quad(nW + i, p[0], -.15 + Math.sin(time * 2 + i) * .05, p[1], 2.4, 1.2); });
+        var H = 1.75, sideOf = function (o) { return o.dir ? o.dir[0] * rx + o.dir[1] * rz : 1; };
+        walkers.forEach(function (o, i) {
+          var frame = 4;   // standing while paused, else the four walking frames by distance covered
+          if (o.pause > 0) { o.pause -= dt; } else { var p = advance(o, wset, WS, dt); o.x = p[0]; o.z = p[1]; o.dist += dt * o.sp; frame = Math.floor(o.dist / .45) % 4; if (rnd() < .002) o.pause = 1 + rnd() * 4; }
+          setCell(i, SP.walkCell(o.type, frame), sideOf(o) < 0);
+          quad(i, o.x === undefined ? o.a[0] : o.x, L.walkY, o.z === undefined ? o.a[1] : o.z, H * SP.aspect, H);
+        });
+        swimmers.forEach(function (o, i) {
+          var p = advance(o, aset, AS, dt), h = H;   // same cell scale as the walkers, so a swimmer's head matches a walker's
+          setCell(nW + i, SP.swimCell(Math.floor(time * 1.2 + o.phase)), sideOf(o) < 0);
+          quad(nW + i, p[0], -h * SP.swimLine + Math.sin(time * 2 + i) * .04, p[1], h * SP.aspect, h);
+        });
+        ua.needsUpdate = true;
         boats.forEach(function (o) { var p = advance(o, aset, AS, dt), dx = o.b[0] - o.a[0], dz = o.b[1] - o.a[1]; if (dx || dz) { var want = Math.atan2(dx, dz), d = ((want - o.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI; o.yaw += d * Math.min(1, dt * 1.5); } o.m.position.set(p[0], .02 + Math.sin(time * 1.6 + o.ph) * .06, p[1]); o.m.rotation.set(Math.sin(time * 1.3 + o.ph) * .03, o.yaw, 0); });
         pa.needsUpdate = true;
       });

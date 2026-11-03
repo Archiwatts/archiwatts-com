@@ -75,13 +75,21 @@
   /* Swimmers, in the same pen: a head and shoulders breaking the water, one arm reaching forward, rings of ripples.
      The water line sits at 3/4 of the cell height; frames 0-1 alternate the stroke. */
   function drawSwimmer(c, cell, k) {
+    // drawn large in the cell (head, shoulders, one arm out of the water, a ring of ripples) so a swimmer reads at site scale
     var r = srand(4400 + k * 37), ox = (cell % ACOLS) * CW, oy = Math.floor(cell / ACOLS) * CH, cx = ox + 64, wl = oy + CH * .75;
-    c.strokeStyle = 'rgba(236,250,246,.9)'; c.lineWidth = 5; c.beginPath(); c.ellipse(cx, wl + 4, 52, 11, 0, 0, Math.PI * 2); c.stroke();
-    pen(c, [[cx - 54, wl + 3], [cx - 20, wl - 2], [cx + 18, wl + 1], [cx + 54, wl - 1]], 2.4, r, 1);
-    pen(c, [[cx - 40, wl + 14], [cx - 8, wl + 12], [cx + 30, wl + 15]], 1.6, r, .8);
-    c.beginPath(); c.ellipse(cx - 6, wl - 26, 13, 15, 0, 0, Math.PI * 2); c.fillStyle = 'rgba(251,249,243,.95)'; c.fill(); pen(c, (function () { var p = []; for (var i = 0; i <= 9; i++) { var a = .6 + i / 9 * (Math.PI * 2 - .5); p.push([cx - 6 + Math.cos(a) * 13, wl - 26 + Math.sin(a) * 15]); } return p; })(), 3.2, r, .7);
-    pen(c, [[cx - 26, wl - 4], [cx - 14, wl - 10], [cx + 10, wl - 10], [cx + 22, wl - 3]], 3.4, r, 1.2);
-    if (k % 2) pen(c, [[cx + 16, wl - 8], [cx + 34, wl - 34], [cx + 52, wl - 30]], 3, r, 1); else pen(c, [[cx - 22, wl - 8], [cx - 42, wl - 30], [cx - 58, wl - 22]], 3, r, 1);
+    c.strokeStyle = 'rgba(236,250,246,.95)'; c.lineWidth = 6; c.beginPath(); c.ellipse(cx, wl + 8, 58, 16, 0, 0, Math.PI * 2); c.stroke();
+    c.lineWidth = 4; c.beginPath(); c.ellipse(cx, wl + 9, 40, 10, 0, 0, Math.PI * 2); c.stroke();
+    pen(c, [[cx - 60, wl + 4], [cx - 22, wl - 2], [cx + 20, wl + 2], [cx + 60, wl - 1]], 3, r, 1);
+    pen(c, [[cx - 44, wl + 20], [cx - 8, wl + 17], [cx + 34, wl + 21]], 2, r, .8);
+    // shoulders and head
+    c.beginPath(); c.ellipse(cx - 4, wl - 12, 30, 14, 0, Math.PI, 0); c.fillStyle = 'rgba(251,249,243,.95)'; c.fill();
+    pen(c, [[cx - 34, wl - 2], [cx - 22, wl - 18], [cx + 12, wl - 20], [cx + 26, wl - 3]], 4.2, r, 1.2);
+    c.beginPath(); c.ellipse(cx - 4, wl - 44, 19, 22, 0, 0, Math.PI * 2); c.fillStyle = 'rgba(251,249,243,.97)'; c.fill();
+    pen(c, (function () { var p = []; for (var i = 0; i <= 10; i++) { var a = .6 + i / 10 * (Math.PI * 2 - .5); p.push([cx - 4 + Math.cos(a) * 19, wl - 44 + Math.sin(a) * 22]); } return p; })(), 4, r, .7);
+    pen(c, [[cx - 22, wl - 52], [cx - 16, wl - 66], [cx + 8, wl - 67], [cx + 16, wl - 54]], 3.4, r, .8);   // hair
+    // one arm reaching out of the water, alternating side by frame
+    if (k % 2) pen(c, [[cx + 20, wl - 12], [cx + 40, wl - 52], [cx + 58, wl - 46]], 4, r, 1);
+    else pen(c, [[cx - 28, wl - 12], [cx - 46, wl - 50], [cx - 60, wl - 40]], 4, r, 1);
   }
   var cache = null;
   function atlas() {

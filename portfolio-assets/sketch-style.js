@@ -3,9 +3,11 @@
    Washes are done in the material shader (no extra textures); the ink outline is a layer of screen-space line strokes built from
    precomputed feature edges (light/edges.bin). Configure with window.SKETCH_STYLE = { edges: 'light/edges', mode: 'watercolor' }.
    Line weight follows the zoom: the width is worldW metres on the model, kept between minW and maxW pixels, and edges shorter than
-   minPx pixels on screen are dropped. Set these for a model much smaller or larger than the Hive's. */
+   minPx pixels on screen are dropped. Set these for a model much smaller or larger than the Hive's.
+   thin: a regex of part names whose lines are drawn light (at 40% of the width), e.g. dense round things like tree trunks. */
 (function () {
   var CFG = window.SKETCH_STYLE; if (!CFG) return;
+  var thinRe = CFG.thin ? new RegExp(CFG.thin) : null;
   function ready() { return window.newProjectViewer && window.newProjectViewer.ready && window.daylightContext && window.daylightContext.scene; }
   var tries = 0;
   (function wait() {
@@ -14,7 +16,7 @@
   })();
   function redraw(ctx) { if (ctx.controls && ctx.controls.dispatchEvent) ctx.controls.dispatchEvent({ type: 'change' }); }
   // the Hive panel skin keeps its own blue-grey and gold (the sepia wash would turn every panel tan)
-  var SKIP = /^Hive (sketch|canal hatch|road markings|planting bed)|Hive sketch|Hive plan overlay|Amenity pool water|^Hive (hex|balcony|window) panel$|^Hive hex mesh panel$|^Phal (water hatch|life sprites)$|^Tranquil (pond water|life sprites)$|^Tranquil diagram /;
+  var SKIP = /^Hive (sketch|canal hatch|road markings|planting bed)|Hive sketch|Hive plan overlay|Amenity pool water|^Hive (hex|balcony|window) panel$|^Hive hex mesh panel$|^Phal (water hatch|life sprites)$|^Tranquil (pond water|life sprites|section cap)$|^NZS life /;
   var MODES = {
     realistic: { style: 0, bg: null, edges: false, paper: 0, ink: [.18, .165, .15] },
     watercolor: { style: 1, bg: 0xf4ecdc, edges: true, paper: .55, ink: [.18, .165, .15] },
@@ -40,9 +42,18 @@
       '  if (st < 1.5) { float gr = (skN(gl_FragCoord.xy * .45) - .5) * .05 + (skN(vSkW.xz * 3.1 + vSkW.y) - .5) * .035; o = skRamp(clamp(lq + gr, 0., 1.)) + (col - l) * uChroma; }\n' +
       '  else if (st < 2.5) { float g = mix(.30,.985,lq); o = vec3(g, g*.985, g*.955); }\n' +
       '  else { float b = floor(l*3.+.5)/3.; float g = mix(.70,1.0,clamp(b+.1,0.,1.)); o = vec3(g, g*.99, g*.965); }\n' +
-      '  gl_FragColor.rgb = o; }\n';
+      '  gl_FragColor.rgb = o; }\n' +
+      // section cut: when the section box cuts a solid, its inside faces show through the cut. Drawn as a filled region:
+      // dark grey with black diagonal hatching in screen space, the way a cut reads in Revit.
+      '#if defined(SK_CAP) && NUM_CLIPPING_PLANES > 0\n' +
+      'if (!gl_FrontFacing) { float hl = mod(gl_FragCoord.x + gl_FragCoord.y, 10.0); gl_FragColor = vec4(hl < 2.2 ? vec3(.03, .03, .035) : vec3(.24, .24, .25), 1.0); }\n' +
+      '#endif\n';
+    // parts that get the hatched cut: solid, opaque parts only (not thin shells, leaves or water: SKETCH_STYLE.noCap)
+    var noCapRe = CFG.noCap ? new RegExp(CFG.noCap) : null;
     function patch(m) {
       if (patched.has(m) || SKIP.test(m.name || '') || !m.isMeshStandardMaterial) return; patched.add(m);
+      var cap = CFG.sectionHatch !== false && !m.transparent && !(noCapRe && noCapRe.test(m.name || ''));
+      if (cap) { m.side = 2; m.defines = Object.assign({}, m.defines, { SK_CAP: '' }); }
       var ctxFlag = { value: /context/i.test(m.name || '') || (m.map && /context/i.test(m.map.name || '')) ? 1 : 0 };
       var prev = m.onBeforeCompile;
       m.onBeforeCompile = function (shader, renderer) {
@@ -51,7 +62,7 @@
         shader.vertexShader = 'varying vec3 vSkW;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vSkW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
         shader.fragmentShader = FRAG_HEAD + shader.fragmentShader.replace('#include <dithering_fragment>', FRAG_MAIN);
       };
-      m.customProgramCacheKey = function () { return 'sk-wash-1'; };
+      m.customProgramCacheKey = function () { return 'sk-wash-1' + (cap ? '-cap' : ''); };
       m.needsUpdate = true;
     }
     function patchAll() {
@@ -74,10 +85,12 @@
         if (Attr || !o.isMesh || !o.geometry) return; var g = o.geometry;
         [g.index && g.index.constructor, g.index && Object.getPrototypeOf(g.index.constructor), g.attributes.normal && g.attributes.normal.constructor, g.attributes.position && g.attributes.position.constructor].forEach(function (C) { if (!Attr && typeof C === 'function' && plain(C)) Attr = C; });
       });
-      if (!Mesh || !std) return;
+      // the line material starts from a lit material, or, on a model of baked (unlit) materials only, from whatever it uses
+      var lineBase = std; if (!lineBase) scene.traverse(function (o) { if (!lineBase && o.isMesh && o.material && !Array.isArray(o.material)) lineBase = o.material; });
+      if (!Mesh || !lineBase) return;
       var q = new Int16Array(bin), range = [0, 1, 2].map(function (i) { return meta.max[i] - meta.min[i]; });
       edgeU.uQMin.value = meta.min; edgeU.uQRange.value = range;
-      edgeMat = std.clone(); edgeMat.name = 'Hive sketch outline'; edgeMat.map = null; edgeMat.normalMap = null; edgeMat.roughnessMap = null; edgeMat.side = 2; edgeMat.transparent = false; edgeMat.fog = false;
+      edgeMat = lineBase.clone(); edgeMat.name = 'Hive sketch outline'; edgeMat.map = null; edgeMat.normalMap = null; edgeMat.roughnessMap = null; edgeMat.side = 2; edgeMat.transparent = false; edgeMat.fog = false;
       edgeMat.onBeforeCompile = function (shader) {
         Object.keys(edgeU).forEach(function (k) { shader.uniforms[k] = edgeU[k]; });
         shader.vertexShader = 'attribute vec3 other; attribute vec4 meta; uniform vec2 uRes; uniform float uWorldW; uniform float uMinW; uniform float uMaxW; uniform float uMinPx; uniform vec3 uQMin; uniform vec3 uQRange; varying vec3 vSk; varying float vSide;\n' + shader.vertexShader
@@ -90,7 +103,7 @@
             'vec4 ca = projectionMatrix * a4, cb = projectionMatrix * b4;\n' +
             'vec2 sa = ca.xy / ca.w, sb = cb.xy / cb.w; vec2 dir = (sb - sa) * uRes; float dl = length(dir); dir = dl > 1e-5 ? dir / dl : vec2(1.0, 0.0);\n' +
             'vec2 nrm = vec2(-dir.y, dir.x); vec4 cc = endf < .5 ? ca : cb; float dep = max(.5, endf < .5 ? -a4.z : -b4.z);\n' +
-            'float focal = projectionMatrix[1][1] * uRes.y * .5; float wpx = clamp(uWorldW * (meta.w > .5 ? 1.25 : 1.0) * focal / dep, uMinW, uMaxW); wpx = min(wpx, max(uMinW, dl * .06));\n' +
+            'float focal = projectionMatrix[1][1] * uRes.y * .5; float wpx = clamp(uWorldW * (meta.w > .5 ? 1.25 : 1.0) * focal / dep, uMinW, uMaxW); wpx = min(wpx, max(uMinW, dl * .06)); if (meta.w > 1.5) wpx *= .4;\n' +
             'cc.xy += nrm * sd * wpx / uRes * cc.w;\n' +
             'if (gone || dl * .5 < uMinPx) cc = vec4(2.0, 2.0, 2.0, 1.0);\n' +            'gl_Position = cc; vSk = vec3(meta.z / 255.0, endf, meta.w); vSide = sd;')
           .replace('#include <begin_vertex>', 'vec3 transformed = vec3(position);');
@@ -107,7 +120,7 @@
           for (var v = 0; v < 4; v++) {
             var vi = e * 4 + v, end = v >> 1, side = v & 1;
             for (var k = 0; k < 3; k++) { P[vi * 3 + k] = q[s + k]; O[vi * 3 + k] = q[s + 3 + k]; }
-            M[vi * 4] = side; M[vi * 4 + 1] = end; M[vi * 4 + 2] = id; M[vi * 4 + 3] = /context/.test(m.name) ? 1 : 0;
+            M[vi * 4] = side; M[vi * 4 + 1] = end; M[vi * 4 + 2] = id; M[vi * 4 + 3] = thinRe && thinRe.test(m.name) ? 2 : /context/.test(m.name) ? 1 : 0;   // 2: a light line (SKETCH_STYLE.thin), 1: context
           }
           I.push(e * 4, e * 4 + 1, e * 4 + 2, e * 4 + 1, e * 4 + 3, e * 4 + 2);
         }
@@ -144,7 +157,7 @@
       document.documentElement.setAttribute('data-sk', name);
       redraw(ctx);
     }
-    window.sketchStyle = { u: edgeU, setMode: apply, mode: function () { return current; }, edges: function () { return edgeMeshes; } };
+    window.sketchStyle = { u: edgeU, setMode: apply, patch: patch, mode: function () { return current; }, edges: function () { return edgeMeshes; } };
     apply(current);
   }
 })();

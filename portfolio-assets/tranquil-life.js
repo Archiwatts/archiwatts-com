@@ -93,9 +93,66 @@
     });
     var wset = new Set(walk), sset = new Set(swim);
 
+    /* ---- section cut through the ground: the site's ground is open surfaces, not a closed solid, so where the section box cuts
+       below it there is nothing to fill. Each face of the box carries a cut face drawn dark grey with diagonal hatching wherever
+       it lies inside the earth: below the ground line (read from the model into a height map) and above the site's base. ---- */
+    (function () {
+      var HC = .2, X0 = 1e9, X1 = -1e9, Z0 = 1e9, Z1 = -1e9, base = 1e9, earth = [];
+      scene.traverse(function (o) { if (o.isMesh && /terrain_bank|spring_bank|spring_bed/.test(o.name || '')) earth.push(o); });
+      if (!earth.length) return;
+      earth.forEach(function (o) { eachTri(o, function (a, b, c) { [a, b, c].forEach(function (p) { X0 = Math.min(X0, p[0]); X1 = Math.max(X1, p[0]); Z0 = Math.min(Z0, p[2]); Z1 = Math.max(Z1, p[2]); base = Math.min(base, p[1]); }); }); });
+      var NX = Math.ceil((X1 - X0) / HC) + 1, NZ = Math.ceil((Z1 - Z0) / HC) + 1, H = new Float32Array(NX * NZ).fill(-1e9), H0 = base, H1 = -1e9;
+      earth.forEach(function (o) {
+        eachTri(o, function (a, b, c) {
+          var d = (b[2] - c[2]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[2] - c[2]); if (Math.abs(d) < 1e-9) return;
+          for (var ix = Math.max(0, Math.floor((Math.min(a[0], b[0], c[0]) - X0) / HC)); ix <= Math.min(NX - 1, Math.ceil((Math.max(a[0], b[0], c[0]) - X0) / HC)); ix++)
+            for (var iz = Math.max(0, Math.floor((Math.min(a[2], b[2], c[2]) - Z0) / HC)); iz <= Math.min(NZ - 1, Math.ceil((Math.max(a[2], b[2], c[2]) - Z0) / HC)); iz++) {
+              var x = X0 + ix * HC, z = Z0 + iz * HC, l1 = ((b[2] - c[2]) * (x - c[0]) + (c[0] - b[0]) * (z - c[2])) / d, l2 = ((c[2] - a[2]) * (x - c[0]) + (a[0] - c[0]) * (z - c[2])) / d, l3 = 1 - l1 - l2;
+              if (l1 < -.02 || l2 < -.02 || l3 < -.02) continue; var y = l1 * a[1] + l2 * b[1] + l3 * c[1], k = iz * NX + ix; if (y > H[k]) { H[k] = y; if (y > H1) H1 = y; }
+            }
+        });
+      });
+      // the height map as a texture: 16-bit heights in red and green, blue marks where there is ground at all
+      var cv = document.createElement('canvas'); cv.width = NX; cv.height = NZ; var g2 = cv.getContext('2d'), img = g2.createImageData(NX, NZ);
+      for (var k = 0; k < NX * NZ; k++) { var ok = H[k] > -1e8, v = ok ? Math.round(Math.max(0, Math.min(1, (H[k] - H0) / (H1 - H0))) * 65535) : 0; img.data[k * 4] = v >> 8; img.data[k * 4 + 1] = v & 255; img.data[k * 4 + 2] = ok ? 255 : 0; img.data[k * 4 + 3] = 255; }
+      g2.putImageData(img, 0, 0);
+      var ht = new Tex(cv); ht.flipY = false; ht.magFilter = ht.minFilter = 1003; ht.generateMipmaps = false; ht.colorSpace = ''; ht.needsUpdate = true;
+      var U = { uHt: { value: ht }, uHB: { value: [X0, Z0, (NX - 1) * HC, (NZ - 1) * HC] }, uHY: { value: [H0, H1] } };
+      var cm = std.clone(); cm.name = 'Tranquil section cap'; cm.map = null; cm.normalMap = null; cm.roughnessMap = null; cm.aoMap = null; cm.side = 2; cm.transparent = false; cm.opacity = 1;
+      cm.onBeforeCompile = function (sh) {
+        Object.keys(U).forEach(function (n) { sh.uniforms[n] = U[n]; });
+        sh.vertexShader = 'varying vec3 vCapW;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vCapW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+        sh.fragmentShader = 'uniform sampler2D uHt; uniform vec4 uHB; uniform vec2 uHY; varying vec3 vCapW;\n' + sh.fragmentShader.replace('#include <dithering_fragment>',
+          '#include <dithering_fragment>\n' +
+          'vec2 huv = (vCapW.xz - uHB.xy) / uHB.zw; if (huv.x < 0.0 || huv.y < 0.0 || huv.x > 1.0 || huv.y > 1.0) discard;\n' +
+          'vec4 ht = texture2D(uHt, huv); if (ht.b < .5) discard; float gy = mix(uHY.x, uHY.y, (ht.r * 65280.0 + ht.g * 255.0) / 65535.0);\n' +
+          'if (vCapW.y > gy || vCapW.y < uHY.x) discard;\n' +
+          'float hl = mod(gl_FragCoord.x + gl_FragCoord.y, 10.0); gl_FragColor = vec4(hl < 2.2 ? vec3(.03, .03, .035) : vec3(.24, .24, .25), 1.0);');
+      };
+      cm.customProgramCacheKey = function () { return 'tr-section-cap'; }; cm.needsUpdate = true;
+      // six quads, one per face of the section box, rebuilt from the box's cutting planes every frame
+      var CP = new Float32Array(6 * 12), CN = new Float32Array(6 * 12), CI = [];
+      for (var f = 0; f < 6; f++) CI.push(f * 4, f * 4 + 1, f * 4 + 2, f * 4, f * 4 + 2, f * 4 + 3);
+      var cg = new BG(), cpa = new Attr(CP, 3); cg.setAttribute('position', cpa); cg.setAttribute('normal', new Attr(CN, 3)); cg.setIndex(CI);
+      var cap = new Mesh(cg, cm); cap.name = 'Tranquil section cap'; cap.frustumCulled = false; cap.visible = false; scene.add(cap);
+      anim.push(function () {
+        var planes = std.clippingPlanes; if (!planes || planes.length < 6) { cap.visible = false; return; }
+        var lo = [-1e4, -1e4, -1e4], hi = [1e4, 1e4, 1e4];
+        planes.forEach(function (p) { var n = p.normal, ax = Math.abs(n.x) > .9 ? 0 : Math.abs(n.y) > .9 ? 1 : 2, s = [n.x, n.y, n.z][ax]; if (s > 0) lo[ax] = Math.max(lo[ax], -p.constant / s); else hi[ax] = Math.min(hi[ax], p.constant / -s); });
+        var e = .002, q = 0;
+        function face(ax, v) {   // a quad on the plane axis = v, spanning the box on the other two axes
+          var u = (ax + 1) % 3, w = (ax + 2) % 3, cs = [[lo[u], lo[w]], [hi[u], lo[w]], [hi[u], hi[w]], [lo[u], hi[w]]];
+          cs.forEach(function (c, i) { var p = [0, 0, 0]; p[ax] = v; p[u] = c[0]; p[w] = c[1]; CP[q * 12 + i * 3] = p[0]; CP[q * 12 + i * 3 + 1] = p[1]; CP[q * 12 + i * 3 + 2] = p[2]; CN[q * 12 + i * 3 + ax] = 1; });
+          q++;
+        }
+        for (var ax = 0; ax < 3; ax++) { face(ax, lo[ax] + e); face(ax, hi[ax] - e); }
+        cpa.needsUpdate = true; cap.visible = true;
+      });
+    })();
+
     /* ---- sprites: the shared sketch people, quads turned to the camera every frame ---- */
     var SP = window.SketchPeople, atlas = tex(SP.atlas(), false), rnd = srand(2207);
-    var nW = Math.min(walk.length ? (mobile ? 14 : 36) : 0, walk.length), nS = Math.min(swim.length ? (mobile ? 4 : 10) : 0, swim.length), N = nW + nS;
+    var nW = Math.min(walk.length ? (mobile ? 10 : 26) : 0, walk.length), nS = Math.min(swim.length ? (mobile ? 4 : 12) : 0, swim.length), N = nW + nS;
     if (!N) { window.tranquilLife = { walkers: 0, swimmers: 0 }; return; }
     var P = new Float32Array(N * 12), UV = new Float32Array(N * 8), NN = new Float32Array(N * 12), I = [];
     for (var q = 0; q < N; q++) { for (var v = 0; v < 4; v++) NN[q * 12 + v * 3 + 1] = 1; I.push(q * 4, q * 4 + 1, q * 4 + 2, q * 4, q * 4 + 2, q * 4 + 3); }
@@ -133,9 +190,9 @@
         setCell(i, SP.walkCell(o.type, frame), mv < 0); quad(i, p[0], p[2], p[1], 1.75 * SP.aspect, 1.75);
       });
       swimmers.forEach(function (o, i) {
-        var p = advance(o, sset, null, dt), k = nW + i, h = 1.75 * SP.aspect * 1.6;
+        var p = advance(o, sset, null, dt), k = nW + i, h = 1.75;   // same cell scale as the walkers, so a swimmer's head matches a walker's
         setCell(k, SP.swimCell(Math.floor(time * 1.2 + o.phase)), (o.dir ? o.dir[0] * rx + o.dir[1] * rz : 1) < 0);
-        quad(k, p[0], p[2] - h * SP.swimLine + Math.sin(time * 2 + o.phase) * .03, p[1], h * SP.aspect * 2, h);
+        quad(k, p[0], p[2] - h * SP.swimLine + Math.sin(time * 2 + o.phase) * .03, p[1], h * SP.aspect, h);
       });
       pa.needsUpdate = true; ua.needsUpdate = true;
     });
@@ -144,7 +201,8 @@
     /* ---- Diagram view: each zone in its own colour, the site context pale ---- */
     var ZONE = { 'zone-1': '#e3b24d', 'zone-2': '#e8706a', 'zone-3': '#72a8dc', 'zone-4': '#9c7fc4', 'zone-5': '#5fae8f', 'zone-6': '#7c7c80' }, PALE = '#efe4c8', GREEN = '#cfe0b8';
     var orig = new Map(), flatCache = {}, diag = false;
-    function flat(hex) { if (flatCache[hex]) return flatCache[hex]; var m = std.clone(); m.name = 'Tranquil diagram ' + hex; m.map = null; m.normalMap = null; m.roughnessMap = null; m.aoMap = null; m.vertexColors = false; m.color.set(hex); m.emissive.set(hex); m.emissiveIntensity = .2; m.roughness = 1; m.metalness = 0; m.transparent = false; m.opacity = 1; m.needsUpdate = true; return (flatCache[hex] = m); }
+    function flat(hex) { if (flatCache[hex]) return flatCache[hex]; var m = std.clone(); m.name = 'Tranquil diagram ' + hex; m.map = null; m.normalMap = null; m.roughnessMap = null; m.aoMap = null; m.vertexColors = false; m.color.set(hex); m.emissive.set(hex); m.emissiveIntensity = .2; m.roughness = 1; m.metalness = 0; m.transparent = false; m.opacity = 1; m.needsUpdate = true; if (window.sketchStyle && window.sketchStyle.patch) window.sketchStyle.patch(m);   // the section cut hatch
+      return (flatCache[hex] = m); }
     function setDiagram(on) {
       diag = on;
       scene.traverse(function (o) {
