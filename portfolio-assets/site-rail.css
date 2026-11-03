@@ -3,6 +3,8 @@
 :root{--sr-w:176px;--sr-panel:#26242a;--sr-panel2:#302d35;--sr-line:#4d4953;--sr-ink:#f2f0f4;--sr-mute:#c9c4d0;--sr-pink:#e0557c;--sr-pinkdeep:#d84c74;--sr-tile:#d4d2d6}
 #portfolio-rail{width:var(--sr-w)!important;padding:20px 12px!important;background:var(--sr-panel)!important;border-right:1px solid var(--sr-line)!important;color:var(--sr-ink)!important;display:flex!important;flex-direction:column;gap:22px;font-family:Archivo,system-ui,sans-serif!important}
 #portfolio-rail svg{margin:0!important}
+#portfolio-rail>nav.project-links,#portfolio-rail>.project-links{display:none!important}
+#portfolio-rail{overflow-y:auto!important;scrollbar-width:thin;scrollbar-color:#4d4953 transparent}
 @media (min-width:901px){main#app{left:var(--sr-w)!important}}
 #portfolio-rail .sr-mark{display:block!important;width:62px;height:86px;margin:0 auto!important;padding:6px!important;background:var(--sr-tile)!important;border:1px solid #99949e;border-radius:8px!important;flex:none;box-sizing:border-box}
 #portfolio-rail .sr-mark svg{width:100%!important;height:100%!important;display:block;overflow:visible;filter:drop-shadow(0 0 .6px #fff)}
@@ -33,7 +35,7 @@
   #mobile-model-chrome .mm-project strong{color:var(--sr-ink)!important;font-size:15px}
   #mobile-model-chrome .sr-menu-pill{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border:1.5px solid var(--sr-ink);border-radius:999px;color:var(--sr-ink);font:700 14px Archivo,system-ui,sans-serif;flex:none}
   #mobile-model-chrome .mm-project[aria-expanded=true] .sr-menu-pill{background:var(--sr-ink);color:#1c1b1e}
-  #mobile-model-chrome .mm-projects{background:var(--sr-panel)!important;border-bottom:1px solid var(--sr-line)!important;box-shadow:0 14px 24px #0008!important;padding:14px 16px 18px!important}
+  #mobile-model-chrome .mm-projects{max-height:calc(100dvh - 96px);overflow-y:auto;overscroll-behavior:contain;background:var(--sr-panel)!important;border-bottom:1px solid var(--sr-line)!important;box-shadow:0 14px 24px #0008!important;padding:14px 16px 18px!important}
   #mobile-model-chrome .sr-links{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
   #mobile-model-chrome .sr-links>li>a{display:flex!important;align-items:center;gap:9px;min-height:44px;padding:8px 10px!important;border:1.5px solid var(--sr-line)!important;border-radius:6px!important;background:var(--sr-panel2)!important;font:700 14px Archivo,system-ui,sans-serif!important;color:var(--sr-ink)!important;text-decoration:none}
   #mobile-model-chrome .sr-links>li>a::before{content:"";width:8px;height:8px;border-radius:50%;border:2px solid currentColor;flex:none}
@@ -42,4 +44,38 @@
   #mobile-model-chrome .sr-proj{list-style:none;margin:6px 0 2px 10px;padding:0 0 0 10px;border-left:1px solid var(--sr-line);display:flex;flex-direction:column;gap:2px}
   #mobile-model-chrome .sr-proj a{display:block!important;min-height:0!important;height:auto!important;line-height:1.4!important;padding:9px 6px!important;font:500 13px Archivo,system-ui,sans-serif!important;color:var(--sr-mute)!important;border:0!important;border-radius:4px!important;background:none!important;text-decoration:none}
   #mobile-model-chrome .sr-proj a[aria-current=page]{color:#1c1b1e!important;background:var(--sr-ink)!important;font-weight:700!important}
+}
+/* phones: the project controls inside the bottom sheet were laid out as one squeezed row (the panel is a flex row on desktop widths):
+   stack them as a column of cards (views, snapshot, appearance, layers, section box), with 44px touch targets */
+@media (max-width:900px){
+  #mobile-model-chrome .mm-content .building-panel{display:block!important;width:auto!important;max-width:none!important;height:auto!important;margin:0!important;padding:6px 16px calc(28px + env(safe-area-inset-bottom,0px))!important;overflow:visible!important;font-family:Archivo,system-ui,sans-serif}
+  #mobile-model-chrome .mm-content .building-panel>small:first-child{display:block;margin:6px 0 2px;font:700 11px Archivo,system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#ffb1c8!important}
+  #mobile-model-chrome .mm-content .building-panel>h2{margin:10px 0 4px;font:800 24px/1.15 Archivo,system-ui,sans-serif;color:#f2f0f4}
+  #mobile-model-chrome .mm-content .pp-viewbar{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:6px 0 4px;padding:4px;background:#26242a;border:1.5px solid #4d4953;border-radius:12px}
+  #mobile-model-chrome .mm-content .pp-viewbar button{min-height:44px;width:auto;border:0!important;background:transparent!important;font:700 13px Archivo,system-ui,sans-serif}
+  #mobile-model-chrome .mm-content .pp-viewbar button[aria-pressed=true]{background:#e0557c!important;color:#1c1b1e!important}
+  #mobile-model-chrome .mm-content .pp{display:grid;gap:12px;margin-top:12px}
+  #mobile-model-chrome .mm-content .pp>section{background:#2e2c33;border:1px solid #4d4953;border-radius:14px;padding:14px}
+  #mobile-model-chrome .mm-content .pp>hr{display:none}
+  #mobile-model-chrome .mm-content .pp *{box-sizing:border-box}
+  #mobile-model-chrome .mm-content .pp .seg button[aria-pressed=true],#mobile-model-chrome .mm-content .pp .tabs button[aria-selected=true]{background:#e0557c!important;border-color:#e0557c!important;color:#1c1b1e!important}
+  #mobile-model-chrome .mm-content .pp .chips button[aria-pressed=true]{background:#3f3a46!important;border-color:#f2f0f4!important}
+  #mobile-model-chrome .mm-content .pp .seg{grid-auto-flow:row;grid-template-columns:repeat(3,1fr)}
+  #mobile-model-chrome .mm-content .pp .seg button,#mobile-model-chrome .mm-content .pp .tabs button,#mobile-model-chrome .mm-content .pp .acts button,#mobile-model-chrome .mm-content .pp .views button{min-height:46px;width:auto;max-width:none}
+  #mobile-model-chrome .mm-content .pp .tabs{grid-auto-flow:row;grid-template-columns:repeat(3,1fr)}
+  #mobile-model-chrome .mm-content .pp .chips{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #mobile-model-chrome .mm-content .pp .chips button{min-height:46px;width:auto;font-size:13px}
+  #mobile-model-chrome .mm-content .pp label.sel{flex-wrap:wrap}
+  #mobile-model-chrome .mm-content .pp select{min-height:44px;flex:1;min-width:150px}
+  #mobile-model-chrome .mm-content .pp-keep{margin:12px 0 0;padding:14px;background:#2e2c33;border:1px solid #4d4953;border-radius:14px;text-align:center}
+  #mobile-model-chrome .mm-content .pp-keep a{display:flex;align-items:center;justify-content:center;min-height:46px;border:1.5px solid #e0557c;border-radius:10px;color:#ffd0dd!important;font:700 13px Archivo,system-ui,sans-serif;text-decoration:none;padding:0 12px}
+  #mobile-model-chrome .mm-content .model-panel-options{display:block!important;margin-top:12px;padding:0;border:0}
+  #mobile-model-chrome .mm-content .model-panel-options details{background:#2e2c33;border:1px solid #4d4953;border-radius:14px;padding:12px 14px}
+  #mobile-model-chrome .mm-content .model-panel-options summary{min-height:44px;display:flex;align-items:center;font:700 12px Archivo,system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase}
+  #mobile-model-chrome .mm-content .section-sliders{display:grid;gap:10px}
+  #mobile-model-chrome .mm-content .section-sliders label{display:grid;gap:4px}
+  #mobile-model-chrome .mm-content .section-sliders input[type=range]{width:100%;min-height:32px}
+  #mobile-model-chrome .mm-content .model-panel-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  #mobile-model-chrome .mm-content .model-panel-buttons button{min-height:46px}
+  #mobile-model-chrome .mm-content #model-stats{display:block;margin:14px 0 0;text-align:center;font-size:11px;color:#c9c4d0}
 }

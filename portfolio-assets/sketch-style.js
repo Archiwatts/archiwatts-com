@@ -132,7 +132,7 @@
       });
     }
     var base = CFG.edges + (mobile ? '-lite' : '');
-    Promise.all([fetch(base + '.json').then(function (r) { return r.json(); }), fetch(base + '.bin').then(function (r) { return r.arrayBuffer(); })]).then(function (res) {
+    if (CFG.edges) Promise.all([fetch(base + '.json').then(function (r) { return r.json(); }), fetch(base + '.bin').then(function (r) { return r.arrayBuffer(); })]).then(function (res) {
       buildEdges(res[0], res[1]); apply(current);
     }).catch(function (e) { console.warn('Sketch outline unavailable:', e && e.message || e); });
     // ---- paper layer: grain, fibres and a soft vignette over the canvas ----
@@ -146,6 +146,7 @@
     })();
     var host = ctx.renderer.domElement.parentElement || document.body; if (getComputedStyle(host).position === 'static') host.style.position = 'relative'; host.appendChild(paper);
     var current = CFG.mode || 'watercolor';
+    if (!CFG.edges) setTimeout(function () { apply(current); }, 0);   // no outline file: washes only
     function apply(name) {
       var m = MODES[name] || MODES.realistic; current = name; var phased = name === 'diagram' && !!window.hivePhases; if (phased) m = { style: 0, bg: 0xf4f1ea, edges: true, paper: .15, ink: [.17, .16, .15] };
       shared.uStyle.value = m.style; patchAll();

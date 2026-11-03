@@ -34,7 +34,18 @@
     document.head.appendChild(css);
     // keep the full-detail link, restyled as the last action
     var full = panel.querySelector('a.full-detail'), fullP = full && full.closest('p'); if (fullP) fullP.classList.add('pp-keep');
-    var layers = (C.layers || []).map(function (l) { return { n: l.n, re: new RegExp(l.re, 'i'), on: true, meshes: null }; });
+    // layers: 'auto' builds them from the model's own names (meshes named <Group>__<Material>: one layer per material, the
+    // "Site_context" group kept out as the surrounding context)
+    var layerCfg = C.layers;
+    if (layerCfg === 'auto') {
+      // meshes named <Group>__<Material> (a layer per material, the "Site_context" group left out as the surrounding context), else a
+      // layer per mesh name (Hull, Deck, Timber ...) with any trailing _1, _2 folded in
+      var seen = {}; layerCfg = [];
+      ctx.scene.traverse(function (o) { if (!o.isMesh || (o.userData && o.userData.skEdge)) return; var m = /__([A-Za-z0-9 ]+)$/.exec(o.name || ''); if (!m || /^Site_context/.test(o.name)) return; var k = m[1]; if (!seen[k]) { seen[k] = 1; layerCfg.push({ n: k.replace(/([a-z])([A-Z])/g, '$1 $2'), re: '__' + k + '$' }); } });
+      if (!layerCfg.length) ctx.scene.traverse(function (o) { if (!o.isMesh || (o.userData && o.userData.skEdge) || !o.name) return; var k = o.name.replace(/_\d+$/, ''); if (/lines$/.test(k) || seen[k]) return; seen[k] = 1; layerCfg.push({ n: k.replace(/_/g, ' '), re: '^' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(_\\d+)?$' }); });
+    }    if (Array.isArray(layerCfg)) C.layers = layerCfg;   // resolved, for the diagram view
+    var layers = (layerCfg || []).map(function (l) { return { n: l.n, re: new RegExp(l.re, 'i'), on: true, meshes: null }; });
+    if (C.context === 'auto') { var hasCtx = false; ctx.scene.traverse(function (o) { if (o.name && /^Site_context/.test(o.name)) hasCtx = true; }); C.context = hasCtx ? '^Site_context' : null; }
     var ctxRe = C.context ? new RegExp(C.context, 'i') : null, ctxMeshes = null, ctxOrig = new Map(), PALE_CTX = null;
     function meshesFor(re) { var out = []; ctx.scene.traverse(function (o) { if (!o.isMesh) return; for (var p = o; p; p = p.parent) if (p.name && re.test(p.name)) { out.push(o); return; } }); return out; }
     var root = document.createElement('div'); root.className = 'pp';
@@ -116,7 +127,7 @@
       if (head) head.after(bar); else panel.prepend(bar);
       bar.addEventListener('click', function (e) { var b = e.target.closest('button[data-v]'); if (b) setView(b.dataset.v); });
     }
-    q('#pp-sheets').addEventListener('click', function () { var b = document.getElementById('drawings-button') || document.getElementById('sheets-button'); if (b) b.click(); else q('#pp-sheets').textContent = 'No drawings added yet'; });
+    q('#pp-sheets').addEventListener('click', function () { var b = document.getElementById('drawings-button') || document.getElementById('sheets-button'); if (b) b.click(); else if (C.story) location.href = C.story; else q('#pp-sheets').textContent = 'No drawings added yet'; });
     count();
   }
 })();

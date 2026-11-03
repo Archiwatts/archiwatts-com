@@ -100,9 +100,10 @@
       pa.needsUpdate = true; ua.needsUpdate = true;
     });
 
-    /* ---- vehicles: simple massing in one mesh (sedans, SUVs, pickups, vans and yellow school buses), driven along the road network;
+    /* ---- vehicles: simple massing in one mesh (sedans, SUVs, pickups, vans and yellow school buses), driven along the road network
+       (the campus roads and the streets around it);
        parked cars fill the stalls, and the buses pull up at the drop-off and let the children out ---- */
-    fetch('light/nzs-routes.json').then(function (r) { return r.json(); }).then(function (R) {
+    fetch('light/nzs-routes.json?v=3').then(function (r) { return r.json(); }).then(function (R) {
       var nodes = R.nodes, links = R.links; if (!nodes || !nodes.length) return;
       var PAINT = ['#f2f0ea', '#c9ccd0', '#2c2f34', '#8a1f2a', '#24466e', '#d8d2c4', '#5d6b73', '#a8a49a', '#3d5a45', '#b4542c'];
       var D = '#1d1e20', G = '#5a6a75', YB = '#f2b300';
@@ -112,9 +113,9 @@
         suv: [[4.4, 1.8, .12, .5, 0, D], [4.7, 1.9, .5, 1.15, 0, null], [3.2, 1.8, 1.15, 1.68, -.45, G], [3.1, 1.76, 1.68, 1.8, -.45, null]],
         pickup: [[5.0, 1.85, .12, .5, 0, D], [5.4, 1.95, .5, 1.1, 0, null], [1.9, 1.85, 1.1, 1.72, .9, G], [1.8, 1.8, 1.72, 1.84, .9, null]],
         van: [[4.9, 1.9, .12, .45, 0, D], [5.2, 2.0, .45, 1.3, 0, null], [4.3, 1.96, 1.3, 1.92, -.3, G], [4.5, 1.98, 1.92, 2.12, -.25, null]],
-        bus: [[10.4, 2.36, .15, .62, 0, D], [11.2, 2.5, .62, 1.75, 0, YB], [10.6, 2.46, 1.75, 2.45, -.15, G], [11.0, 2.5, 2.45, 2.95, -.05, YB]]
-      }, MIX = ['sedan', 'sedan', 'sedan', 'suv', 'suv', 'pickup', 'van'];
-      var nBus = mobile ? 1 : 2, nCar = Math.min(mobile ? 5 : 12, nodes.length), nMove = nCar + nBus, stalls = (R.parking || []).slice(), nPark = Math.min(mobile ? 16 : 42, stalls.length);
+        bus: [[10.4, 2.36, .15, .55, 0, D], [11.2, 2.5, .55, 1.5, 0, YB], [10.6, 2.46, 1.5, 2.12, -.15, G], [11.0, 2.5, 2.12, 2.4, -.05, YB]]   // 2.4 m tall: under the canopies' 2.6 m clearance over the drive
+      }, MIX = ['sedan', 'sedan', 'sedan', 'suv', 'suv', 'pickup', 'van'], PARKED = ['sedan', 'sedan', 'sedan', 'suv', 'suv', 'van'];   // stalls are 2.7 x 5.5 m: the parked ones are the narrower, shorter types
+      var nBus = mobile ? 1 : 2, nCar = Math.min(mobile ? 8 : 24, nodes.length), nCampus = R.campus || nodes.length, nMove = nCar + nBus, stalls = (R.parking || []).slice(), nPark = Math.min(mobile ? 16 : 42, stalls.length);
       for (var s = stalls.length - 1; s > 0; s--) { var j = Math.floor(rnd() * (s + 1)), tmp = stalls[s]; stalls[s] = stalls[j]; stalls[j] = tmp; }
       var NC = nMove + nPark, VPC = 4 * 24, CP = new Float32Array(NC * VPC * 3), CN = new Float32Array(NC * VPC * 3), CC = new Float32Array(NC * VPC * 3), CI = [], kind = [];
       // the 6 faces of a unit box as 4 corners each (x along the vehicle, y up, z across)
@@ -124,7 +125,7 @@
         [[0, 0, 1], [[-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]]], [[0, 0, -1], [[1, -1, -1], [-1, -1, -1], [-1, 1, -1], [1, 1, -1]]]];
       var tmpC = new (sm.color.constructor)();
       for (var c = 0; c < NC; c++) {
-        var t = c >= nCar && c < nMove ? 'bus' : MIX[Math.floor(rnd() * MIX.length)], paint = PAINT[Math.floor(rnd() * PAINT.length)]; kind.push(TYPES[t]);
+        var pool = c >= nMove ? PARKED : MIX, t = c >= nCar && c < nMove ? 'bus' : pool[Math.floor(rnd() * pool.length)], paint = PAINT[Math.floor(rnd() * PAINT.length)]; kind.push(TYPES[t]);
         TYPES[t].forEach(function (b, bi) {
           tmpC.set(b[5] || paint);
           F6.forEach(function (f, fi) {
@@ -152,7 +153,7 @@
           });
         });
       }
-      for (var p2 = 0; p2 < nPark; p2++) { var st = stalls[p2]; place(nMove + p2, st[0], st[1], st[2], Math.cos(st[3]), -Math.sin(st[3])); }
+      for (var p2 = 0; p2 < nPark; p2++) { var st = stalls[p2]; var fl = (p2 * 7 % 3 === 0 ? -1 : 1); place(nMove + p2, st[0], st[1], st[2], fl * Math.cos(st[3]), -fl * Math.sin(st[3])); }
       // the drop-off: the road node nearest the administration building's front (PROJECT_PANEL.dropOff overrides, as [x, z])
       var DROP = (window.PROJECT_PANEL && window.PROJECT_PANEL.dropOff) || [185, -235], drop = 0, dd = 1e18;
       nodes.forEach(function (n, i) { var d = (n[0] - DROP[0]) * (n[0] - DROP[0]) + (n[2] - DROP[1]) * (n[2] - DROP[1]); if (d < dd) { dd = d; drop = i; } });
@@ -166,9 +167,10 @@
         if (!opts.length) return a;   // a dead end: turn round
         var r = rnd() * tot; for (var i = 0; i < opts.length; i++) { r -= opts[i][1]; if (r <= 0) return opts[i][0]; } return opts[0][0];
       }
+      // half the cars start on the campus roads, half out on the streets
       var movers = [];
       for (var m = 0; m < nMove; m++) {
-        var bus = m >= nCar, a0 = bus ? drop : Math.floor(rnd() * nodes.length), b0 = links[a0].length ? links[a0][Math.floor(rnd() * links[a0].length)] : a0;
+        var bus = m >= nCar, a0 = bus ? drop : Math.floor(rnd() * (m % 2 ? nCampus : nodes.length)), b0 = links[a0].length ? links[a0][Math.floor(rnd() * links[a0].length)] : a0;
         movers.push({ a: a0, b: b0, t: bus ? 0 : rnd(), sp: bus ? 5 : 6 + rnd() * 3, hx: 1, hz: 0, init: false, bus: bus, stop: 0, cool: bus ? 20 + m * 25 : 0 });
       }
       anim.push(function (time, dt) {

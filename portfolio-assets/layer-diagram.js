@@ -10,7 +10,9 @@
   var tries = 0;
   (function wait() { if (ready()) { try { run(); } catch (e) { console.warn('Layer diagram skipped', e); } } else if (tries++ < 600) setTimeout(wait, 150); })();
   function run() {
-    var ctx = window.daylightContext, scene = ctx.scene, layers = C.layers.map(function (l, i) { return { re: new RegExp(l.re, 'i'), col: l.color || PAL[i % PAL.length] }; });
+    var ctx = window.daylightContext, scene = ctx.scene, layers = [];
+    // the layer list may be built by the project panel from the model's own names ('auto'), so it is read when the view is first used
+    function loadLayers() { if (layers.length || !Array.isArray(C.layers)) return; layers = C.layers.map(function (l, i) { return { re: new RegExp(l.re, 'i'), col: l.color || PAL[i % PAL.length] }; }); }
     var site = (C.diagramColors || []).map(function (d) { return { re: new RegExp(d.re, 'i'), col: d.color }; });
     var orig = new Map(), cache = {}, on = false, inkSaved = null;
     function colourOf(o) {
@@ -34,7 +36,7 @@
       } else if (inkSaved) { u.uWorldW.value = inkSaved.w; u.uMinPx.value = inkSaved.px; u.uMinW.value = inkSaved.minW; u.uMaxW.value = inkSaved.maxW; inkSaved = null; }
     }
     function set(next) {
-      on = next;
+      on = next; loadLayers();
       scene.traverse(function (o) {
         if (!o.isMesh || (o.userData && o.userData.skEdge) || !o.material || /^(Hive|Phal|Tranquil|NZS life) |sketch|sprite/i.test(o.material.name || '')) return;
         if (!orig.has(o)) orig.set(o, o.material);
