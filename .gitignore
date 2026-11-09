@@ -1,0 +1,6 @@
+# Working files over GitHub's 100 MB limit: kept locally (originals stay on the E: drive), never committed
+_source-models/north-beach-youth-center/Test-Youth_Render-Model.ifc
+_source-models/north-beach-youth-center/revit/tris.bin
+*.ifc
+*.rvt
+*.bin.tmp
