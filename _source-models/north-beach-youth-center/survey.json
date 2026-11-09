@@ -1,0 +1,2270 @@
+[
+{
+"cls": "IfcPlate",
+"type": "parametric_screen-curtain-wall-panel:parametric_",
+"mat": "White",
+"level": "GYM",
+"n": 3493
+},
+{
+"cls": "IfcPlate",
+"type": "parametric_screen-curtain-wall-panel:parametric_",
+"mat": "White",
+"level": "MAIN",
+"n": 2167
+},
+{
+"cls": "IfcPlate",
+"type": "parametric_screen-curtain-wall-panel:parametric_",
+"mat": "White",
+"level": "Level 5",
+"n": 750
+},
+{
+"cls": "IfcPlate",
+"type": "parametric_screen-curtain-wall-panel:parametric_",
+"mat": "White",
+"level": "CLASSROOM TOP",
+"n": 627
+},
+{
+"cls": "IfcMember",
+"type": "Rectangular Mullion:2.5\" x 5\" rectangular",
+"mat": "Aluminum",
+"level": "TABLE T.",
+"n": 488
+},
+{
+"cls": "IfcPlate",
+"type": "parametric_screen-curtain-wall-panel:parametric_",
+"mat": "White",
+"level": "SKATE TOP",
+"n": 369
+},
+{
+"cls": "IfcPlate",
+"type": "parametric_screen-curtain-wall-panel:parametric_",
+"mat": "White",
+"level": "TABLE T.",
+"n": 355
+},
+{
+"cls": "IfcColumn",
+"type": "SOE-Columns-CRHConcrete:S\u00d8 8\" pilles",
+"mat": "GFRC",
+"level": "Foundation",
+"n": 326
+},
+{
+"cls": "IfcMember",
+"type": "Rectangular Mullion:Custom 8\" x 4\"",
+"mat": "Metal - Aluminum",
+"level": "GYM",
+"n": 243
+},
+{
+"cls": "IfcMember",
+"type": "Circular Mullion:2.5\" Circular",
+"mat": "Aluminum",
+"level": "GRADE",
+"n": 218
+},
+{
+"cls": "IfcGeographicElement",
+"type": "parking_stripe_677:parking_stripe_677",
+"mat": "Parking Stripe",
+"level": "GRADE",
+"n": 205
+},
+{
+"cls": "IfcPlate",
+"type": "System Panel:Glazed",
+"mat": "Glass",
+"level": "TABLE T.",
+"n": 180
+},
+{
+"cls": "IfcMember",
+"type": "Rectangular Mullion:Custom 8\" x 4\"",
+"mat": "Metal - Aluminum",
+"level": "JUICE BAR",
+"n": 165
+},
+{
+"cls": "IfcPlate",
+"type": "Spider_type_panel_14107:Spider_type_panel_14107",
+"mat": "<Unnamed>|Glass, Clear Glazing",
+"level": "MAIN",
+"n": 140
+},
+{
+"cls": "IfcSlab",
+"type": "Footing-Rectangular:72\" x 48\" x 18\"",
+"mat": "Concrete, Cast-in-Place gray",
+"level": "Foundation",
+"n": 124
+},
+{
+"cls": "IfcWall",
+"type": "Basic Wall:Generic - 8\"",
+"mat": "Con",
+"level": "TABLE T.",
+"n": 113
+},
+{
+"cls": "IfcBeam",
+"type": "Concrete-Rectangular Beam:12 x 12",
+"mat": "Concrete, Cast-in-Place gray",
+"level": "Foundation",
+"n": 95
+},
+{
+"cls": "IfcLightFixture",
+"type": "Downlight_Recessed_Cooper_Halo_LED_6 Inch_H750T:",
+"mat": "Glass - Cooper Industries - Clear|Metal - Cooper Industries ",
+"level": "5",
+"n": 83
+},
+{
+"cls": "IfcPlate",
+"type": "Family3:Family3",
+"mat": "Glass|alum",
+"level": "GYM",
+"n": 82
+},
+{
+"cls": "IfcPlate",
+"type": "System Panel:Glazed",
+"mat": "Glass",
+"level": "GYM",
+"n": 82
+},
+{
+"cls": "IfcLightFixture",
+"type": "Downlight_Recessed_Cooper_Halo_LED_6 Inch_H750T:",
+"mat": "Glass - Cooper Industries - Clear|Metal - Cooper Industries ",
+"level": "17",
+"n": 76
+},
+{
+"cls": "IfcWall",
+"type": "Basic Wall:Generic - 8\"",
+"mat": "Con",
+"level": "GRADE",
+"n": 75
+},
+{
+"cls": "IfcPlate",
+"type": "parametric_screen-curtain-wall-panel:parametric_",
+"mat": "White",
+"level": "JUICE BAR",
+"n": 73
+},
+{
+"cls": "IfcPlate",
+"type": "System Panel:Glazed",
+"mat": "Glass",
+"level": "GRADE",
+"n": 71
+},
+{
+"cls": "IfcPlate",
+"type": "Spider_type_frame:Spider_type_frame",
+"mat": "Aluminum",
+"level": "Foundation",
+"n": 70
+},
+{
+"cls": "IfcBeam",
+"type": "HP-Bearing Pile:HP8X36",
+"mat": "Steel ASTM A572",
+"level": "GYM",
+"n": 63
+},
+{
+"cls": "IfcWall",
+"type": "Basic Wall:Generic - 8\"",
+"mat": "Con",
+"level": "GYM",
+"n": 60
+},
+{
+"cls": "IfcPlate",
+"type": "System Panel:Glazed",
+"mat": "Glass",
+"level": "JUICE BAR",
+"n": 52
+},
+{
+"cls": "IfcColumn",
+"type": "HP-Bearing Pile-Column:HP8X36",
+"mat": "Steel ASTM A572",
+"level": "Foundation",
+"n": 48
+},
+{
+"cls": "IfcMember",
+"type": "Rectangular Mullion:1.5\" x 2.5\" rectangular",
+"mat": "Aluminum",
+"level": "GYM",
+"n": 46
+},
+{
+"cls": "IfcPlate",
+"type": "Family3:Family3",
+"mat": "Glass|alum",
+"level": "GRADE",
+"n": 42
+},
+{
+"cls": "IfcPlate",
+"type": "Family3:Family3",
+"mat": "Glass|alum",
+"level": "MAIN",
+"n": 40
+},
+{
+"cls": "IfcPlate",
+"type": "Spider_type_panel_14107:Spider_type_panel_14107",
+"mat": "<Unnamed>|Glass, Clear Glazing",
+"level": "TABLE T.",
+"n": 40
+},
+{
+"cls": "IfcBeam",
+"type": "HP-Bearing Pile:HP12X63",
+"mat": "Steel ASTM A572",
+"level": "ROOF",
+"n": 39
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Kit Sunfix aero duo (1):Sunmodule Plus mono",
+"mat": "SolarWorld Aluminum Blue|SolarWorld Iron|SolarWorld Iron Bla",
+"level": "6",
+"n": 39
+},
+{
+"cls": "IfcColumn",
+"type": "SOE-Columns-CRHConcrete:S\u00d8 8\"",
+"mat": "GFRC",
+"level": "Foundation",
+"n": 38
+},
+{
+"cls": "IfcLightFixture",
+"type": "Downlight_Recessed_Cooper_Halo_LED_6 Inch_H750T:",
+"mat": "Glass - Cooper Industries - Clear|Metal - Cooper Industries ",
+"level": "GYM",
+"n": 38
+},
+{
+"cls": "IfcBeam",
+"type": "HP-Bearing Pile:HP12X63",
+"mat": "Steel ASTM A572",
+"level": "CLASSROOM TOP",
+"n": 36
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Kit Sunfix aero duo (1):Sunmodule Plus mono",
+"mat": "SolarWorld Aluminum Blue|SolarWorld Iron|SolarWorld Iron Bla",
+"level": "ROOF",
+"n": 33
+},
+{
+"cls": "IfcWall",
+"type": "Basic Wall:Generic - 2\"",
+"mat": "Gypsum Wall Board",
+"level": "GRADE",
+"n": 32
+},
+{
+"cls": "IfcWall",
+"type": "Basic Wall:Generic - 8\"",
+"mat": "Con",
+"level": "JUICE BAR",
+"n": 31
+},
+{
+"cls": "IfcBeam",
+"type": "HP-Bearing Pile:HP8X36",
+"mat": "Steel ASTM A572",
+"level": "ROOF",
+"n": 30
+},
+{
+"cls": "IfcPlate",
+"type": "Spider_type_panel_14107:Spider_type_panel_14107",
+"mat": "<Unnamed>|Glass, Clear Glazing",
+"level": "SKATE TOP",
+"n": 30
+},
+{
+"cls": "IfcPlate",
+"type": "Spider_type_frame:Spider_type_frame",
+"mat": "Aluminum",
+"level": "GRADE",
+"n": 30
+},
+{
+"cls": "IfcWindow",
+"type": "Curtain Wall-Awning:Curtain Wall-Awning",
+"mat": "Aluminum|Glass",
+"level": "GYM",
+"n": 30
+},
+{
+"cls": "IfcBeam",
+"type": "HP-Bearing Pile:HP8X36",
+"mat": "Steel ASTM A572",
+"level": "TABLE T.",
+"n": 29
+},
+{
+"cls": "IfcWall",
+"type": "Basic Wall:Generic - 2\"",
+"mat": "Gypsum Wall Board",
+"level": "TABLE T.",
+"n": 25
+},
+{
+"cls": "IfcLightFixture",
+"type": "Downlight_Recessed_Cooper_Halo_LED_6 Inch_H750T:",
+"mat": "Glass - Cooper Industries - Clear|Metal - Cooper Industries ",
+"level": "JUICE BAR",
+"n": 25
+},
+{
+"cls": "IfcLightFixture",
+"type": "Downlight_Recessed_Cooper_Halo_LED_6 Inch_H750T:",
+"mat": "Glass - Cooper Industries - Clear|Metal - Cooper Industries ",
+"level": "TABLE T.",
+"n": 25
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Fire_Sprinkler_Head_16406:Fire_Sprinkler_Head_16",
+"mat": "Spinkler Connection|Sprinkler Base|Sprinkler Head",
+"level": "17",
+"n": 24
+},
+{
+"cls": "IfcWall",
+"type": "Basic Wall:Generic - 1\"",
+"mat": "WhitePlastic",
+"level": "TABLE T.",
+"n": 24
+},
+{
+"cls": "IfcWindow",
+"type": "Curtain Wall-Awning:Curtain Wall-Awning",
+"mat": "Aluminum|Glass",
+"level": "TABLE T.",
+"n": 24
+},
+{
+"cls": "IfcPlate",
+"type": "Family3:Family3",
+"mat": "Glass|alum",
+"level": "CLASSROOM TOP",
+"n": 22
+},
+{
+"cls": "IfcPlate",
+"type": "parametric_screen-curtain-wall-panel:parametric_",
+"mat": "White",
+"level": "GRADE",
+"n": 21
+},
+{
+"cls": "IfcPlate",
+"type": "Spider_type_panelwood:Spider_type_panelwood",
+"mat": "Aluminum|cabinet wood",
+"level": "SKATE TOP",
+"n": 20
+},
+{
+"cls": "IfcPlate",
+"type": "Spider_type_panelwood:Spider_type_panelwood",
+"mat": "Aluminum|cabinet wood",
+"level": "MAIN",
+"n": 20
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Ref-Road Marker:Truncated Domes",
+"mat": "ref marker yellow",
+"level": "GRADE",
+"n": 18
+},
+{
+"cls": "IfcLightFixture",
+"type": "Downlight_Recessed_Cooper_Halo_LED_6 Inch_H750T:",
+"mat": "Glass - Cooper Industries - Clear|Metal - Cooper Industries ",
+"level": "6",
+"n": 18
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "",
+"mat": "-",
+"level": "GRADE",
+"n": 17
+},
+{
+"cls": "IfcWall",
+"type": "Basic Wall:Generic - 4\"",
+"mat": "Default Wall",
+"level": "TABLE T.",
+"n": 17
+},
+{
+"cls": "IfcWall",
+"type": "Basic Wall:Generic -(gyp) 1/2\"",
+"mat": "Gypsum Wall Board",
+"level": "GRADE",
+"n": 16
+},
+{
+"cls": "IfcWall",
+"type": "Basic Wall:Generic - 4\"",
+"mat": "Default Wall",
+"level": "GYM",
+"n": 16
+},
+{
+"cls": "IfcFurniture",
+"type": "MINOTTI_Aston_Lounge Chair_cm 55x58 h74:cm 55x58",
+"mat": "MINOTTI_ wood_open pore Moka_|Minotti_Leather_safari_fumo",
+"level": "18",
+"n": 16
+},
+{
+"cls": "IfcFurniture",
+"type": "MINOTTI_Aston_Lounge Little Armchair_cm 64x58 h7",
+"mat": "MINOTTI_ wood_open pore Moka_|Minotti_Leather_safari_fumo",
+"level": "18",
+"n": 16
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Fire_Sprinkler_Head_16406:Fire_Sprinkler_Head_16",
+"mat": "Spinkler Connection|Sprinkler Base|Sprinkler Head",
+"level": "5",
+"n": 15
+},
+{
+"cls": "IfcPlate",
+"type": "Spider_type_panelwood:Spider_type_panelwood",
+"mat": "Aluminum|cabinet wood",
+"level": "GRADE",
+"n": 15
+},
+{
+"cls": "IfcPlate",
+"type": "Spider_type_panelwood:Spider_type_panelwood",
+"mat": "Aluminum|cabinet wood",
+"level": "JUICE BAR",
+"n": 15
+},
+{
+"cls": "IfcPlate",
+"type": "Spider_type_panel_14107:Spider_type_panel_14107",
+"mat": "<Unnamed>|Glass, Clear Glazing",
+"level": "JUICE BAR",
+"n": 15
+},
+{
+"cls": "IfcPlate",
+"type": "Family3:Family3",
+"mat": "Glass|alum",
+"level": "SKATE TOP",
+"n": 14
+},
+{
+"cls": "IfcLightFixture",
+"type": "Downlight_Recessed_Cooper_Halo_LED_6 Inch_H750T:",
+"mat": "Glass - Cooper Industries - Clear|Metal - Cooper Industries ",
+"level": "23",
+"n": 14
+},
+{
+"cls": "IfcFurniture",
+"type": "Locker-Personal_Storage-Spacesaver-3_Tier_Single",
+"mat": "<Unnamed>|Metal-Spacesaver-Brushed Stainless Steel|Paint-Spa",
+"level": "5",
+"n": 14
+},
+{
+"cls": "IfcFurniture",
+"type": "MINOTTI_Aston_Stool_cm 55x58 h100:cm 55x58 B",
+"mat": "MINOTTI_ wood_open pore Moka_|Minotti_Leather_safari_fumo|Mi",
+"level": "18",
+"n": 14
+},
+{
+"cls": "IfcBeam",
+"type": "HP-Bearing Pile:HP12X63",
+"mat": "Steel ASTM A572",
+"level": "GYM",
+"n": 13
+},
+{
+"cls": "IfcDoor",
+"type": "Single-Flush:36\" x 84\"",
+"mat": "Door - Frame|Door - Panel",
+"level": "JUICE BAR",
+"n": 13
+},
+{
+"cls": "IfcStairFlight",
+"type": "Monolithic Run:3/4\" Nosing",
+"mat": "Concrete, Cast-in-Place gray",
+"level": "GRADE",
+"n": 13
+},
+{
+"cls": "IfcBeam",
+"type": "HP-Bearing Pile:HP12X63",
+"mat": "Steel ASTM A572",
+"level": "SKATE TOP",
+"n": 12
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "",
+"mat": "-",
+"level": "GYM",
+"n": 12
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Elevator Rail:Elevator Rail",
+"mat": "Elevator Rail Attachment",
+"level": "GYM",
+"n": 12
+},
+{
+"cls": "IfcDoor",
+"type": "Single-Flush:36\" x 84\"",
+"mat": "Door - Frame|Door - Panel",
+"level": "GYM",
+"n": 12
+},
+{
+"cls": "IfcPlate",
+"type": "Family3:Family3",
+"mat": "Glass|alum",
+"level": "JUICE BAR",
+"n": 12
+},
+{
+"cls": "IfcPlate",
+"type": "Family3:Family3",
+"mat": "Glass|alum",
+"level": "TABLE T.",
+"n": 12
+},
+{
+"cls": "IfcPlate",
+"type": "Family3:Family3",
+"mat": "Glass|alum",
+"level": "Level 5",
+"n": 12
+},
+{
+"cls": "IfcSlab",
+"type": "Monolithic Landing:7\" Thickness",
+"mat": "Concrete, Cast-in-Place gray",
+"level": "TABLE T.",
+"n": 12
+},
+{
+"cls": "IfcStairFlight",
+"type": "Monolithic Run:3/4\" Nosing",
+"mat": "Concrete, Cast-in-Place gray",
+"level": "TABLE T.",
+"n": 12
+},
+{
+"cls": "IfcFlowTerminal",
+"type": "Shower Fixture - Delta - T14282:T14282",
+"mat": "Metal - Delta - Chrome - PC|Metal-Copper Piping",
+"level": "5",
+"n": 12
+},
+{
+"cls": "IfcDoor",
+"type": "Single-Flush:36\" x 84\"",
+"mat": "Door - Frame|Door - Panel",
+"level": "TABLE T.",
+"n": 11
+},
+{
+"cls": "IfcRoof",
+"type": "Sloped Glazing:Sloped Glazing",
+"mat": "-",
+"level": "GYM",
+"n": 11
+},
+{
+"cls": "IfcLightFixture",
+"type": "Downlight_Recessed_Cooper_Halo_LED_6 Inch_H750T:",
+"mat": "Glass - Cooper Industries - Clear|Metal - Cooper Industries ",
+"level": "7",
+"n": 11
+},
+{
+"cls": "IfcPlate",
+"type": "Family3:Family3",
+"mat": "Glass|alum",
+"level": "Foundation",
+"n": 10
+},
+{
+"cls": "IfcPlate",
+"type": "System Panel:Glazed",
+"mat": "Glass",
+"level": "ROOF",
+"n": 10
+},
+{
+"cls": "IfcRoof",
+"type": "Sloped Glazing:Sloped Glazing",
+"mat": "-",
+"level": "ROOF",
+"n": 10
+},
+{
+"cls": "IfcFurniture",
+"type": "Locker-Personal_Storage-Spacesaver-3_Tier_Single",
+"mat": "<Unnamed>|Metal-Spacesaver-Brushed Stainless Steel|Metal-Spa",
+"level": "5",
+"n": 10
+},
+{
+"cls": "IfcSystemFurnitureElement",
+"type": "Shower-Stall-Petal-Thor-Pilaster_To be nested:St",
+"mat": "Laminate - Petal - White - Satin|Metal - Petal - Aluminium -",
+"level": "TABLE T.",
+"n": 10
+},
+{
+"cls": "IfcSystemFurnitureElement",
+"type": "Shower-Stall-Petal-Thor-Wall Panel Section_To be",
+"mat": "Laminate - Petal - White - Satin|Metal - Petal - Aluminium -",
+"level": "TABLE T.",
+"n": 10
+},
+{
+"cls": "IfcDoor",
+"type": "Single-Flush:36\" x 84\"",
+"mat": "Door - Frame|Door - Panel",
+"level": "GRADE",
+"n": 9
+},
+{
+"cls": "IfcPlate",
+"type": "parametric_screen-curtain-wall-panel:parametric_",
+"mat": "White",
+"level": "ROOF",
+"n": 9
+},
+{
+"cls": "IfcRailing",
+"type": "Railing:Cable Hand Rail",
+"mat": "<Unnamed>|railing alum|railing alum(1)",
+"level": "GRADE",
+"n": 9
+},
+{
+"cls": "IfcSlab",
+"type": "Monolithic Landing:7\" Thickness",
+"mat": "Concrete, Cast-in-Place gray",
+"level": "GRADE",
+"n": 9
+},
+{
+"cls": "IfcFurniture",
+"type": "Standard_Restaurant_Booth_Seat_14757:Standard_Re",
+"mat": "<Unnamed>",
+"level": "18",
+"n": 9
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Fire_Sprinkler_Head_16406:Fire_Sprinkler_Head_16",
+"mat": "Spinkler Connection|Sprinkler Base|Sprinkler Head",
+"level": "23",
+"n": 8
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Fire_Sprinkler_Head_16406:Fire_Sprinkler_Head_16",
+"mat": "Spinkler Connection|Sprinkler Base|Sprinkler Head",
+"level": "TABLE T.",
+"n": 8
+},
+{
+"cls": "IfcWall",
+"type": "Basic Wall:Generic - 4\"",
+"mat": "Default Wall",
+"level": "JUICE BAR",
+"n": 8
+},
+{
+"cls": "IfcWall",
+"type": "Basic Wall:Generic - 1\"",
+"mat": "WhitePlastic",
+"level": "ROOF",
+"n": 8
+},
+{
+"cls": "IfcLightFixture",
+"type": "Downlight_Recessed_Cooper_Halo_LED_6 Inch_H750T:",
+"mat": "Glass - Cooper Industries - Clear|Metal - Cooper Industries ",
+"level": "51",
+"n": 8
+},
+{
+"cls": "IfcLightFixture",
+"type": "Downlight_Recessed_Cooper_Halo_LED_6 Inch_H750T:",
+"mat": "Glass - Cooper Industries - Clear|Metal - Cooper Industries ",
+"level": "52",
+"n": 8
+},
+{
+"cls": "IfcFurniture",
+"type": "MINOTTI_Lou_Table_round_dcm160h74:\u00d8160_Glass Amb",
+"mat": "MINOTTI_film_amber|Minotti_extra clear glass|Minotti_metal_t",
+"level": "18",
+"n": 8
+},
+{
+"cls": "IfcSystemFurnitureElement",
+"type": "Shower-Stall-Petal-Thor-Door_To be nested:Standa",
+"mat": "Laminate - Petal - Blue - Satin|Laminate - Petal - Green - S",
+"level": "TABLE T.",
+"n": 8
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "",
+"mat": "-",
+"level": "Foundation",
+"n": 7
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Car_Revit_Generic_Small_Car_19284:Car_Revit_Gene",
+"mat": "Aluminium Polished|Cario-Brake Light|Cario-Glass Windows|Car",
+"level": "GRADE",
+"n": 7
+},
+{
+"cls": "IfcCovering",
+"type": "Compound Ceiling:2' x 2' ACT System",
+"mat": "Acoustic Ceiling Tile 24 x 24|Default",
+"level": "GYM",
+"n": 7
+},
+{
+"cls": "IfcLightFixture",
+"type": "Downlight_Recessed_Cooper_Halo_LED_6 Inch_H750T:",
+"mat": "Glass - Cooper Industries - Clear|Metal - Cooper Industries ",
+"level": "54",
+"n": 7
+},
+{
+"cls": "IfcElementAssembly",
+"type": "",
+"mat": "-",
+"level": "CLASSROOM TOP",
+"n": 7
+},
+{
+"cls": "IfcGeographicElement",
+"type": "A_Revit_Suv_3d_car:A_Revit_Suv_3d_car",
+"mat": "Glass|Red Light|Tire|Wheel|White|blue|dark gray|r-suv1 body|",
+"level": "GRADE",
+"n": 7
+},
+{
+"cls": "IfcBeam",
+"type": "HP-Bearing Pile:HP8X36",
+"mat": "Steel ASTM A572",
+"level": "CLASSROOM TOP",
+"n": 6
+},
+{
+"cls": "IfcSlab",
+"type": "Floor:Generic - 6\"",
+"mat": "WhitePlastic",
+"level": "TABLE T.",
+"n": 6
+},
+{
+"cls": "IfcSlab",
+"type": "Floor:Generic - 4\"",
+"mat": "WhitePlastic",
+"level": "GYM",
+"n": 6
+},
+{
+"cls": "IfcStair",
+"type": "Cast-In-Place Stair:Monolithic Stair 2",
+"mat": "-",
+"level": "GRADE",
+"n": 6
+},
+{
+"cls": "IfcSanitaryTerminal",
+"type": "Sanitary_Toilets_Svedbergs_Lossen:Svedbergs WC L",
+"mat": "Porcelain",
+"level": "GRADE",
+"n": 6
+},
+{
+"cls": "IfcFurniture",
+"type": "18x24Locker-Personal_Storage-Spacesaver-3_Tier_S",
+"mat": "<Unnamed>|Metal-Spacesaver-Brushed Stainless Steel|Paint-Spa",
+"level": "5",
+"n": 6
+},
+{
+"cls": "IfcFurniture",
+"type": "Bench-Locker-Personal_Storage-Spacesaver-2_Tier_",
+"mat": "Metal-Spacesaver-Brushed Stainless Steel|Paint-Spacesaver-84",
+"level": "5",
+"n": 6
+},
+{
+"cls": "IfcBeam",
+"type": "HP-Bearing Pile:HP12X63",
+"mat": "Steel ASTM A572",
+"level": "TABLE T.",
+"n": 5
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Scion_tC_-_Car_Automobile_Vehicle_13459:Scion_tC",
+"mat": "<Unnamed>",
+"level": "GRADE",
+"n": 5
+},
+{
+"cls": "IfcPlate",
+"type": "Spider_type_panel_14107:Spider_type_panel_14107",
+"mat": "<Unnamed>|Glass, Clear Glazing",
+"level": "GRADE",
+"n": 5
+},
+{
+"cls": "IfcSlab",
+"type": "Floor:Generic - 6\" path",
+"mat": "path",
+"level": "GRADE",
+"n": 5
+},
+{
+"cls": "IfcLightFixture",
+"type": "Downlight_Recessed_Cooper_Halo_LED_6 Inch_H750T:",
+"mat": "Glass - Cooper Industries - Clear|Metal - Cooper Industries ",
+"level": "10",
+"n": 5
+},
+{
+"cls": "IfcLightFixture",
+"type": "Downlight_Recessed_Cooper_Halo_LED_6 Inch_H750T:",
+"mat": "Glass - Cooper Industries - Clear|Metal - Cooper Industries ",
+"level": "9",
+"n": 5
+},
+{
+"cls": "IfcElementAssembly",
+"type": "",
+"mat": "-",
+"level": "ROOF",
+"n": 5
+},
+{
+"cls": "IfcGeographicElement",
+"type": "Car_796:Car_796",
+"mat": "<Unnamed>|BMCD2AR3\\Bitmap Textures\\Fabric\\FABRI27\\Normal|BMC",
+"level": "GRADE",
+"n": 5
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "",
+"mat": "-",
+"level": "ROOF",
+"n": 4
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "",
+"mat": "-",
+"level": "TABLE T.",
+"n": 4
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Commercial_ADA_amp_Standard_Shower_Stalls_-_UPDA",
+"mat": "<Unnamed>|Acrylic|Ceramic Tile - 4\" Beige|Fixtures - Drains ",
+"level": "5",
+"n": 4
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Table_Tennis_Table_12197 (1):Table_Tennis_Table_",
+"mat": "Table Tennis Glowing Lines|Table Tennis Glowing supports|Tab",
+"level": "17",
+"n": 4
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Fire_Sprinkler_Head_16406:Fire_Sprinkler_Head_16",
+"mat": "Spinkler Connection|Sprinkler Base|Sprinkler Head",
+"level": "24",
+"n": 4
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Fire_Sprinkler_Head_16406:Fire_Sprinkler_Head_16",
+"mat": "Spinkler Connection|Sprinkler Base|Sprinkler Head",
+"level": "56",
+"n": 4
+},
+{
+"cls": "IfcCovering",
+"type": "Compound Ceiling:2' x 2' ACT System",
+"mat": "Acoustic Ceiling Tile 24 x 24|Default",
+"level": "ROOF",
+"n": 4
+},
+{
+"cls": "IfcCurtainWall",
+"type": "Curtain Wall:Storefront 2",
+"mat": "-",
+"level": "TABLE T.",
+"n": 4
+},
+{
+"cls": "IfcCurtainWall",
+"type": "Curtain Wall:Storefront",
+"mat": "-",
+"level": "GRADE",
+"n": 4
+},
+{
+"cls": "IfcCurtainWall",
+"type": "Curtain Wall:class room - store front",
+"mat": "-",
+"level": "JUICE BAR",
+"n": 4
+},
+{
+"cls": "IfcDoor",
+"type": "HM_Frame_Door_-_Interior_Double_3898:6'-0\" x 7'-",
+"mat": "Door - H.M. Frame|Door - H.M. Panel|Door - Hardware",
+"level": "GYM",
+"n": 4
+},
+{
+"cls": "IfcDoor",
+"type": "Single-Flush:30\" x 84\"",
+"mat": "Door - Frame|Door - Panel",
+"level": "GRADE",
+"n": 4
+},
+{
+"cls": "IfcRailing",
+"type": "Railing:Cable Hand Rail",
+"mat": "<Unnamed>|railing alum|railing alum(1)",
+"level": "MAIN",
+"n": 4
+},
+{
+"cls": "IfcRailing",
+"type": "Railing:AGRV-HRAL_SeriesD-H120-W\u2248120-EQ",
+"mat": "Air|Glass|Stainless Steel",
+"level": "GYM",
+"n": 4
+},
+{
+"cls": "IfcSlab",
+"type": "Floor:Generic - 6\"",
+"mat": "WhitePlastic",
+"level": "GYM",
+"n": 4
+},
+{
+"cls": "IfcWall",
+"type": "Basic Wall:Generic - 5\"",
+"mat": "Default Wall",
+"level": "JUICE BAR",
+"n": 4
+},
+{
+"cls": "IfcWall",
+"type": "Basic Wall:Generic -(gyp) 1/2\"",
+"mat": "Gypsum Wall Board",
+"level": "TABLE T.",
+"n": 4
+},
+{
+"cls": "IfcWall",
+"type": "Basic Wall:Generic - 1\"",
+"mat": "WhitePlastic",
+"level": "GYM",
+"n": 4
+},
+{
+"cls": "IfcWindow",
+"type": "Fixed:llong 2",
+"mat": "Glass|Sash",
+"level": "GYM",
+"n": 4
+},
+{
+"cls": "IfcLightFixture",
+"type": "Downlight_Recessed_Cooper_Halo_LED_6 Inch_H750T:",
+"mat": "Glass - Cooper Industries - Clear|Metal - Cooper Industries ",
+"level": "61",
+"n": 4
+},
+{
+"cls": "IfcLightFixture",
+"type": "Street Light - Standard:400W Halogen - 120V",
+"mat": "Glass, Frosted|Steel, Paint Finish, Dark Gray, Matte",
+"level": "GRADE",
+"n": 4
+},
+{
+"cls": "IfcSanitaryTerminal",
+"type": "Sanitary_Toilets_Svedbergs_Lossen:Svedbergs WC L",
+"mat": "Porcelain",
+"level": "GYM",
+"n": 4
+},
+{
+"cls": "IfcGeographicElement",
+"type": "crosswalks_10851:crosswalks_10851",
+"mat": "Strisce Pedonali",
+"level": "GRADE",
+"n": 4
+},
+{
+"cls": "IfcGeographicElement",
+"type": "Parking_Symbol_-_Bicycle_16685:Parking_Symbol_-_",
+"mat": "Paint - White",
+"level": "GRADE",
+"n": 4
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Grab_Bars_-_Toilet_4680:Bathtub",
+"mat": "Metal - Aluminum, Brushed",
+"level": "54",
+"n": 3
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Urinal_Screen_16504:Urinal_Screen_16504",
+"mat": "Plywood, Sheathing|Polyurethane Foam|Stainless Steel, Polish",
+"level": "51",
+"n": 3
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Urinal_Screen_16504:Urinal_Screen_16504",
+"mat": "Plywood, Sheathing|Polyurethane Foam|Stainless Steel, Polish",
+"level": "52",
+"n": 3
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Kit Sunfix aero duo (1):Sunmodule Plus mono",
+"mat": "SolarWorld Aluminum Blue|SolarWorld Iron|SolarWorld Iron Bla",
+"level": "7",
+"n": 3
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Police_Car_-_Mustang_Saleen_-_Vehicle_Car_Automo",
+"mat": "<Unnamed>|BARRICAD - BODY - COLOR",
+"level": "GRADE",
+"n": 3
+},
+{
+"cls": "IfcRailing",
+"type": "Railing:Cable Hand Rail",
+"mat": "<Unnamed>|railing alum|railing alum(1)",
+"level": "TABLE T.",
+"n": 3
+},
+{
+"cls": "IfcRailing",
+"type": "Railing:Cable Hand Rail",
+"mat": "<Unnamed>|railing alum|railing alum(1)",
+"level": "JUICE BAR",
+"n": 3
+},
+{
+"cls": "IfcStair",
+"type": "Cast-In-Place Stair:Monolithic Stair 2",
+"mat": "-",
+"level": "TABLE T.",
+"n": 3
+},
+{
+"cls": "IfcLightFixture",
+"type": "Downlight_Recessed_Cooper_Halo_LED_6 Inch_H750T:",
+"mat": "Glass - Cooper Industries - Clear|Metal - Cooper Industries ",
+"level": "8",
+"n": 3
+},
+{
+"cls": "IfcLightFixture",
+"type": "Downlight_Recessed_Cooper_Halo_LED_6 Inch_H750T:",
+"mat": "Glass - Cooper Industries - Clear|Metal - Cooper Industries ",
+"level": "56",
+"n": 3
+},
+{
+"cls": "IfcSanitaryTerminal",
+"type": "Sanitary_Toilets_Svedbergs_Lossen:Svedbergs WC L",
+"mat": "Porcelain",
+"level": "54",
+"n": 3
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Panoramic_Elevator_15739:Passenger_2500 2",
+"mat": "<Unnamed>|Bracket|Elevator Car|Elevator Rail Attachment|Elev",
+"level": "GRADE",
+"n": 2
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "urinal_12788:Urinal",
+"mat": "urinal",
+"level": "54",
+"n": 2
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Urinal_Screen_16504:Urinal_Screen_16504",
+"mat": "Plywood, Sheathing|Polyurethane Foam|Stainless Steel, Polish",
+"level": "54",
+"n": 2
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "DURAVIT_234463-Viu-sink:Default",
+"mat": "234463-Viu sink - viu-sink-234463 - Color",
+"level": "54",
+"n": 2
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Partition-Floor_Braced-Bradley_Corp-St_Stl-ADA-N",
+"mat": "Metal - Bradley Corp - Chrome|Metal - Bradley Corp - Stainle",
+"level": "54",
+"n": 2
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "DURAVIT_234463-Viu-sink:Default",
+"mat": "234463-Viu sink - viu-sink-234463 - Color",
+"level": "GYM",
+"n": 2
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Grab_Bars_-_Toilet_4680:Bathtub",
+"mat": "Metal - Aluminum, Brushed",
+"level": "GYM",
+"n": 2
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Baby_Changing_Station_-_KB100_7300:Baby_Changing",
+"mat": "<Unnamed>",
+"level": "GYM",
+"n": 2
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "urinal_12788:Urinal",
+"mat": "urinal",
+"level": "51",
+"n": 2
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "urinal_12788:Urinal",
+"mat": "urinal",
+"level": "52",
+"n": 2
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "DURAVIT_234463-Viu-sink:Default",
+"mat": "234463-Viu sink - viu-sink-234463 - Color",
+"level": "GRADE",
+"n": 2
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "DURAVIT_234463-Viu-sink:Default",
+"mat": "234463-Viu sink - viu-sink-234463 - Color",
+"level": "TABLE T.",
+"n": 2
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Grab_Bars_-_Toilet_4680:Bathtub",
+"mat": "Metal - Aluminum, Brushed",
+"level": "TABLE T.",
+"n": 2
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Baby_Changing_Station_-_KB100_7300:Baby_Changing",
+"mat": "<Unnamed>",
+"level": "TABLE T.",
+"n": 2
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Kit Sunfix aero duo (1):Sunmodule Plus mono",
+"mat": "SolarWorld Aluminum Blue|SolarWorld Iron|SolarWorld Iron Bla",
+"level": "10",
+"n": 2
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "City_Bus_2017_Original_Design_18423:City_Bus_201",
+"mat": "<Unnamed>|Bus|Bus Rear Lights|BusChairs|Buslights|Glass|Whee",
+"level": "GRADE",
+"n": 2
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Gymnastic_Pommel Horse:Gymnastic_Pommel Horse",
+"mat": "06 Wood - Species - Teak|<Unnamed>|Metal - Stainless|Wood, M",
+"level": "5",
+"n": 2
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Gymnastic_Pommel Horse:Gymnastic_Pommel Horse",
+"mat": "06 Wood - Species - Teak|<Unnamed>|Metal - Stainless|Wood, M",
+"level": "6",
+"n": 2
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Fire_Sprinkler_Head_16406:Fire_Sprinkler_Head_16",
+"mat": "Spinkler Connection|Sprinkler Base|Sprinkler Head",
+"level": "54",
+"n": 2
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Fire_Sprinkler_Head_16406:Fire_Sprinkler_Head_16",
+"mat": "Spinkler Connection|Sprinkler Base|Sprinkler Head",
+"level": "60",
+"n": 2
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Fire_Sprinkler_Head_16406:Fire_Sprinkler_Head_16",
+"mat": "Spinkler Connection|Sprinkler Base|Sprinkler Head",
+"level": "55",
+"n": 2
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Engineering-Infrastructure_Road-Accessories_HUB-",
+"mat": "Glass - HUB Parking - Glass|Metal - HUB Parking - Metal|Meta",
+"level": "GRADE",
+"n": 2
+},
+{
+"cls": "IfcCovering",
+"type": "Compound Ceiling:GWB on Mtl. Stud",
+"mat": "Gypsum Wall Board|Metal Stud Layer",
+"level": "TABLE T.",
+"n": 2
+},
+{
+"cls": "IfcCovering",
+"type": "Compound Ceiling:GWB on Mtl. Stud",
+"mat": "Gypsum Wall Board|Metal Stud Layer",
+"level": "GYM",
+"n": 2
+},
+{
+"cls": "IfcCovering",
+"type": "Compound Ceiling:GWB on Mtl. Stud",
+"mat": "Gypsum Wall Board|Metal Stud Layer",
+"level": "ROOF",
+"n": 2
+},
+{
+"cls": "IfcCurtainWall",
+"type": "Curtain Wall:Storefront 3",
+"mat": "-",
+"level": "GYM",
+"n": 2
+},
+{
+"cls": "IfcCurtainWall",
+"type": "Curtain Wall:gym bath",
+"mat": "-",
+"level": "GYM",
+"n": 2
+},
+{
+"cls": "IfcDoor",
+"type": "HM_Frame_Door_-_Interior_Double_3898:6'-0\" x 7'-",
+"mat": "Door - H.M. Frame|Door - H.M. Panel|Door - Hardware",
+"level": "GRADE",
+"n": 2
+},
+{
+"cls": "IfcDoor",
+"type": "Door-Curtain-Wall-Double-Storefront:Door-Curtain",
+"mat": "Aluminum|Glass",
+"level": "GRADE",
+"n": 2
+},
+{
+"cls": "IfcRailing",
+"type": "Railing:Cable Hand Rail",
+"mat": "<Unnamed>|railing alum|railing alum(1)",
+"level": "SKATE TOP",
+"n": 2
+},
+{
+"cls": "IfcRamp",
+"type": "Ramp:Ramp 1/20",
+"mat": "-",
+"level": "GRADE",
+"n": 2
+},
+{
+"cls": "IfcRampFlight",
+"type": "",
+"mat": "con ramp spyy",
+"level": "GRADE",
+"n": 2
+},
+{
+"cls": "IfcRoof",
+"type": "Basic Roof:Generic - 2'",
+"mat": "Default Roof",
+"level": "ROOF",
+"n": 2
+},
+{
+"cls": "IfcSlab",
+"type": "Floor:Generic - 6\"",
+"mat": "WhitePlastic",
+"level": "MAIN",
+"n": 2
+},
+{
+"cls": "IfcSlab",
+"type": "Floor:Generic - 6\"",
+"mat": "WhitePlastic",
+"level": "JUICE BAR",
+"n": 2
+},
+{
+"cls": "IfcSlab",
+"type": "Monolithic Landing:8\" Thickness",
+"mat": "Concrete, Cast-in-Place gray",
+"level": "GRADE",
+"n": 2
+},
+{
+"cls": "IfcSlab",
+"type": "Monolithic Landing:8\" Thickness",
+"mat": "Concrete, Cast-in-Place gray",
+"level": "JUICE BAR",
+"n": 2
+},
+{
+"cls": "IfcStairFlight",
+"type": "Monolithic Run:3/4\" Nosing 6 1/2\" Depth",
+"mat": "Concrete, Cast-in-Place gray",
+"level": "GRADE",
+"n": 2
+},
+{
+"cls": "IfcStairFlight",
+"type": "Monolithic Run:3/4\" Nosing 6 1/2\" Depth",
+"mat": "Concrete, Cast-in-Place gray",
+"level": "JUICE BAR",
+"n": 2
+},
+{
+"cls": "IfcWall",
+"type": "Basic Wall:Generic - 4\"",
+"mat": "Default Wall",
+"level": "GRADE",
+"n": 2
+},
+{
+"cls": "IfcWindow",
+"type": "Fixed:llong",
+"mat": "Glass|Sash",
+"level": "GYM",
+"n": 2
+},
+{
+"cls": "IfcFlowTerminal",
+"type": "Sink-Bradley_Corp-Frequency-FL-2L:Standard Heigh",
+"mat": "Metal - Bradley Corp - Chrome|Stone - Bradley Corp - Terreon",
+"level": "54",
+"n": 2
+},
+{
+"cls": "IfcFlowTerminal",
+"type": "Sink-Bradley_Corp-Frequency-FL-2L:Standard Heigh",
+"mat": "Metal - Bradley Corp - Chrome|Stone - Bradley Corp - Terreon",
+"level": "GYM",
+"n": 2
+},
+{
+"cls": "IfcFlowTerminal",
+"type": "Sink-Bradley_Corp-Frequency-FL-2L:Standard Heigh",
+"mat": "Metal - Bradley Corp - Chrome|Stone - Bradley Corp - Terreon",
+"level": "TABLE T.",
+"n": 2
+},
+{
+"cls": "IfcLightFixture",
+"type": "Downlight_Recessed_Cooper_Halo_LED_6 Inch_H750T:",
+"mat": "Glass - Cooper Industries - Clear|Metal - Cooper Industries ",
+"level": "60",
+"n": 2
+},
+{
+"cls": "IfcLightFixture",
+"type": "Downlight_Recessed_Cooper_Halo_LED_6 Inch_H750T:",
+"mat": "Glass - Cooper Industries - Clear|Metal - Cooper Industries ",
+"level": "53",
+"n": 2
+},
+{
+"cls": "IfcSanitaryTerminal",
+"type": "Sanitary_Toilets_Svedbergs_Lossen:Svedbergs WC L",
+"mat": "Porcelain",
+"level": "52",
+"n": 2
+},
+{
+"cls": "IfcSanitaryTerminal",
+"type": "Sanitary_Toilets_Svedbergs_Lossen:Svedbergs WC L",
+"mat": "Porcelain",
+"level": "51",
+"n": 2
+},
+{
+"cls": "IfcSanitaryTerminal",
+"type": "Sanitary_Toilets_Svedbergs_Lossen:Svedbergs WC L",
+"mat": "Porcelain",
+"level": "TABLE T.",
+"n": 2
+},
+{
+"cls": "IfcElementAssembly",
+"type": "",
+"mat": "-",
+"level": "SKATE TOP",
+"n": 2
+},
+{
+"cls": "IfcSystemFurnitureElement",
+"type": "Shower-Stall-Petal-Thor-Rail_To be nested:Standa",
+"mat": "Laminate - Petal - Black - Satin",
+"level": "TABLE T.",
+"n": 2
+},
+{
+"cls": "IfcSystemFurnitureElement",
+"type": "Shower-Stall-Petal-Thor-Rail_To be nested:Standa",
+"mat": "<Unnamed>",
+"level": "TABLE T.",
+"n": 2
+},
+{
+"cls": "IfcSystemFurnitureElement",
+"type": "Shower-Stall-Petal-Thor-Wall Panel Section_To be",
+"mat": "Laminate - Petal - White - Satin",
+"level": "TABLE T.",
+"n": 2
+},
+{
+"cls": "IfcGeographicElement",
+"type": "Bus_Stop_-_Modern_3307:Bus_Stop_-_Modern_3307",
+"mat": "Glass - Blue Dark|Metal - Aluminium Satin|Metal - Aluminium ",
+"level": "GRADE",
+"n": 2
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Mass 1:Mass 6",
+"mat": "Default Form",
+"level": "Foundation",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Structural Framing 3:Structural Framing 1",
+"mat": "<Unnamed>",
+"level": "GRADE",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Clear_Acrylic_Podium__Lectern_7279:lectern",
+"mat": "white cream",
+"level": "23",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Mass 3:Mass 2",
+"mat": "Default Form",
+"level": "Foundation",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Mass 6:Mass 6",
+"mat": "Default Form",
+"level": "Foundation",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Mass 2:Mass 6",
+"mat": "Default Form",
+"level": "TABLE T.",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Mass 4:Mass 4",
+"mat": "Default Form",
+"level": "SKATE TOP",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Panoramic_Elevator_15739:Passenger_2500 4",
+"mat": "<Unnamed>|Bracket|Elevator Car|Elevator Rail Attachment|Elev",
+"level": "GRADE",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Model Text:24\" Arial",
+"mat": "-",
+"level": "JUICE BAR",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Grab_Bars_-_Toilet_4680:Bathtub",
+"mat": "Metal - Aluminum, Brushed",
+"level": "53",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Baby_Changing_Station_-_KB100_7300:Baby_Changing",
+"mat": "<Unnamed>",
+"level": "53",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "DURAVIT_234463-Viu-sink:Default",
+"mat": "234463-Viu sink - viu-sink-234463 - Color",
+"level": "53",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Partition-Floor_Braced-Bradley_Corp-St_Stl-N_Sta",
+"mat": "Metal - Bradley Corp - Chrome|Metal - Bradley Corp - Stainle",
+"level": "54",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "DURAVIT_234463-Viu-sink:Default",
+"mat": "234463-Viu sink - viu-sink-234463 - Color",
+"level": "61",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Partition-Floor_Braced-Bradley_Corp-St_Stl-N_Sta",
+"mat": "Metal - Bradley Corp - Chrome|Metal - Bradley Corp - Stainle",
+"level": "61",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Partition-Floor_Braced-Bradley_Corp-St_Stl-ADA-N",
+"mat": "Metal - Bradley Corp - Chrome|Metal - Bradley Corp - Stainle",
+"level": "61",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Grab_Bars_-_Toilet_4680:Bathtub",
+"mat": "Metal - Aluminum, Brushed",
+"level": "61",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Structural Framing 1:Structural Framing 1",
+"mat": "234463-Viu sink - viu-sink-234463 - Color|<Unnamed>",
+"level": "SKATE TOP",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "DURAVIT_234463-Viu-sink:Default",
+"mat": "234463-Viu sink - viu-sink-234463 - Color",
+"level": "52",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Partition-Floor_Braced-Bradley_Corp-St_Stl-ADA-N",
+"mat": "Metal - Bradley Corp - Chrome|Metal - Bradley Corp - Stainle",
+"level": "52",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Partition-Floor_Braced-Bradley_Corp-St_Stl-N_Sta",
+"mat": "Metal - Bradley Corp - Chrome|Metal - Bradley Corp - Stainle",
+"level": "52",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Grab_Bars_-_Toilet_4680:Bathtub",
+"mat": "Metal - Aluminum, Brushed",
+"level": "52",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "DURAVIT_234463-Viu-sink:Default",
+"mat": "234463-Viu sink - viu-sink-234463 - Color",
+"level": "51",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Partition-Floor_Braced-Bradley_Corp-St_Stl-ADA-N",
+"mat": "Metal - Bradley Corp - Chrome|Metal - Bradley Corp - Stainle",
+"level": "51",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Partition-Floor_Braced-Bradley_Corp-St_Stl-N_Sta",
+"mat": "Metal - Bradley Corp - Chrome|Metal - Bradley Corp - Stainle",
+"level": "51",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Grab_Bars_-_Toilet_4680:Bathtub",
+"mat": "Metal - Aluminum, Brushed",
+"level": "51",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Structural Connections 1:Structural Connections ",
+"mat": "<Unnamed>|alum",
+"level": "GRADE",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "DURAVIT_234463-Viu-sink:Default",
+"mat": "234463-Viu sink - viu-sink-234463 - Color",
+"level": "56",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Partition-Floor_Braced-Bradley_Corp-St_Stl-ADA-N",
+"mat": "Metal - Bradley Corp - Chrome|Metal - Bradley Corp - Stainle",
+"level": "56",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Grab_Bars_-_Toilet_4680:Bathtub",
+"mat": "Metal - Aluminum, Brushed",
+"level": "56",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Kit Sunfix aero duo (1):Sunmodule Plus mono",
+"mat": "SolarWorld Aluminum Blue|SolarWorld Iron|SolarWorld Iron Bla",
+"level": "9",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Clear_Acrylic_Podium__Lectern_7279:lectern",
+"mat": "white cream",
+"level": "24",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Wall_Vent_Parametric_14314:Wall_Vent_8911",
+"mat": "<Unnamed>",
+"level": "JUICE BAR",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "WRECKER_-_FLAT_BED_TOW_TRUCK_and_Wrecked_Car_132",
+"mat": "<Unnamed>",
+"level": "GRADE",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Karate_Kumite_Tatami__Judo_Mat_16473:Judo Mat",
+"mat": "Judo Mat|Judo Mat Paint",
+"level": "17",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Judo_Mat-around:Karate Kumite",
+"mat": "Judo Mat|Judo Mat Paint",
+"level": "17",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Gymnastic_Balance Beam:Gymnastic_Balance Beam",
+"mat": "Beam Material|Beam Support",
+"level": "5",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Gymnastic_Balance Beam:Gymnastic_Balance Beam",
+"mat": "Beam Material|Beam Support",
+"level": "17",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Fire_Sprinkler_Head_16406:Fire_Sprinkler_Head_16",
+"mat": "Spinkler Connection|Sprinkler Base|Sprinkler Head",
+"level": "22",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Fire_Sprinkler_Head_16406:Fire_Sprinkler_Head_16",
+"mat": "Spinkler Connection|Sprinkler Base|Sprinkler Head",
+"level": "51",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Fire_Sprinkler_Head_16406:Fire_Sprinkler_Head_16",
+"mat": "Spinkler Connection|Sprinkler Base|Sprinkler Head",
+"level": "52",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Fire_Sprinkler_Head_16406:Fire_Sprinkler_Head_16",
+"mat": "Spinkler Connection|Sprinkler Base|Sprinkler Head",
+"level": "9",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "3D_Person_standing_simple_gestural_form:3D_Perso",
+"mat": "Analytical Floor Surface",
+"level": "TABLE T.",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Roads 1:Roads 1",
+"mat": "curb edge",
+"level": "Foundation",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Truncated_Domes_5117:Truncated Domes",
+"mat": "yello trunk doom",
+"level": "GRADE",
+"n": 1
+},
+{
+"cls": "IfcBuildingElementProxy",
+"type": "Street_Sign_8479:Street_Sign_8479",
+"mat": "Street Post|Street Sign|Street Sign Text",
+"level": "GRADE",
+"n": 1
+},
+{
+"cls": "IfcColumn",
+"type": "Structural Columns 4:Structural Columns 3",
+"mat": "<Unnamed>|Structure, Steel Bar Joist Layer|Wall Material (1)",
+"level": "Foundation",
+"n": 1
+},
+{
+"cls": "IfcColumn",
+"type": "Structural Columns 2:Structural Columns 3",
+"mat": "<Unnamed>|Structure, Steel Bar Joist Layer",
+"level": "ROOF",
+"n": 1
+},
+{
+"cls": "IfcColumn",
+"type": "Structural Columns 6:Structural Columns 3",
+"mat": "Con",
+"level": "GRADE",
+"n": 1
+},
+{
+"cls": "IfcColumn",
+"type": "Structural Columns 5:Structural Columns 1",
+"mat": "234463-Viu sink - viu-sink-234463 - Color|<Unnamed>|Con",
+"level": "Foundation",
+"n": 1
+},
+{
+"cls": "IfcColumn",
+"type": "Structural Columns 1:Structural Columns 1",
+"mat": "<Unnamed>|Con",
+"level": "Foundation",
+"n": 1
+},
+{
+"cls": "IfcCovering",
+"type": "Ceilings 1:Ceilings 1",
+"mat": "-",
+"level": "GRADE",
+"n": 1
+},
+{
+"cls": "IfcCurtainWall",
+"type": "Curtain Wall:Storefront 8\"",
+"mat": "-",
+"level": "JUICE BAR",
+"n": 1
+},
+{
+"cls": "IfcDoor",
+"type": "HM_Frame_Door_-_Interior_Double_3898:6'-0\" x 7'-",
+"mat": "Door - H.M. Frame|Door - H.M. Panel|Door - Hardware",
+"level": "JUICE BAR",
+"n": 1
+},
+{
+"cls": "IfcDoor",
+"type": "HM_Frame_Door_-_Interior_Double_3898:6x6",
+"mat": "Door - Hardware|Wall material 1",
+"level": "GYM",
+"n": 1
+},
+{
+"cls": "IfcMember",
+"type": "HP-Bearing Pile:HP12X63",
+"mat": "Steel ASTM A572",
+"level": "TABLE T.",
+"n": 1
+},
+{
+"cls": "IfcRailing",
+"type": "Railing:Cable Hand Rail 2",
+"mat": "<Unnamed>|railing alum|railing alum(1)",
+"level": "GRADE",
+"n": 1
+},
+{
+"cls": "IfcRailing",
+"type": "Railing:Residential - Spiral Stair - No Stringer",
+"mat": "<Unnamed>|Metal - Chrome",
+"level": "GRADE",
+"n": 1
+},
+{
+"cls": "IfcRailing",
+"type": "Railing:Handrail - Pipe",
+"mat": "<Unnamed>",
+"level": "GRADE",
+"n": 1
+},
+{
+"cls": "IfcRamp",
+"type": "Ramp:Ramp 1/20",
+"mat": "-",
+"level": "SKATE TOP",
+"n": 1
+},
+{
+"cls": "IfcRamp",
+"type": "Ramp:Ramp 1/20",
+"mat": "con ramp spyy",
+"level": "TABLE T.",
+"n": 1
+},
+{
+"cls": "IfcRamp",
+"type": "Ramp:Ramp 1/20",
+"mat": "-",
+"level": "MAIN",
+"n": 1
+},
+{
+"cls": "IfcRamp",
+"type": "Ramp:Ramp 1/20",
+"mat": "con ramp spyy",
+"level": "MAIN",
+"n": 1
+},
+{
+"cls": "IfcRamp",
+"type": "Ramp:Ramp 4",
+"mat": "-",
+"level": "GRADE",
+"n": 1
+},
+{
+"cls": "IfcRampFlight",
+"type": "",
+"mat": "con ramp spyy",
+"level": "SKATE TOP",
+"n": 1
+},
+{
+"cls": "IfcRampFlight",
+"type": "",
+"mat": "con ramp spyy",
+"level": "MAIN",
+"n": 1
+},
+{
+"cls": "IfcRampFlight",
+"type": "",
+"mat": "<Unnamed>",
+"level": "GRADE",
+"n": 1
+},
+{
+"cls": "IfcRoof",
+"type": "Basic Roof:Generic - 3'",
+"mat": "Default Roof",
+"level": "GYM",
+"n": 1
+},
+{
+"cls": "IfcRoof",
+"type": "Roofs 2:Roofs 1",
+"mat": "-",
+"level": "ROOF",
+"n": 1
+},
+{
+"cls": "IfcRoof",
+"type": "Roofs 1:Roofs 1",
+"mat": "-",
+"level": "CLASSROOM TOP",
+"n": 1
+},
+{
+"cls": "IfcSlab",
+"type": "Floor:Generic - 12\"",
+"mat": "Default Floor",
+"level": "JUICE BAR",
+"n": 1
+},
+{
+"cls": "IfcSlab",
+"type": "Floor:grass",
+"mat": "grass",
+"level": "GRADE",
+"n": 1
+},
+{
+"cls": "IfcSlab",
+"type": "Floor:Generic - 6\"",
+"mat": "WhitePlastic",
+"level": "SKATE TOP",
+"n": 1
+},
+{
+"cls": "IfcSlab",
+"type": "Floor:Generic - 2'",
+"mat": "Default Floor",
+"level": "GYM",
+"n": 1
+},
+{
+"cls": "IfcSlab",
+"type": "Floor:Wood Finish 2",
+"mat": "Oak Flooring",
+"level": "GYM",
+"n": 1
+},
+{
+"cls": "IfcSlab",
+"type": "Floor:Generic - 12\" with wood floor",
+"mat": "Default Floor|Oak Flooring",
+"level": "JUICE BAR",
+"n": 1
+},
+{
+"cls": "IfcSlab",
+"type": "Floor:Generic - 12\" with wood floor",
+"mat": "Default Floor|Oak Flooring",
+"level": "GRADE",
+"n": 1
+},
+{
+"cls": "IfcSlab",
+"type": "Floor:sand",
+"mat": "Sand",
+"level": "GRADE",
+"n": 1
+},
+{
+"cls": "IfcSlab",
+"type": "Floor:Generic - 12\" with wood floor",
+"mat": "Default Floor|Oak Flooring",
+"level": "TABLE T.",
+"n": 1
+},
+{
+"cls": "IfcSlab",
+"type": "Floor:Generic - 12\"",
+"mat": "Default Floor",
+"level": "GRADE",
+"n": 1
+},
+{
+"cls": "IfcSlab",
+"type": "Floor:diry",
+"mat": "dirt",
+"level": "GRADE",
+"n": 1
+},
+{
+"cls": "IfcStair",
+"type": "Precast Stair:Precast Stair",
+"mat": "-",
+"level": "GRADE",
+"n": 1
+},
+{
+"cls": "IfcStair",
+"type": "Precast Stair:Precast Stair",
+"mat": "-",
+"level": "JUICE BAR",
+"n": 1
+},
+{
+"cls": "IfcWall",
+"type": "Mass 19:Mass 19",
+"mat": "alum",
+"level": "GRADE",
+"n": 1
+},
+{
+"cls": "IfcWall",
+"type": "Walls 1:Walls 1",
+"mat": "Default Wall",
+"level": "TABLE T.",
+"n": 1
+},
+{
+"cls": "IfcWall",
+"type": "Basic Wall:Generic - 1\"",
+"mat": "WhitePlastic",
+"level": "SKATE TOP",
+"n": 1
+},
+{
+"cls": "IfcWall",
+"type": "curten wall lip conecter:curten wall lip conecte",
+"mat": "Aluminum wall edge",
+"level": "TABLE T.",
+"n": 1
+},
+{
+"cls": "IfcFlowTerminal",
+"type": "Sink-Bradley_Corp-Frequency-FL-2L:Standard Heigh",
+"mat": "Metal - Bradley Corp - Chrome|Stone - Bradley Corp - Terreon",
+"level": "61",
+"n": 1
+},
+{
+"cls": "IfcFlowTerminal",
+"type": "Sink-Bradley_Corp-Frequency-FL-2L:Standard Heigh",
+"mat": "Metal - Bradley Corp - Chrome|Stone - Bradley Corp - Terreon",
+"level": "52",
+"n": 1
+},
+{
+"cls": "IfcFlowTerminal",
+"type": "Sink-Bradley_Corp-Frequency-FL-2L:Standard Heigh",
+"mat": "Metal - Bradley Corp - Chrome|Stone - Bradley Corp - Terreon",
+"level": "51",
+"n": 1
+},
+{
+"cls": "IfcFlowTerminal",
+"type": "Sink-Bradley_Corp-Frequency-FL-2L:Standard Heigh",
+"mat": "Metal - Bradley Corp - Chrome|Stone - Bradley Corp - Terreon",
+"level": "57",
+"n": 1
+},
+{
+"cls": "IfcFlowTerminal",
+"type": "Sink-Bradley_Corp-Frequency-FL-2L:Standard Heigh",
+"mat": "Metal - Bradley Corp - Chrome|Stone - Bradley Corp - Terreon",
+"level": "58",
+"n": 1
+},
+{
+"cls": "IfcFlowTerminal",
+"type": "Sink-Bradley_Corp-Frequency-FL-2L:Standard Heigh",
+"mat": "Metal - Bradley Corp - Chrome|Stone - Bradley Corp - Terreon",
+"level": "56",
+"n": 1
+},
+{
+"cls": "IfcLightFixture",
+"type": "Downlight_Recessed_Cooper_Halo_LED_6 Inch_H750T:",
+"mat": "Glass - Cooper Industries - Clear|Metal - Cooper Industries ",
+"level": "44",
+"n": 1
+},
+{
+"cls": "IfcSanitaryTerminal",
+"type": "Sanitary_Toilets_Svedbergs_Lossen:Svedbergs WC L",
+"mat": "Porcelain",
+"level": "53",
+"n": 1
+},
+{
+"cls": "IfcSanitaryTerminal",
+"type": "Sanitary_Toilets_Svedbergs_Lossen:Svedbergs WC L",
+"mat": "Porcelain",
+"level": "56",
+"n": 1
+},
+{
+"cls": "IfcFurniture",
+"type": "Furniture 10:Furniture 16",
+"mat": "Wood",
+"level": "JUICE BAR",
+"n": 1
+},
+{
+"cls": "IfcFurniture",
+"type": "Furniture 33:Furniture 3",
+"mat": "<Unnamed>",
+"level": "23",
+"n": 1
+},
+{
+"cls": "IfcFurniture",
+"type": "Furniture 14:Furniture 3",
+"mat": "Bleachers",
+"level": "55",
+"n": 1
+},
+{
+"cls": "IfcFurniture",
+"type": "Furniture 4:Furniture 1",
+"mat": "con setting",
+"level": "GRADE",
+"n": 1
+},
+{
+"cls": "IfcFurniture",
+"type": "Furniture 7:Furniture 3",
+"mat": "Bleachers",
+"level": "56",
+"n": 1
+},
+{
+"cls": "IfcFurniture",
+"type": "Furniture 8:Furniture 3",
+"mat": "Bleachers",
+"level": "5",
+"n": 1
+},
+{
+"cls": "IfcFurniture",
+"type": "Furniture 9:Furniture 3",
+"mat": "Bleachers",
+"level": "5",
+"n": 1
+},
+{
+"cls": "IfcFurniture",
+"type": "Furniture 11:Furniture 3",
+"mat": "<Unnamed>",
+"level": "24",
+"n": 1
+},
+{
+"cls": "IfcGeographicElement",
+"type": "Chan_Link_Dumpster_Gate_18275:72\"x76\" Gate",
+"mat": "Chainlink,2-1/2\"|Phase-Temp|Steel,Galvanized",
+"level": "GRADE",
+"n": 1
+},
+{
+"cls": "IfcGeographicElement",
+"type": "Site 3:Site 3",
+"mat": "<Unnamed>",
+"level": "Foundation",
+"n": 1
+},
+{
+"cls": "IfcGeographicElement",
+"type": "road:road",
+"mat": "asphalt",
+"level": "Foundation",
+"n": 1
+}
+]

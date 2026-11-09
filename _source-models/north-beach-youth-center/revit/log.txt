@@ -1,0 +1,7 @@
+doc: C:\Users\herna\AppData\Local\Temp\claude\fd9fa047545a0060\18a6b605-daed-4515-bf21-b2408da4f76d\scratchpad\D6\revit stuff\Test-Youth_Render-Model.rvt
+link: C:\Users\herna\AppData\Local\Temp\claude\fd9fa047545a0060\18a6b605-daed-4515-bf21-b2408da4f76d\scratchpad\D6\site\Youth_Center-Site_Model.rvt
+link: C:\Users\herna\AppData\Local\Temp\claude\fd9fa047545a0060\18a6b605-daed-4515-bf21-b2408da4f76d\scratchpad\D6\site\rhino site.rvt
+link: C:\Users\herna\AppData\Local\Temp\claude\fd9fa047545a0060\18a6b605-daed-4515-bf21-b2408da4f76d\scratchpad\D6\site\Youth_Center-Site_Model.rvt
+link: C:\Users\herna\AppData\Local\Temp\claude\fd9fa047545a0060\18a6b605-daed-4515-bf21-b2408da4f76d\scratchpad\D6\site\rhino site.rvt
+triangles 18267746 elements 13537 materials 284
+done
