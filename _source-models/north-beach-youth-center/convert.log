@@ -1,0 +1,7 @@
+2000 elements 30 s
+4000 elements 49 s
+6000 elements 58 s
+8000 elements 61 s
+10000 elements 65 s
+geometry done 11898 166 s
+wrote {'Metal': 491678, 'Glazing': 35402, 'Stone': 87378, 'Other': 64322, 'Plaster': 35272, 'Planting': 1216, 'ScreenPanel': 741922, 'Timber': 572} total 167 s
