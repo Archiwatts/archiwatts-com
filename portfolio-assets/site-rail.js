@@ -15,7 +15,17 @@
   function isHere(p) { var dir = new URL(href(p), location.href).pathname.replace(/[^\/]*$/, ''); return here.indexOf(dir) === 0; }
   var mark = document.createElement('a'); mark.className = 'sr-mark'; mark.href = href('index.html#home'); mark.setAttribute('aria-label', 'ArchiWatts home'); if (logo) mark.appendChild(logo);
   var nav = document.createElement('nav'); nav.setAttribute('aria-label', 'Site');
-  function projList(cls) { return '<ul class="' + cls + '" aria-label="3D projects">' + PROJECTS.map(function (p) { return '<li><a href="' + href(p[1]) + '"' + (isHere(p[1]) ? ' aria-current="page"' : '') + '>' + esc(p[0]) + '</a></li>'; }).join('') + '</ul>'; }
+  // only the current project is listed, with arrows to the previous and next one, the tour, and a link to all of them
+  var cur = -1; PROJECTS.forEach(function (p, i) { if (isHere(p[1])) cur = i; });
+  window.siteProjects = PROJECTS.map(function (p) { return { name: p[0], url: href(p[1]) }; }); window.siteProjectIndex = cur;
+  function projList(cls) {
+    if (cur < 0) return '<ul class="' + cls + '" aria-label="3D projects">' + PROJECTS.map(function (p) { return '<li><a href="' + href(p[1]) + '">' + esc(p[0]) + '</a></li>'; }).join('') + '</ul>';
+    var prev = PROJECTS[(cur + PROJECTS.length - 1) % PROJECTS.length], next = PROJECTS[(cur + 1) % PROJECTS.length];
+    return '<div class="' + cls + ' sr-now" aria-label="Current 3D project">' +
+      '<a class="sr-name" href="' + href(PROJECTS[cur][1]) + '" aria-current="page">' + esc(PROJECTS[cur][0]) + '</a>' +
+      '<div class="sr-step"><a href="' + href(prev[1]) + '" rel="prev" aria-label="Previous project: ' + esc(prev[0]) + '" title="' + esc(prev[0]) + '">‹ Prev</a><span>' + (cur + 1) + ' / ' + PROJECTS.length + '</span><a href="' + href(next[1]) + '" rel="next" aria-label="Next project: ' + esc(next[0]) + '" title="' + esc(next[0]) + '">Next ›</a></div>' +
+      '<a class="sr-all" href="' + href('interactive/index.html') + '">All projects →</a></div>';
+  }
   nav.innerHTML = '<ul class="sr-links">' +
     '<li><a href="' + href('index.html#arch') + '" aria-current="page">Architecture</a><ul class="sr-sub" aria-label="Architecture categories">' +
     CATS.map(function (c) {

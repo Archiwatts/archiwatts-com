@@ -16,7 +16,7 @@
   })();
   function redraw(ctx) { if (ctx.controls && ctx.controls.dispatchEvent) ctx.controls.dispatchEvent({ type: 'change' }); }
   // the Hive panel skin keeps its own blue-grey and gold (the sepia wash would turn every panel tan)
-  var SKIP = /^Hive (sketch|canal hatch|road markings|planting bed)|Hive sketch|Hive plan overlay|Amenity pool water|^Hive (hex|balcony|window) panel$|^Hive hex mesh panel$|^Phal (water hatch|life sprites)$|^Tranquil (pond water|life sprites|section cap)$|^NZS life /;
+  var SKIP = /^Hive (sketch|canal hatch|road markings|planting bed)|Hive sketch|Hive plan overlay|Amenity pool water|^Hive (hex|balcony|window) panel$|^Hive hex mesh panel$|^Phal (water hatch|life sprites)$|^Tranquil (pond water|life sprites|section cap)$|^NZS life |^NBYC life (sprites|grass)|^NBYC lawn$|^Hive sketch NBYC/;   // NBYC cars and trees take the washes too
   var MODES = {
     realistic: { style: 0, bg: null, edges: false, paper: 0, ink: [.18, .165, .15] },
     watercolor: { style: 1, bg: 0xf4ecdc, edges: true, paper: .55, ink: [.18, .165, .15] },
@@ -27,9 +27,9 @@
   function run() {
     var ctx = window.daylightContext, scene = ctx.scene, mobile = !!(window.modelPerformance && window.modelPerformance.mobile);
     var bg0 = scene.background && scene.background.isColor ? scene.background.getHex() : null;
-    var shared = { uStyle: { value: 0 }, uBands: { value: 5 }, uChroma: { value: .55 } }, patched = new WeakSet(), std = null;
+    var shared = { uStyle: { value: 0 }, uBands: { value: 5 }, uChroma: { value: CFG.chroma != null ? CFG.chroma : .55 } }, patched = new WeakSet(), std = null;
     // ---- wash shader, patched onto every lit material ----
-    var FRAG_HEAD = 'uniform float uStyle; uniform float uBands; uniform float uChroma; uniform float uCtx; varying vec3 vSkW;\n' +
+    var FRAG_HEAD = 'uniform float uStyle; uniform float uBands; uniform float uChroma; uniform float uCtx; uniform float uSoft; varying vec3 vSkW;\n' +
       'vec3 skRamp(float t){ vec3 c0=vec3(.47,.31,.24), c1=vec3(.80,.60,.43), c2=vec3(.93,.84,.69), c3=vec3(.985,.965,.92); t=clamp(t,0.,1.); if(t<.33) return mix(c0,c1,t/.33); if(t<.66) return mix(c1,c2,(t-.33)/.33); return mix(c2,c3,(t-.66)/.34); }\n' +
       'float skH(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }\n' +
       'float skN(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(skH(i),skH(i+vec2(1.,0.)),f.x),mix(skH(i+vec2(0.,1.)),skH(i+vec2(1.,1.)),f.x),f.y); }\n';
@@ -39,9 +39,13 @@
       'if (uStyle > .5) { vec3 col = gl_FragColor.rgb; float l = dot(col, vec3(.299,.587,.114)); float st = uStyle; if (uCtx > .5) st = 3.0;\n' +
       '  float wob = (skN(vSkW.xz*.30 + vSkW.y*.21)-.5)*.16 + (skN(vSkW.xz*1.9)-.5)*.06;\n' +
       '  float lq = floor((l+wob)*uBands+.5)/uBands; lq = mix(l, lq, .5); vec3 o;\n' +
-      '  if (st < 1.5) { float gr = (skN(gl_FragCoord.xy * .45) - .5) * .05 + (skN(vSkW.xz * 3.1 + vSkW.y) - .5) * .035; o = skRamp(clamp(lq + gr, 0., 1.)) + (col - l) * uChroma; }\n' +
+      '  if (st < 1.5) { float gr = (skN(gl_FragCoord.xy * .45) - .5) * .05 + (skN(vSkW.xz * 3.1 + vSkW.y) - .5) * .035; o = skRamp(clamp(lq + gr, 0., 1.)) + (col - l) * uChroma;\n' +
+      // secondary buildings (material.userData.skSoft, 0..1) take only a light wash, so the main project carries the colour
+      '    if (uSoft > 0.) { float sg = mix(.8, 1.0, clamp(lq + .1, 0., 1.)); o = mix(o, vec3(sg, sg * .985, sg * .955), uSoft); } }\n' +
       '  else if (st < 2.5) { float g = mix(.30,.985,lq); o = vec3(g, g*.985, g*.955); }\n' +
-      '  else { float b = floor(l*3.+.5)/3.; float g = mix(.70,1.0,clamp(b+.1,0.,1.)); o = vec3(g, g*.99, g*.965); }\n' +
+      '  else { float b = floor(l*3.+.5)/3.; float g = mix(.70,1.0,clamp(b+.1,0.,1.)); o = vec3(g, g*.99, g*.965);\n' +
+      // coloured parts of a study model (terracotta roofs) keep their colour
+      '    float sat = max(col.r, max(col.g, col.b)) - min(col.r, min(col.g, col.b)); if (sat > .3) o = mix(o, col, .85); }\n' +
       '  gl_FragColor.rgb = o; }\n' +
       // section cut: when the section box cuts a solid, its inside faces show through the cut. Drawn as a filled region:
       // dark grey with black diagonal hatching in screen space, the way a cut reads in Revit.
@@ -55,10 +59,11 @@
       var cap = CFG.sectionHatch !== false && !m.transparent && !(noCapRe && noCapRe.test(m.name || ''));
       if (cap) { m.side = 2; m.defines = Object.assign({}, m.defines, { SK_CAP: '' }); }
       var ctxFlag = { value: /context/i.test(m.name || '') || (m.map && /context/i.test(m.map.name || '')) ? 1 : 0 };
+      var softU = { value: (m.userData && m.userData.skSoft) || 0 };
       var prev = m.onBeforeCompile;
       m.onBeforeCompile = function (shader, renderer) {
         if (prev) prev.call(this, shader, renderer);
-        shader.uniforms.uStyle = shared.uStyle; shader.uniforms.uBands = shared.uBands; shader.uniforms.uChroma = shared.uChroma; shader.uniforms.uCtx = ctxFlag;
+        shader.uniforms.uStyle = shared.uStyle; shader.uniforms.uBands = shared.uBands; shader.uniforms.uChroma = shared.uChroma; shader.uniforms.uCtx = ctxFlag; shader.uniforms.uSoft = softU;
         shader.vertexShader = 'varying vec3 vSkW;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vSkW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
         shader.fragmentShader = FRAG_HEAD + shader.fragmentShader.replace('#include <dithering_fragment>', FRAG_MAIN);
       };
