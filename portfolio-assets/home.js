@@ -8,7 +8,8 @@ const MAIN = [
   {id:'Hive', title:'Hive', tag:'Capstone · Miami, Florida', img:'img/tiles/hive.jpg'},
   {id:'Phalanstery', title:'Phalanstery', tag:'New Harmony · Architectural representation', img:'img/Phalanstery/model/overview.png'},
   {id:'Tranquil-River', title:'Tranquil River', tag:'Kikuletwa Hot Springs · Tanzania', img:'img/Tranquil-River/model/overview.png'},
-  {id:'Net-Zero-School', title:'Net Zero School', tag:'Henry S. West Laboratory School · Coral Gables', img:'img/tiles/net-zero-school.jpg'}
+  {id:'Net-Zero-School', title:'Net Zero School', tag:'Henry S. West Laboratory School · Coral Gables', img:'img/tiles/net-zero-school.jpg'},
+  {id:'north-beach-youth-center', title:'North Beach Youth Center', tag:'Youth center · 3D model and drawings', img:'interactive/north-beach-youth-center/preview.webp', href:'interactive/north-beach-youth-center/index.html', story:'projects/north-beach-youth-center/index.html'}
 ];
 const MORE = [
   {title:'Venice Apartments', sub:'3D model · drawings', slug:'venice-apartments', gallery:'projects/venice-redesign/index.html'},
@@ -18,7 +19,6 @@ const MORE = [
   {title:'Wheels on Water', sub:'3D model', slug:'wheels-on-water', gallery:'projects/wheels-on-water/index.html'},
   {title:'Bench Boat', sub:'Bench studies · 3D', slug:'bench-boat', gallery:'projects/bench-studies/index.html'},
   {title:'Bench D9', sub:'Bench studies · 3D', slug:'bench-d9', gallery:'projects/bench-studies/index.html'},
-  {title:'North Beach Youth Center', sub:'Youth center · 3D', slug:'north-beach-youth-center', gallery:'projects/north-beach-youth-center/index.html'},
   {title:'A Moment in Monument', sub:'Winter Stations 2027 · interactive wall', slug:'winter-station-2027', gallery:'projects/winter-station-2027/index.html'}
 ];
 const STORIES = [
@@ -58,13 +58,13 @@ const CARDS = [
 const img = (src, alt, extra = '') => `<img src="${src}" alt="${alt}" loading="lazy" decoding="async" ${extra}>`;
 
 const modelTile = p => `<article class="tile">
-<a class="thumb" href="${p.id}/${p.id}.html" aria-label="${p.title}: explore in 3D" tabindex="-1">${img(p.img, p.title + ' 3D model')}</a>
+<a class="thumb" href="${p.href || p.id + '/' + p.id + '.html'}" aria-label="${p.title}: explore in 3D" tabindex="-1">${img(p.img, p.title + ' 3D model')}</a>
 <div class="body"><h3>${p.title}</h3><small>${p.tag}</small>
 <div class="btns">
-<a class="btn dk-only" href="${p.id}/${p.id}.html">Explore in 3D ↗</a>
-<a class="btn alt dk-only" href="${p.id}/story.html">Project story →</a>
-<a class="btn ph-only" href="${p.id}/story.html">Project story →</a>
-<a class="btn alt ph-only" href="${p.id}/${p.id}.html">Open 3D model anyway ↗</a>
+<a class="btn dk-only" href="${p.href || p.id + '/' + p.id + '.html'}">Explore in 3D ↗</a>
+<a class="btn alt dk-only" href="${p.story || p.id + '/story.html'}">Project story →</a>
+<a class="btn ph-only" href="${p.story || p.id + '/story.html'}">Project story →</a>
+<a class="btn alt ph-only" href="${p.href || p.id + '/' + p.id + '.html'}">Open 3D model anyway ↗</a>
 </div><p class="note">The full 3D model works best on a computer.</p></div></article>`;
 
 const row = (title, sub, thumb, main, links = '') => `<div class="row"><span class="t">${thumb}</span>

@@ -1,0 +1,3 @@
+/* Floor plans exported from the Revit model (_source-models/tools/revit_plans.py), placed by their crop boxes and the fit of
+   Revit onto the web model (plan_configs.py); refined against the model walls in the browser before writing. */
+window.PROJECT_PLANS = {"plans": [{"img": "plans/level-2.webp?v=1", "name": "Circule 9", "sub": "Revit plan: CIRCULE 9", "floor": 6.63, "cut": 7.83, "tl": [16.381, -99.378], "tr": [-46.139, -99.378], "bl": [16.381, 49.113]}, {"img": "plans/level-3.webp?v=1", "name": "Circule 1", "sub": "Revit plan: CIRCULE 1 Copy 1", "floor": 9.68, "cut": 10.88, "tl": [19.349, -98.871], "tr": [-47.723, -98.871], "bl": [19.349, 49.814]}]};

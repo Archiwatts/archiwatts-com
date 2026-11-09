@@ -38,7 +38,7 @@
     function set(next) {
       on = next; loadLayers();
       scene.traverse(function (o) {
-        if (!o.isMesh || (o.userData && o.userData.skEdge) || !o.material || /^(Hive|Phal|Tranquil|NZS life) |sketch|sprite/i.test(o.material.name || '')) return;
+        if (!o.isMesh || (o.userData && o.userData.skEdge) || !o.material || /^(Hive|Phal|Tranquil|NZS life|NBYC life) |sketch|sprite/i.test(o.material.name || '')) return;
         if (!orig.has(o)) orig.set(o, o.material);
         o.material = on ? flat(Array.isArray(orig.get(o)) ? orig.get(o)[0] : orig.get(o), colourOf(o)) : orig.get(o);
       });

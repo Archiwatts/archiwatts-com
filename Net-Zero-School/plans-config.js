@@ -1,0 +1,3 @@
+/* Floor plans exported from the Revit model (_source-models/tools/revit_plans.py), placed by their crop boxes and the fit of
+   Revit onto the web model (plan_configs.py); refined against the model walls in the browser before writing. */
+window.PROJECT_PLANS = {"plans": [{"img": "plans/level-1.webp?v=1", "name": "Grade", "sub": "Revit plan: GRADE", "floor": 2.07, "cut": 3.57, "tl": [11.54, -413.911], "tr": [412.657, -413.911], "bl": [11.54, 21.343]}, {"img": "plans/level-2.webp?v=1", "name": "Level 1", "sub": "Revit plan: Level 1", "floor": 4.82, "cut": 6.02, "tl": [40.775, -406.456], "tr": [298.998, -406.456], "bl": [40.775, -0.877]}]};
