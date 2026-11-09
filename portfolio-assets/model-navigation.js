@@ -20,3 +20,19 @@ setInterval(()=>{attach();const m=mode();document.body.dataset.modelNavigationMo
 function tick(){requestAnimationFrame(tick);if(axis()&&walking()&&performance.now()-lastRender>18){const c=window.daylightContext;if(c)c.renderer.render(c.scene,c.camera)}}requestAnimationFrame(tick);
 const api=window.modelNavigation={version:4,boost:()=>boostHeld,isWalking:walking,axis,input:()=>axis()!==0,reset,state:()=>({height,input:axis(),speed:window.newProjectViewer?.navigation?.state?.().speed||3,downKey:'Q',upKey:'E',mode:mode(),template:'shared-model-navigation-v3'}),step(){}};window.hiveVerticalTravel=api;
 })();
+
+/* Orbit view: W A S D slide the view over the ground (forward / back follow where the camera faces), Q / E move down / up, Shift is
+   faster. Camera and orbit centre move together, so dragging still looks around the new spot. Speed follows the zoom. Walk mode and
+   running tours keep their own keys; typing in a field never moves the model. */
+(function(){
+const held=new Set(),KEYS=['KeyW','KeyA','KeyS','KeyD','KeyQ','KeyE','ShiftLeft','ShiftRight'];
+const busy=()=>window.modelNavigation?.isWalking?.()||(window.projectWalk&&window.projectWalk.state&&window.projectWalk.state().playing);
+addEventListener('keydown',e=>{if(!KEYS.includes(e.code)||e.ctrlKey||e.metaKey||e.altKey||e.target.closest?.('input,textarea,select,[contenteditable=true]')||busy())return;held.add(e.code);if(!/Shift/.test(e.code))e.preventDefault();});
+addEventListener('keyup',e=>held.delete(e.code));addEventListener('blur',()=>held.clear());
+let last=performance.now();
+(function tick(now){requestAnimationFrame(tick);const dt=Math.min(.1,(now-last)/1000);last=now;const c=window.daylightContext;if(!c||!c.controls||!held.size)return;if(busy()){held.clear();return;}
+const f=Number(held.has('KeyW'))-Number(held.has('KeyS')),r=Number(held.has('KeyD'))-Number(held.has('KeyA')),u=Number(held.has('KeyE'))-Number(held.has('KeyQ'));if(!f&&!r&&!u)return;
+const cam=c.camera,t=c.controls.target,dx=t.x-cam.position.x,dz=t.z-cam.position.z,dl=Math.hypot(dx,dz)||1,fx=dx/dl,fz=dz/dl,dist=cam.position.distanceTo(t);
+const sp=Math.max(3,Math.min(80,dist*.6))*(held.has('ShiftLeft')||held.has('ShiftRight')?2.5:1)*dt,mx=(fx*f-fz*r)*sp,mz=(fz*f+fx*r)*sp,my=u*sp;
+cam.position.x+=mx;cam.position.y+=my;cam.position.z+=mz;t.x+=mx;t.y+=my;t.z+=mz;c.controls.update&&c.controls.update();c.controls.dispatchEvent({type:'change'});})(performance.now());
+})();

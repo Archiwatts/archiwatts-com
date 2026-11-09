@@ -22,7 +22,9 @@
 
     // ---- massing context: whiter basswood (tiled roofs in terracotta when PROJECT_LOOK.roofs is set) ----
     var ROOF = CFG.roofs ? new (any.material.color.constructor)(CFG.roofs === true ? '#c8714a' : CFG.roofs) : null;
-    scene.traverse(function (o) { if (o.isMesh && isCtx(o) && !isSoft(o) && o.material && !Array.isArray(o.material) && o.material.color && !o.userData.skEdge) { var mm = o.material; mm.map = null; mm.vertexColors = false; mm.emissiveMap = null; mm.color.set(BASSWOOD); if (mm.emissive) mm.emissive.set('#000000'); mm.roughness = .9; mm.metalness = 0;   /* textures off: plain model material */
+    // PROJECT_LOOK.massing === false: the context keeps its own colours and draws no ink (a ship or large object as context)
+    var KEEP = CFG.massing === false;
+    if (!KEEP) scene.traverse(function (o) { if (o.isMesh && isCtx(o) && !isSoft(o) && o.material && !Array.isArray(o.material) && o.material.color && !o.userData.skEdge) { var mm = o.material; mm.map = null; mm.vertexColors = false; mm.emissiveMap = null; mm.color.set(BASSWOOD); if (mm.emissive) mm.emissive.set('#000000'); mm.roughness = .9; mm.metalness = 0;   /* textures off: plain model material */
         // pages that paint their city in a shader (Venice's roofs) still end up basswood: the colour is set again after any such painting
         if (!mm.userData.pcMass) { mm.userData.pcMass = true; var prev = mm.onBeforeCompile, pk = mm.customProgramCacheKey; var bc = new (mm.color.constructor)(BASSWOOD);
           var v3 = function (c) { return 'vec3(' + c.r.toFixed(3) + ',' + c.g.toFixed(3) + ',' + c.b.toFixed(3) + ')'; };
@@ -114,7 +116,7 @@
     }
     var ctxMeshes = [], projMeshes = [];
     scene.traverse(function (o) { if (!o.isMesh || o.userData.skEdge || !o.geometry || !o.geometry.attributes.position) return; if (/life|sprite|people|car|tree|lawn|drape|overlay|boat/i.test(o.name || '') || isSoft(o)) return; (isCtx(o) ? ctxMeshes : projMeshes).push(o); });
-    var ctxInk = ctxMeshes.length ? strips(new Float32Array(featureEdges(ctxMeshes, true)), 'Project ink context') : null, projInk = null;
+    var ctxInk = ctxMeshes.length && !KEEP ? strips(new Float32Array(featureEdges(ctxMeshes, true)), 'Project ink context') : null, projInk = null;
     function apply() {
       var mode = document.documentElement.getAttribute('data-sk') || 'realistic';
       if (ctxInk) ctxInk.visible = ctxMeshes.some(function (o) { return o.visible; });

@@ -121,5 +121,6 @@
       else { ctx.renderer.clippingPlanes = []; label.hidden = true; ctx.controls.dispatchEvent({ type: 'change' }); }
     });
     window.projectControls = { cut: cut, sections: SEC, elevation: elevation, elevations: ELEV };
+
   }
 })();

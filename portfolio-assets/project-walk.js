@@ -169,14 +169,14 @@
 
   function init() {
     var ctx = window.daylightContext, cam = ctx.camera, ctl = ctx.controls, scene = ctx.scene, playing = false, s = 0, last = 0, saved = null, fov0 = cam.fov, hemi = null, hemi0 = 1, speed = 1, paused = false;
-    var box = projectBox(scene), K = CFG.walk || null, FLY = CFG.fly || autoFly(box), route = null, mode = 'walk';
+    var box = projectBox(scene), K = CFG.walk || null, FLY = CFG.fly || autoFly(box), route = null, mode = 'walk', navRef = null;
     function at(t0) {
       var L = FLY, n = L.length; if (t0 <= 0) return [L[0][1], L[0][2], 0]; if (t0 >= L[n - 1][0]) return [L[n - 1][1], L[n - 1][2], n - 1];
       var i = 0; while (L[i + 1][0] < t0) i++; var a = L[Math.max(0, i - 1)], b = L[i], c = L[i + 1], d = L[Math.min(n - 1, i + 2)], t = (t0 - b[0]) / (c[0] - b[0]); t = t * t * (3 - 2 * t) * .35 + t * .65;
       return [cr(a[1], b[1], c[1], d[1], t), cr(a[2], b[2], c[2], d[2], t), i];
     }
     function buildRoute() {
-      var nav = buildNav(scene, box); if (!K) K = autoStops(nav, box);
+      var nav = buildNav(scene, box); navRef = nav; if (!K) K = autoStops(nav, box);
       var R2 = [], stops = [];
       for (var i = 0; i < K.length - 1; i++) {
         var a = K[i][0], b = K[i + 1][0], seg = findPath(nav, [a[0], a[1] - E, a[2]], [b[0], b[1] - E, b[2]]);
@@ -207,6 +207,10 @@
     addEventListener('keydown', function (e) { if (!playing || !paused || /input|textarea|select/i.test(e.target.tagName)) return; var k = e.key.toLowerCase(); if ('wasdqe'.indexOf(k) >= 0 && k.length === 1) { keys[k] = true; e.preventDefault(); } if (e.key === 'Shift') keys.shift = true; });
     addEventListener('keyup', function (e) { var k = e.key.toLowerCase(); if (k.length === 1) keys[k] = false; if (e.key === 'Shift') keys.shift = false; });
     addEventListener('blur', function () { keys = {}; });
+    function floorAt(x, z, foot) {   // the walkable floor under (x, z) within a step of the feet, or null
+      var gx = Math.floor((x - X0) / CS), gz = Math.floor((z - Z0) / CS); if (gx < 0 || gz < 0 || gx >= NX || gz >= NZ) return null; var c = gz * NX + gx, n = navRef.node, best = null;
+      for (var k = navRef.ofs[c]; k < navRef.ofs[c + 1]; k += 2) { var h = n[k + 1]; if (Math.abs(h - foot) <= STEP && (best === null || Math.abs(h - foot) < Math.abs(best - foot))) best = h; } return best;
+    }
     function list() { return mode === 'fly' ? FLY.map(function (k) { return [k[1], k[2], k[3]]; }) : K; }
     function total() { return mode === 'fly' ? FLY[FLY.length - 1][0] * FLYSLOW : (route ? route.total : 0); }
     function frame(now) {
@@ -217,6 +221,12 @@
         if (mvx || mvz || mvy) {
           var fx = ctl.target.x - cam.position.x, fz = ctl.target.z - cam.position.z, fl = Math.hypot(fx, fz) || 1; fx /= fl; fz /= fl;
           var v = (keys.shift ? 7 : 2.6) * dt, dx = (fx * mvz - fz * mvx) * v, dz = (fz * mvz + fx * mvx) * v, dy = mvy * v;
+          // paused in a walk: feet stay on the floors (up and down ramps and steps), walls and drops stop you; paused in a flight: free
+          if (mode === 'walk' && navRef) {
+            var foot = cam.position.y - E, here = floorAt(cam.position.x, cam.position.z, foot), fh = floorAt(cam.position.x + dx, cam.position.z + dz, here === null ? foot : here);
+            if (here === null) dy = 0;                                       // off the mapped floors (between cells on a ramp): move level, never stuck
+            else if (fh !== null) dy = fh + E - cam.position.y;               // on a floor: follow it up and down; past its edge or through a wall: keep going level
+          }
           cam.position.x += dx; cam.position.y += dy; cam.position.z += dz; ctl.target.x += dx; ctl.target.y += dy; ctl.target.z += dz; ctl.update && ctl.update(); ctl.dispatchEvent({ type: 'change' });
         }
         requestAnimationFrame(frame); return;
@@ -259,7 +269,7 @@
     var api = window.projectWalk = { box: box, fly: FLY, start: start, startFly: startFly, stop: stop, onChange: function (f) { listeners.push(f); },
       seek: function (t) { s = Math.max(0, Math.min(total() - .05, t)); lookS = null; lastLabel = -1; },
       pause: function (p) { var was = paused; paused = p === undefined ? !paused : !!p; last = performance.now();
-        if (paused && !was) { ctl.enabled = true; tag.textContent = 'Paused: drag to look around, W A S D to walk'; tag.style.opacity = 1; clearTimeout(tag._t); tag._t = setTimeout(function () { tag.style.opacity = 0; }, 5000); }
+        if (paused && !was) { ctl.enabled = true; { var lx = ctl.target.x - cam.position.x, ly = ctl.target.y - cam.position.y, lz = ctl.target.z - cam.position.z, ll = Math.hypot(lx, ly, lz) || 1; ctl.target.set(cam.position.x + lx / ll * .4, cam.position.y + ly / ll * .4, cam.position.z + lz / ll * .4); ctl.update && ctl.update(); }   /* orbit centre just ahead of the eye: dragging turns the head in place */ tag.textContent = 'Paused: drag to look around, W A S D to walk'; tag.style.opacity = 1; clearTimeout(tag._t); tag._t = setTimeout(function () { tag.style.opacity = 0; }, 5000); }
         if (!paused && was) { ctl.enabled = false; keys = {}; resumeFrom = { p: cam.position.toArray(), q: ctl.target.toArray() }; resumeBlend = 1; lookS = null; } notify(); },
       setSpeed: function (v) { speed = v; },
       state: function () { return { playing: playing, preparing: preparing, paused: paused, mode: mode, t: s, total: total(), speed: speed, markers: markers() }; } };

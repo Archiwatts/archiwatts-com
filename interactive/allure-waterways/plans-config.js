@@ -1,0 +1,3 @@
+/* Deck 8 plan (the tank level) from the board drawings, placed by matching the drawn tank outline (492.5-679 px across,
+   163-1714.5 px down a 1267 x 1900 image) to the model's tank (x -5.8..5.8, z -53.2..43.1). Top of the drawing is -z, left is -x; cropped to 400-760 x 120-1760 px to leave the legend out. */
+window.PROJECT_PLANS = {"plans": [{"img": "plans/deck-8.webp?v=2", "name": "Deck 8 · tank", "sub": "Plan from the board: ramp path and elevators 1-4", "floor": 35.3, "cut": 37, "tl": [-11.553, -55.869], "tr": [10.838, -55.869], "bl": [-11.553, 45.924]}]};

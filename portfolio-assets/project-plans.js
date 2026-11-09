@@ -20,6 +20,9 @@
     function plain(C) { try { var a = new Float32Array(3), p = new C(a, 1); return p.array === a; } catch (e) { return false; } }
     if (!plain(Attr)) scene.traverse(function (o) { if (o.isMesh && o.geometry.index && plain(o.geometry.index.constructor)) Attr = o.geometry.index.constructor; });
     if (!TexC) { var c0 = document.createElement('canvas'); c0.width = c0.height = 2; scene.traverse(function (o) { if (!TexC && o.material && o.material.emissiveMap) TexC = o.material.emissiveMap.constructor; }); }
+    // a model without any textures: the texture class from the sun's shadow map (made once the first frame renders)
+    if (!TexC) scene.traverse(function (o) { if (!TexC && o.isLight && o.shadow && o.shadow.map && o.shadow.map.texture) TexC = o.shadow.map.texture.constructor; });
+    if (!TexC) { setTimeout(init, 1500); return; }
     var label = document.createElement('div'); label.style.cssText = 'position:fixed;left:50%;top:18px;transform:translateX(-50%);background:rgba(20,20,22,.8);color:#fff;font:600 12px/1.3 system-ui,sans-serif;letter-spacing:.05em;padding:8px 14px;border-radius:10px;pointer-events:none;z-index:30;text-align:center;max-width:80vw'; label.hidden = true; document.body.appendChild(label);
     // every model triangle (world space), for the surfaces and the floor masks
     function tris(fn) {

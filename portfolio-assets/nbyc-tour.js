@@ -268,7 +268,7 @@
       seek: function (t) { s = Math.max(0, Math.min(total() - .05, t)); lookS = null; lastLabel = -1; },
       pause: function (p) {
         var was = paused; paused = p === undefined ? !paused : !!p; last = performance.now();
-        if (paused && !was) { ctl.enabled = true; tag.textContent = 'Paused: drag to look around, W A S D to walk'; tag.style.opacity = 1; clearTimeout(tag._t); tag._t = setTimeout(function () { tag.style.opacity = 0; }, 5000); }
+        if (paused && !was) { ctl.enabled = true; { var lx = ctl.target.x - cam.position.x, ly = ctl.target.y - cam.position.y, lz = ctl.target.z - cam.position.z, ll = Math.hypot(lx, ly, lz) || 1; ctl.target.set(cam.position.x + lx / ll * .4, cam.position.y + ly / ll * .4, cam.position.z + lz / ll * .4); ctl.update && ctl.update(); }   /* dragging turns the head in place */ tag.textContent = 'Paused: drag to look around, W A S D to walk'; tag.style.opacity = 1; clearTimeout(tag._t); tag._t = setTimeout(function () { tag.style.opacity = 0; }, 5000); }
         if (!paused && was) { ctl.enabled = false; keys = {}; resumeFrom = { p: cam.position.toArray(), q: ctl.target.toArray() }; resumeBlend = 1; lookS = null; }
       },
       setSpeed: function (v) { speed = v; },
