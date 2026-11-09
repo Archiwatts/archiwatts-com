@@ -18,7 +18,7 @@
     if (!plainAttr(Attr)) { scene.traverse(function (o) { if (o.isMesh && o.geometry.index && plainAttr(o.geometry.index.constructor)) Attr = o.geometry.index.constructor; }); }
     var isCtx = function (o) { return ctxRe.test(o.name || '') || (o.material && ctxRe.test(o.material.name || '')); };
     // ground, water and planting in the context keep their own look (and draw no ink): only buildings become the study model
-    var SOFT = /landscape|water|canal|grass|lawn|tree|plant|terrain|topo/i, isSoft = function (o) { return SOFT.test(o.name || ''); };
+    var SOFT = new RegExp('landscape|water|canal|grass|lawn|tree|plant|terrain|topo' + (CFG.soft ? '|' + CFG.soft : ''), 'i'), isSoft = function (o) { return SOFT.test(o.name || ''); };
 
     // ---- massing context: whiter basswood (tiled roofs in terracotta when PROJECT_LOOK.roofs is set) ----
     var ROOF = CFG.roofs ? new (any.material.color.constructor)(CFG.roofs === true ? '#c8714a' : CFG.roofs) : null;
@@ -31,8 +31,14 @@
           var body = 'diffuseColor.rgb = ' + v3(bc) + ';\n';
           // sloped faces are pitched tile roofs: world normal from the screen-space derivatives of the view position
           if (ROOF) body += '{ vec3 pcN = normalize((vec4(normalize(cross(dFdx(vViewPosition), dFdy(vViewPosition))), 0.) * viewMatrix).xyz); float ay = abs(pcN.y);\n' +
-            '  if (ay > .3 && ay < .985) diffuseColor.rgb = ' + v3(ROOF) + '; }\n';
-          mm.onBeforeCompile = function (sh, r) { if (prev) prev.call(this, sh, r); sh.fragmentShader = sh.fragmentShader.replace('#include <roughnessmap_fragment>', body + '#include <roughnessmap_fragment>'); };
+            '  if (ay > .3 && ay < .985) { ' + (CFG.roofTile ? 'vec3 pcP = (inverse(viewMatrix) * vec4(-vViewPosition, 1.)).xyz; diffuseColor.rgb = pcTile(pcN, pcP, ' + v3(ROOF) + ');' : 'diffuseColor.rgb = ' + v3(ROOF) + ';') + ' } }\n';
+          // Spanish (barrel) tile for pitched roofs: columns of half-round tiles, overlapping courses, a shade per tile, fading to the average colour at a distance
+          var TILE = 'float pcH(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\n' +
+            'vec3 pcTile(vec3 N, vec3 P, vec3 base){ vec3 dn = normalize(vec3(0.,-1.,0.) - N*dot(N, vec3(0.,-1.,0.))); vec3 ac = normalize(cross(N, dn)); float u = dot(P, ac)/.36, v = dot(P, dn)/.6; float cu = fract(u), cv = fract(v); float prof = .5+.5*cos(6.2832*cu);\n' +
+            ' vec2 id = vec2(floor(u*2.), floor(v)); float h1 = pcH(id*1.7+3.3), h2 = pcH(id*2.9+8.1); float fw = max(fwidth(u), fwidth(v)); float fade = 1. - smoothstep(.1,.38,fw);\n' +
+            ' float shade = .66+.46*prof; shade *= .8+.2*smoothstep(0.,.16,cv); shade *= 1.-.22*smoothstep(.86,1.,cv)*(1.-prof); vec3 tint = mix(vec3(1.05,.86,.72), vec3(.92,.74,.62), h1); vec3 c = base*tint*(.94+.12*h2)*shade; if (h2 > .94) c *= .86;\n' +
+            ' return mix(base*vec3(.98,.8,.67)*.86, c, fade); }\n';
+          mm.onBeforeCompile = function (sh, r) { if (prev) prev.call(this, sh, r); sh.fragmentShader = (CFG.roofTile ? TILE : '') + sh.fragmentShader.replace('#include <roughnessmap_fragment>', body + '#include <roughnessmap_fragment>'); };
           mm.customProgramCacheKey = function () { return (pk ? pk.call(this) : '') + '-pcmass' + (ROOF ? 'r' : ''); }; }
         mm.needsUpdate = true; } });
 
@@ -86,7 +92,7 @@
       var best = null, bw = 0; H.forEach(function (w, k) { if (k / 4 < bx[1] + 12 && w > bw) { bw = w; best = k / 4; } });
       return best == null ? bx[1] : best;
     }
-    function featureEdges(meshes, ground) {
+    function featureEdges(meshes, ground, roofOnly) {
       var E = [];
       meshes.forEach(function (o) {
         o.updateMatrixWorld(); var p = o.geometry.attributes.position, ix = o.geometry.index ? o.geometry.index.array : null, mw = o.matrixWorld.elements, nv = p.count; if (nv > 4000000) return;
@@ -96,12 +102,12 @@
         var id = new Int32Array(nv), Pw = W;
         if (ix) { for (var v0 = 0; v0 < nv; v0++) id[v0] = v0; }
         else { var key = new Map(), Pl = []; for (var v = 0; v < nv; v++) { var k = Math.round(W[v * 3] * 50) + ',' + Math.round(W[v * 3 + 1] * 50) + ',' + Math.round(W[v * 3 + 2] * 50), r = key.get(k); if (r === undefined) { r = Pl.length / 3; key.set(k, r); Pl.push(W[v * 3], W[v * 3 + 1], W[v * 3 + 2]); } id[v] = r; } Pw = Pl; }
-        var nt = (ix ? ix.length : nv) / 3, N = new Float32Array(nt * 3), edges = new Map(), out = [], steep = [];
+        var nt = (ix ? ix.length : nv) / 3, N = new Float32Array(nt * 3), edges = new Map(), out = [], steep = [], roofy = [];
         for (var t = 0; t < nt; t++) {
           var a = id[ix ? ix[t * 3] : t * 3], b = id[ix ? ix[t * 3 + 1] : t * 3 + 1], c = id[ix ? ix[t * 3 + 2] : t * 3 + 2]; if (a === b || b === c || a === c) continue;
           var ux = Pw[b * 3] - Pw[a * 3], uy = Pw[b * 3 + 1] - Pw[a * 3 + 1], uz = Pw[b * 3 + 2] - Pw[a * 3 + 2], vx = Pw[c * 3] - Pw[a * 3], vy = Pw[c * 3 + 1] - Pw[a * 3 + 1], vz = Pw[c * 3 + 2] - Pw[a * 3 + 2];
           var nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx, l = Math.hypot(nx, ny, nz) || 1; N[t * 3] = nx / l; N[t * 3 + 1] = ny / l; N[t * 3 + 2] = nz / l;
-          [[a, b], [b, c], [c, a]].forEach(function (e) { var k2 = e[0] < e[1] ? e[0] * 4194304 * 16 + e[1] : e[1] * 4194304 * 16 + e[0], f = edges.get(k2); if (f === undefined) edges.set(k2, t); else if (f >= 0) { var d = N[f * 3] * N[t * 3] + N[f * 3 + 1] * N[t * 3 + 1] + N[f * 3 + 2] * N[t * 3 + 2]; if (d < ANGLE) { out.push(e[0], e[1]); steep.push(Math.min(Math.abs(N[f * 3 + 1]), Math.abs(N[t * 3 + 1])) < .5); } edges.set(k2, -1); } });
+          [[a, b], [b, c], [c, a]].forEach(function (e) { var k2 = e[0] < e[1] ? e[0] * 4194304 * 16 + e[1] : e[1] * 4194304 * 16 + e[0], f = edges.get(k2); if (f === undefined) edges.set(k2, t); else if (f >= 0) { var d = N[f * 3] * N[t * 3] + N[f * 3 + 1] * N[t * 3 + 1] + N[f * 3 + 2] * N[t * 3 + 2]; if (d < ANGLE) { out.push(e[0], e[1]); steep.push(Math.min(Math.abs(N[f * 3 + 1]), Math.abs(N[t * 3 + 1])) < .5); roofy.push(Math.max(N[f * 3 + 1], N[t * 3 + 1]) > .35); } edges.set(k2, -1); } });
           // ground line: a wall face crossing ground level
           if (ground && Math.abs(N[t * 3 + 1]) < .5) {
             var GY = G + .08, V = [[Pw[a * 3], Pw[a * 3 + 1], Pw[a * 3 + 2]], [Pw[b * 3], Pw[b * 3 + 1], Pw[b * 3 + 2]], [Pw[c * 3], Pw[c * 3 + 1], Pw[c * 3 + 2]]], pts = [];
@@ -109,19 +115,23 @@
             if (pts.length === 6) E.push.apply(E, pts);
           }
         }
-        edges.forEach(function (f, k2) { if (f >= 0) { var hi2 = Math.floor(k2 / 67108864); out.push(hi2, k2 - hi2 * 67108864); steep.push(Math.abs(N[f * 3 + 1]) < .5); } });
-        for (var j = 0; j < out.length; j += 2) { var A = out[j] * 3, B = out[j + 1] * 3, hi = Math.max(Pw[A + 1], Pw[B + 1]); if (hi < G - .3 || (hi < G + .35 && !steep[j / 2])) continue; if (Math.hypot(Pw[A] - Pw[B], Pw[A + 1] - Pw[B + 1], Pw[A + 2] - Pw[B + 2]) < .25) continue; E.push(Pw[A], Pw[A + 1], Pw[A + 2], Pw[B], Pw[B + 1], Pw[B + 2]); }
+        edges.forEach(function (f, k2) { if (f >= 0) { var hi2 = Math.floor(k2 / 67108864); out.push(hi2, k2 - hi2 * 67108864); steep.push(Math.abs(N[f * 3 + 1]) < .5); roofy.push(N[f * 3 + 1] > .35); } });
+        for (var j = 0; j < out.length; j += 2) { if (roofOnly && !roofy[j / 2]) continue; var A = out[j] * 3, B = out[j + 1] * 3, hi = Math.max(Pw[A + 1], Pw[B + 1]); if (hi < G - .3 || (hi < G + .35 && !steep[j / 2])) continue; if (Math.hypot(Pw[A] - Pw[B], Pw[A + 1] - Pw[B + 1], Pw[A + 2] - Pw[B + 2]) < .25) continue; E.push(Pw[A], Pw[A + 1], Pw[A + 2], Pw[B], Pw[B + 1], Pw[B + 2]); }
       });
       return E;
     }
     var ctxMeshes = [], projMeshes = [];
     scene.traverse(function (o) { if (!o.isMesh || o.userData.skEdge || !o.geometry || !o.geometry.attributes.position) return; if (/life|sprite|people|car|tree|lawn|drape|overlay|boat/i.test(o.name || '') || isSoft(o)) return; (isCtx(o) ? ctxMeshes : projMeshes).push(o); });
     var ctxInk = ctxMeshes.length && !KEEP ? strips(new Float32Array(featureEdges(ctxMeshes, true)), 'Project ink context') : null, projInk = null;
+    // PROJECT_LOOK.roofInk: names of project meshes whose roof edges get a slight ink outline (Realistic and Watercolor)
+    var roofMeshes = CFG.roofInk ? projMeshes.filter(function (o) { return new RegExp(CFG.roofInk, 'i').test(o.name || ''); }) : [], roofInk = null;
     function apply() {
       var mode = document.documentElement.getAttribute('data-sk') || 'realistic';
       if (ctxInk) ctxInk.visible = ctxMeshes.some(function (o) { return o.visible; });
       if (mode === 'diagram' && !projInk) { var E = featureEdges(projMeshes, false); if (E.length) projInk = strips(new Float32Array(E), 'Project ink project'); }
       if (projInk) projInk.visible = mode === 'diagram';
+      if (roofMeshes.length && !roofInk) { var RE = featureEdges(roofMeshes, false, true); if (RE.length) roofInk = strips(new Float32Array(RE), 'Project ink roof'); }
+      if (roofInk) roofInk.visible = mode !== 'diagram';
       ctx.controls.dispatchEvent({ type: 'change' });
     }
     new MutationObserver(apply).observe(document.documentElement, { attributes: true, attributeFilter: ['data-sk'] });

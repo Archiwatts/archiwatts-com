@@ -199,7 +199,7 @@
     window.tranquilLife = { walkers: nW, swimmers: nS, walkCells: walk.length, swimCells: swim.length, waterY: +waterY.toFixed(2) };
 
     /* ---- Diagram view: each zone in its own colour, the site context pale ---- */
-    var ZONE = { 'zone-1': '#e3b24d', 'zone-2': '#e8706a', 'zone-3': '#72a8dc', 'zone-4': '#9c7fc4', 'zone-5': '#5fae8f', 'zone-6': '#7c7c80' }, PALE = '#efe4c8', GREEN = '#cfe0b8';
+    var ZONE = { 'zone-1': '#e3b24d', 'zone-2': '#e8706a', 'zone-3': '#72a8dc', 'zone-4': '#9c7fc4', 'zone-5': '#5fae8f', 'zone-6': '#7c7c80' }, PALE = '#efe4c8', GREEN = '#8fc06f';
     var orig = new Map(), flatCache = {}, diag = false;
     function flat(hex) { if (flatCache[hex]) return flatCache[hex]; var m = std.clone(); m.name = 'Tranquil diagram ' + hex; m.map = null; m.normalMap = null; m.roughnessMap = null; m.aoMap = null; m.vertexColors = false; m.color.set(hex); m.emissive.set(hex); m.emissiveIntensity = .2; m.roughness = 1; m.metalness = 0; m.transparent = false; m.opacity = 1; m.needsUpdate = true; if (window.sketchStyle && window.sketchStyle.patch) window.sketchStyle.patch(m);   // the section cut hatch
       return (flatCache[hex] = m); }
