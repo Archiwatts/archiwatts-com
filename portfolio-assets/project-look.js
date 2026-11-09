@@ -33,12 +33,13 @@
           if (ROOF) body += '{ vec3 pcN = normalize((vec4(normalize(cross(dFdx(vViewPosition), dFdy(vViewPosition))), 0.) * viewMatrix).xyz); float ay = abs(pcN.y);\n' +
             '  if (ay > .3 && ay < .985) { ' + (CFG.roofTile ? 'vec3 pcP = (inverse(viewMatrix) * vec4(-vViewPosition, 1.)).xyz; diffuseColor.rgb = pcTile(pcN, pcP, ' + v3(ROOF) + ');' : 'diffuseColor.rgb = ' + v3(ROOF) + ';') + ' } }\n';
           // Spanish (barrel) tile for pitched roofs: columns of half-round tiles, overlapping courses, a shade per tile, fading to the average colour at a distance
-          var TILE = 'float pcH(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\n' +
-            'vec3 pcTile(vec3 N, vec3 P, vec3 base){ vec3 dn = normalize(vec3(0.,-1.,0.) - N*dot(N, vec3(0.,-1.,0.))); vec3 ac = normalize(cross(N, dn)); float u = dot(P, ac)/.36, v = dot(P, dn)/.6; float cu = fract(u), cv = fract(v); float prof = .5+.5*cos(6.2832*cu);\n' +
+          var TILE = 'vec3 pcG = vec3(0.); float pcA = 0.;\n' + 'float pcH(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\n' +
+            'vec3 pcTile(vec3 N, vec3 P, vec3 base){ N = normalize(floor(N*24.+.5)/24.); P -= vec3(170.,0.,-200.); vec3 dn = normalize(vec3(0.,-1.,0.) - N*dot(N, vec3(0.,-1.,0.))); vec3 ac = normalize(cross(N, dn)); float u = dot(P, ac)/.36, v = dot(P, dn)/.6; float cu = fract(u), cv = fract(v); float prof = .5+.5*cos(6.2832*cu);\n' +
             ' vec2 id = vec2(floor(u*2.), floor(v)); float h1 = pcH(id*1.7+3.3), h2 = pcH(id*2.9+8.1); float fw = max(fwidth(u), fwidth(v)); float fade = 1. - smoothstep(.1,.38,fw);\n' +
             ' float shade = .66+.46*prof; shade *= .8+.2*smoothstep(0.,.16,cv); shade *= 1.-.22*smoothstep(.86,1.,cv)*(1.-prof); vec3 tint = mix(vec3(1.05,.86,.72), vec3(.92,.74,.62), h1); vec3 c = base*tint*(.94+.12*h2)*shade; if (h2 > .94) c *= .86;\n' +
+            ' float dprof = -.5*6.2832*sin(6.2832*cu)/.36; float dov = ((cv<.16 ? .2/.16 : 0.) - (cv>.86 ? .22/.14 : 0.))/.6; pcG = dprof*ac*.075; pcA = (1. - smoothstep(.05,.2,fw));\n' +
             ' return mix(base*vec3(.98,.8,.67)*.86, c, fade); }\n';
-          mm.onBeforeCompile = function (sh, r) { if (prev) prev.call(this, sh, r); sh.fragmentShader = (CFG.roofTile ? TILE : '') + sh.fragmentShader.replace('#include <roughnessmap_fragment>', body + '#include <roughnessmap_fragment>'); };
+          mm.onBeforeCompile = function (sh, r) { if (prev) prev.call(this, sh, r); sh.fragmentShader = (CFG.roofTile ? TILE : '') + sh.fragmentShader.replace('#include <roughnessmap_fragment>', body + '#include <roughnessmap_fragment>').replace('#include <normal_fragment_maps>', CFG.roofTile ? '#include <normal_fragment_maps>\n normal = normalize(normal - pcA*(viewMatrix*vec4(pcG,0.)).xyz);' : '#include <normal_fragment_maps>'); };
           mm.customProgramCacheKey = function () { return (pk ? pk.call(this) : '') + '-pcmass' + (ROOF ? 'r' : ''); }; }
         mm.needsUpdate = true; } });
 

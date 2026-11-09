@@ -11,12 +11,15 @@
       var bar = document.querySelector('.mm-bottom'); if (!bar) { if ((mobileTimeline.n = (mobileTimeline.n || 0) + 1) < 40) setTimeout(mobileTimeline, 500); return; }
       if (document.querySelector('.pc-mtl')) return;
       var st = document.createElement('style');
-      st.textContent = '.pc-mtl{position:fixed;left:8px;right:8px;z-index:60;padding:8px 10px;border:1.5px solid #4d4953;border-radius:12px;background:rgba(31,29,34,.94);color:#f2f0f4;font:600 12px Archivo,system-ui,sans-serif;transition:opacity .25s;box-sizing:border-box}' +
-        '.pc-mtl.idle{opacity:.6}.pc-mtl .r1{display:grid;grid-template-columns:auto 34px minmax(0,1fr) 38px;gap:8px;align-items:center}' +
-        '.pc-mtl button{min-height:32px;border:1.5px solid #4d4953;border-radius:8px;background:#29262d;color:inherit;font:inherit;padding:0 8px}.pc-mtl button[aria-pressed=true]{background:#e0567f;border-color:#e0567f}' +
-        '.pc-mtl .sw{display:flex;gap:4px}.pc-mtl .sw button{padding:0 9px}.pc-mtl .ln{position:relative;height:28px}.pc-mtl .ln:before{content:"";position:absolute;left:0;right:0;top:12px;height:4px;border-radius:2px;background:#4d4953}' +
-        '.pc-mtl .fl{position:absolute;left:0;top:12px;height:4px;border-radius:2px;background:#e0567f}.pc-mtl .mk{position:absolute;top:5px;width:14px;height:18px;margin-left:-7px;padding:0;min-height:0;border:0;border-radius:4px;background:#f2f0f4}' +
-        '.pc-mtl .mk.on{background:#e0567f}.pc-mtl .nw{margin-top:5px;min-height:15px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}';
+      st.textContent = '.pc-mtl{position:fixed;left:8px;right:8px;z-index:60;padding:4px 6px;border:1px solid #4d4953;border-radius:10px;background:rgba(31,29,34,.9);color:#f2f0f4;font:600 11px Archivo,system-ui,sans-serif;transition:opacity .25s;box-sizing:border-box}' +
+        '.pc-mtl.idle{opacity:.7}.pc-mtl .r1{display:grid;grid-template-columns:auto 28px minmax(0,1fr) 30px;gap:6px;align-items:center}' +
+        '.pc-mtl button{min-height:26px;border:1px solid #4d4953;border-radius:6px;background:#29262d;color:inherit;font:inherit;padding:0 6px}.pc-mtl button[aria-pressed=true]{background:#e0567f;border-color:#e0567f}' +
+        '.pc-mtl .sw{display:flex;gap:3px}.pc-mtl .ln{position:relative;height:28px}.pc-mtl .ln:before{content:"";position:absolute;left:0;right:0;top:19px;height:3px;border-radius:2px;background:#4d4953}' +
+        '.pc-mtl .fl{position:absolute;left:0;top:19px;height:3px;border-radius:2px;background:#e0567f}.pc-mtl .mk{position:absolute;top:15px;width:10px;height:11px;margin-left:-5px;padding:0;min-height:0;border:0;border-radius:3px;background:#f2f0f4}' +
+        '.pc-mtl .mk.on{background:#e0567f}.pc-mtl .nw{position:absolute;left:0;right:0;top:1px;font-size:9px;line-height:11px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.85;pointer-events:none}' +
+        // phone on its side: the bottom bar becomes a column on the right edge, the timeline stays docked under the header
+        '@media (orientation:landscape) and (max-height:520px){.mm-bottom{left:auto!important;right:0!important;top:0!important;bottom:0!important;width:64px!important;height:auto!important;display:flex!important;flex-direction:column!important;justify-content:center!important;gap:4px;padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px)) 4px!important;padding-right:calc(4px + env(safe-area-inset-right,0px))!important}' +
+        '.mm-bottom>*{flex:0 0 auto!important;width:100%!important}.mm-top{right:calc(64px + env(safe-area-inset-right,0px))!important;width:auto!important}.pc-mtl{right:calc(72px + env(safe-area-inset-right,0px))}}';
       document.head.appendChild(st);
       var box = document.createElement('div'); box.className = 'pc-mtl idle'; box.setAttribute('role', 'group'); box.setAttribute('aria-label', 'Tour timeline');
       var r1 = document.createElement('div'); r1.className = 'r1'; var sw = document.createElement('div'); sw.className = 'sw';
@@ -25,7 +28,7 @@
       var ln = document.createElement('div'); ln.className = 'ln'; var fl = document.createElement('div'); fl.className = 'fl'; ln.appendChild(fl);
       var sp = btn('1×', 'Speed', function () { var v = W.state().speed === 2 ? 1 : 2; W.setSpeed(v); sp.textContent = v + '×'; });
       var nw = document.createElement('div'); nw.className = 'nw';
-      r1.appendChild(sw); r1.appendChild(play); r1.appendChild(ln); r1.appendChild(sp); box.appendChild(r1); box.appendChild(nw); document.body.appendChild(box);
+      r1.appendChild(sw); r1.appendChild(play); r1.appendChild(ln); r1.appendChild(sp); box.appendChild(r1); ln.appendChild(nw); document.body.appendChild(box);
       var want = 'walk', cache = {}, key = '';
       function pick(m) { want = m; var s = W.state(); if (s.playing && s.mode !== m) go(m, 0); paint(); }
       function go(m, t) {   // start (or switch to) a mode, then jump to t once its route is ready
@@ -49,6 +52,7 @@
       // the bar's Tour button now drives this timeline
       document.addEventListener('click', function (ev) { var t = ev.target.closest && ev.target.closest('.mm-bottom [data-mm-mode="tour"]'); if (!t) return; ev.preventDefault(); ev.stopImmediatePropagation(); var s = W.state(); if (s.playing && s.mode === want) W.pause(); else go(want, 0); }, true);
       (function place() { var b = document.querySelector('.mm-bottom'), vis = b && b.getBoundingClientRect().height > 0 && getComputedStyle(b).display !== 'none';
-        box.hidden = !vis; if (vis) box.style.bottom = (innerHeight - b.getBoundingClientRect().top + 8) + 'px'; paint(); requestAnimationFrame(place); })();
+        var h = document.querySelector('.mm-top'), hb = h ? h.getBoundingClientRect().bottom : 0;   // docked right under the header bar
+        box.hidden = !vis; if (vis) box.style.top = (Math.max(0, hb) + 6) + 'px'; paint(); requestAnimationFrame(place); })();
     }
 })();
