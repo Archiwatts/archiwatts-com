@@ -92,6 +92,12 @@
         if (sel.value === 'faded') { if (m.color && s.c) m.color.copy(s.c).lerp(PALE_CTX, .72); if (m.emissive) m.emissive.copy(PALE_CTX).multiplyScalar(.45); }
         else { if (s.c) m.color.copy(s.c); if (s.e) m.emissive.copy(s.e); }
       });
+      // PROJECT_PANEL.contextAlso: other buildings that are not the project itself (partner buildings); they stay as they are in
+      // Solid and Faded and step aside in Hidden, so only the project's own building is left
+      if (C.contextAlso) { var alsoRe = new RegExp(C.contextAlso, 'i'), hide = sel.value === 'hidden';
+        ctx.scene.traverse(function (o) { if (!(o.isMesh || o.isSprite || o.isPoints) || !alsoRe.test(o.name || '')) return;
+          if (hide) { if (o.userData.ppWas === undefined) { o.userData.ppWas = o.visible; o.visible = false; } }
+          else if (o.userData.ppWas !== undefined) { o.visible = o.userData.ppWas; delete o.userData.ppWas; } }); }
       redraw(ctx);
     });
     /* Standard views. Plan, north, south, east and west are flat: a long lens from far away, so the model reads like a plan or an

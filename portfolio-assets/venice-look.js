@@ -206,27 +206,65 @@
     // phones keep the light export. Revit material -> look, following the renders and the art direction:
     if (!(window.modelPerformance && window.modelPerformance.mobile)) (function revitMain() {
       var like = list[0].material, any = list[0];
-      var WALL = shaded(like, 'Venice main wall', '#ffffff', CODE.mainWall, function (m) { m.roughness = .9; });
-      var GLASSM = new (like.constructor)(); GLASSM.name = 'Venice main glass'; GLASSM.color.set('#8fb8cb'); GLASSM.roughness = .05; GLASSM.metalness = .1; GLASSM.transparent = true; GLASSM.opacity = .38; GLASSM.depthWrite = false; GLASSM.side = 2; window.sketchStyle.patch(GLASSM);
-      var IRON = shaded(like, 'Venice railing iron', '#1d1f21', 'diffuseColor.rgb *= .9+.15*nbN(vNbW.xz*8.+vNbW.y*5.);', function (m) { m.roughness = .45; m.metalness = .3; });
-      var WHITEWOOD = shaded(like, 'Venice painted wood', '#ece8df', 'diffuseColor.rgb *= .95+.06*nbN(vec2((vNbW.x+vNbW.z)*20., vNbW.y*2.));', function (m) { m.roughness = .6; });
-      var PAVING = shaded(like, 'Venice paving', '#cfc9bd', 'vec2 pq = vNbW.xz/.6; vec2 pf = fract(pq); float pj = (step(pf.x,.03)+step(pf.y,.03)) > 0. ? 1. : 0.; diffuseColor.rgb *= (.92+.1*nbH(floor(pq)))*(1.-.18*pj);', function (m) { m.roughness = .9; });
-      var PLANTER = shaded(like, 'Venice planter', '#a86a4a', 'diffuseColor.rgb *= .9+.12*nbN(vNbW.xz*3.+vNbW.y*2.);', function (m) { m.roughness = .85; });
-      var LIGHTMETAL = brushedMaterial(like, '#c4cacf');
-      function look(name) {
-        if (/glass/i.test(name)) return GLASSM;
-        if (/^Default Wall$|^BRIVK$|t.gl.s|korall/i.test(name)) return WALL;
-        if (/BASE OUTSIDE|Concrete|Betont|Default Floor|^Finish$|^White$/i.test(name)) return /Betont/i.test(name) ? WALL : PAVING;
-        if (/Default Roof/i.test(name)) return WALL;                                   // pitched faces take the Spanish tile in the wall shader
-        if (/Sierra Pacific - VG Fir|Black 023|IfcWindow|Door - Frame|Aluminium|Aluminum/i.test(name)) return bm.main;   // window and door frames: dark metal
-        if (/Sierra Pacific - White/i.test(name)) return bm.main;   // window frames match the sliding doors: the same black metal
-        if (/Wood Planks|^Ash$|Door - Panel|divider doors/i.test(name)) return WOOD;
-        if (/Wood - Painted White/i.test(name)) return WHITEWOOD;
-        if (/Digger|IfcRailing|Kov.csoltvas|GATE|GAIT|Steel|Metal|Perforated|Chrome/i.test(name)) return IRON;
-        if (/Default 2/i.test(name)) return FOLIAGE;
-        if (/Planter/i.test(name)) return PLANTER;
+      // one maker per kind of surface, so the Real view (venice-real.js) can build its own copies with baked light
+      // porphyry setts laid in fans (overlapping arcs of small stones); used on the site slab and on the city's ground
+      var COBBLE = '{ vec2 cp = vNbW.xz; float cR = .86, cW = 1.5, cH = .43, cs = .108; float j0 = floor(cp.y / cH); vec2 cd = vec2(0.); float cj = 0., ci = 0., got = 0.;\n' +
+          ' for (int a = 0; a < 4; a++) { float j = j0 - float(a); float off = mod(j, 2.) * .5 * cW; float i = floor((cp.x - off) / cW + .5); vec2 c = vec2(i * cW + off, j * cH); vec2 d = cp - c; if (got < .5 && (length(d) < cR || a == 3)) { got = 1.; cd = d; cj = j; ci = i; } }\n' +
+          ' float r = length(cd), th = atan(cd.x, max(cd.y, 1e-4)); float k = floor(r / cs); float n = max(1., floor(3.1416 * (k + .5))); float t = (th / 3.1416 + .5) * n; vec2 id = vec2(k + ci * 7.3 + cj * 13.1, floor(t) + cj * 3.7);\n' +
+          ' float fr = fract(r / cs), ft = fract(t); float jw = .1; float joint = (fr < jw || ft < jw * .9 || (k < .5 && r < cs * .1)) ? 1. : 0.;\n' +
+          ' float h1 = nbH(id * 1.7 + 2.3), h2 = nbH(id * 3.9 + 8.1); vec3 st = h1 < .34 ? vec3(.42,.25,.20) : (h1 < .62 ? vec3(.30,.21,.23) : (h1 < .84 ? vec3(.46,.33,.26) : vec3(.36,.34,.33))); st *= .75 + .45 * h2; st *= .94 + .1 * nbN(cp * 40.);\n' +
+          ' st *= 1. - .22 * smoothstep(.72, 1., max(abs(fr - .55) * 2., abs(ft - .55) * 2.));\n' +   // each stone a touch darker toward its edges (worn, rounded)
+          ' vec3 sand = vec3(.22,.19,.16) * (.8 + .5 * nbN(cp * 25.)); vec3 avg = vec3(.345,.25,.22); float fw = max(fwidth(cp.x), fwidth(cp.y)) / cs; float fade = 1. - smoothstep(.35, 1.1, fw);\n' +
+          ' diffuseColor.rgb = mix(avg, mix(st, sand, joint), fade) * (.93 + .12 * nbN(cp * .35)); }';
+      var MK = {
+        wall: function () { return shaded(like, 'Venice main wall', '#ffffff', CODE.mainWall, function (m) { m.roughness = .9; }); },
+        glass: function () { var g = new (like.constructor)(); g.name = 'Venice main glass'; g.color.set('#8fb8cb'); g.roughness = .05; g.metalness = .1; g.transparent = true; g.opacity = .38; g.depthWrite = false; g.side = 2; window.sketchStyle.patch(g); return g; },
+        iron: function () { return shaded(like, 'Venice railing iron', '#1d1f21', 'diffuseColor.rgb *= .9+.15*nbN(vNbW.xz*8.+vNbW.y*5.);', function (m) { m.roughness = .45; m.metalness = .3; }); },
+        whitewood: function () { return shaded(like, 'Venice painted wood', '#ece8df', 'diffuseColor.rgb *= .95+.06*nbN(vec2((vNbW.x+vNbW.z)*20., vNbW.y*2.));', function (m) { m.roughness = .6; }); },
+        paving: function () { return shaded(like, 'Venice paving', '#cfc9bd', 'vec2 pq = vNbW.xz/.6; vec2 pf = fract(pq); float pj = (step(pf.x,.03)+step(pf.y,.03)) > 0. ? 1. : 0.; diffuseColor.rgb *= (.92+.1*nbH(floor(pq)))*(1.-.18*pj);', function (m) { m.roughness = .9; }); },
+        // the site's ground: porphyry setts laid in fans (overlapping arcs of small stones, each a little different: red-brown, plum,
+        // grey), dark joints; fades to its average colour in the distance so it never shimmers
+        cobble: function () { return shaded(like, 'Venice cobbles', '#cfc9bd',
+          // (the Revit floor material holds the site slab and the upper floors: above ground level they stay square paving)
+          NRM + 'if (vNbW.y > 3.3) { vec2 pq = vNbW.xz/.6; vec2 pf = fract(pq); float pj = (step(pf.x,.03)+step(pf.y,.03)) > 0. ? 1. : 0.; diffuseColor.rgb *= (.92+.1*nbH(floor(pq)))*(1.-.18*pj); } else if (abs(nw.y) > .7) ' + COBBLE + ' else { diffuseColor.rgb = vec3(.5,.46,.42); }',
+          function (m) { m.roughness = .88; }); },
+        planter: function () { return shaded(like, 'Venice planter', '#a86a4a', 'diffuseColor.rgb *= .9+.12*nbN(vNbW.xz*3.+vNbW.y*2.);', function (m) { m.roughness = .85; }); },
+        tile: function () { return shaded(like, 'Venice roof tile', '#c56a3f', 'diffuseColor.rgb *= .9+.12*nbN(vNbW.xz*3.+vNbW.y*2.);', function (m) { m.roughness = .82; }); },   // the modelled tile roof of the Real view
+        frame: function () { return brushedMaterial(like, '#7d858a'); },   // window and door frames: dark metal, the same on windows and sliding doors
+        wood: function () { return shaded(like, 'Venice wood louvers', '#93603a', 'float wg = nbN(vec2((vNbW.x+vNbW.z)*2.2, vNbW.y*55.))*.5 + nbN(vec2((vNbW.x+vNbW.z)*55., vNbW.y*2.2))*.5; float wk = nbN(vec2((vNbW.x+vNbW.z)*14., vNbW.y*.9)); diffuseColor.rgb = mix(vec3(.40,.24,.12), vec3(.60,.38,.20), wk) * (.84+.3*wg);', function (m) { m.roughness = .7; }); },
+        foliage: function () { return shaded(like, 'Venice foliage', '#5d8e43', 'float lf = nbN(vNbW.xz*2.6+vNbW.y*1.9), lf2 = nbN(vNbW.xz*9.+vNbW.y*6.); diffuseColor.rgb = mix(vec3(.30,.50,.20), vec3(.50,.68,.28), lf)*(.82+.3*lf2)*(.78+.3*smoothstep(0.,14.,vNbW.y));', function (m) { m.userData.skKeep = .9; }); }
+      };
+      var MATS = { wall: MK.wall(), glass: MK.glass(), iron: MK.iron(), whitewood: MK.whitewood(), paving: MK.paving(), planter: MK.planter(), cobble: MK.cobble(), frame: bm.main, wood: WOOD, foliage: FOLIAGE };
+      // Revit material -> kind of surface, following the renders and the art direction
+      function kind(name) {
+        if (/glass/i.test(name)) return 'glass';
+        if (/^Roof tile 3D/.test(name)) return 'tile';
+        if (/^Default Floor$/i.test(name)) return 'cobble';                               // floors: the ground slab around the building in stone setts, upper floors paved
+        if (/^Default Wall$|^BRIVK$|t.gl.s|korall/i.test(name)) return 'wall';
+        if (/BASE OUTSIDE|Concrete|Betont|Default Floor|^Finish$|^White$/i.test(name)) return /Betont/i.test(name) ? 'wall' : 'paving';
+        if (/Default Roof/i.test(name)) return 'wall';                                   // pitched faces take the Spanish tile in the wall shader
+        if (/Sierra Pacific - VG Fir|Black 023|IfcWindow|Door - Frame|Aluminium|Aluminum|Sierra Pacific - White/i.test(name)) return 'frame';
+        if (/Wood Planks|^Ash$|Door - Panel|divider doors/i.test(name)) return 'wood';
+        if (/Wood - Painted White/i.test(name)) return 'whitewood';
+        if (/Digger|IfcRailing|Kov.csoltvas|GATE|GAIT|Steel|Metal|Perforated|Chrome/i.test(name)) return 'iron';
+        if (/Default 2/i.test(name)) return 'foliage';
+        if (/Planter/i.test(name)) return 'planter';
         return null;
       }
+      function look(name) { var k = kind(name); return k ? MATS[k] : null; }
+      // The city's street level is its own ground mesh, lying just over the site slab, so it is what shows as the ground while the
+      // context is on. In the rendered views (not the washes) it takes the same setts. Added after project-look.js has painted the
+      // context as a study model, so the setts come last.
+      (function ground(n) {
+        if (!window.projectLook) { if (n < 150) setTimeout(function () { ground(n + 1); }, 400); return; }
+        scene.traverse(function (o) {
+          if (o.name !== 'Site_context__Stone' || !o.material || o.material.userData.vlCob) return; var m = o.material; m.userData.vlCob = true; var prev = m.onBeforeCompile, pk = m.customProgramCacheKey;
+          m.onBeforeCompile = function (sh, r) { if (prev) prev.call(this, sh, r); sh.fragmentShader = sh.fragmentShader.replace('#include <roughnessmap_fragment>', 'if (uStyle < .5 && abs(nw.y) > .7 && vNbW.y < 4.5) ' + COBBLE + '\n#include <roughnessmap_fragment>'); };
+          m.customProgramCacheKey = function () { return (pk ? pk.call(this) : '') + '-vlcob'; }; m.needsUpdate = true;
+        });
+        ctx.controls.dispatchEvent({ type: 'change' });
+      })(0);
+      window.veniceLook = { kind: kind, make: MK };
       fetch('main-apartment.bin.gz?v=1').then(function (r) { if (!r.ok) throw 0; return new Response(r.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer(); }).then(function (buf) {
         var dv = new DataView(buf), hl = dv.getUint32(4, true), hdr = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 8, hl))), at = 8 + hl;
         var BG = any.geometry.constructor, MESH = any.constructor, Attr = any.geometry.attributes.position.constructor;

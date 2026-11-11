@@ -131,8 +131,10 @@
       if (ctxInk) ctxInk.visible = ctxMeshes.some(function (o) { return o.visible; });
       if (mode === 'diagram' && !projInk) { var E = featureEdges(projMeshes, false); if (E.length) projInk = strips(new Float32Array(E), 'Project ink project'); }
       if (projInk) projInk.visible = mode === 'diagram';
-      if (roofMeshes.length && !roofInk) { var RE = featureEdges(roofMeshes, false, true); if (RE.length) roofInk = strips(new Float32Array(RE), 'Project ink roof'); }
-      if (roofInk) roofInk.visible = mode !== 'diagram';
+      // one set of roof lines per building group (the name before "__"), so a group the panel hides takes its lines with it
+      if (roofMeshes.length && !roofInk) { roofInk = []; var byGroup = {}; roofMeshes.forEach(function (o) { var g = (o.name || '').split('__')[0]; (byGroup[g] || (byGroup[g] = [])).push(o); });
+        Object.keys(byGroup).forEach(function (g) { var RE = featureEdges(byGroup[g], false, true); if (RE.length) roofInk.push(strips(new Float32Array(RE), 'Project ink roof ' + g)); }); }
+      if (roofInk) roofInk.forEach(function (r) { if (r.userData.ppWas !== undefined) r.userData.ppWas = mode !== 'diagram'; else r.visible = mode !== 'diagram'; });
       ctx.controls.dispatchEvent({ type: 'change' });
     }
     new MutationObserver(apply).observe(document.documentElement, { attributes: true, attributeFilter: ['data-sk'] });
