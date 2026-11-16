@@ -1,0 +1,235 @@
+{
+ "hive": {
+  "w": 284.1,
+  "d": 218.6,
+  "sea": false,
+  "ground": 0,
+  "tris": 2602035,
+  "kb": 21437,
+  "project": [
+   -128,
+   -1.8,
+   -95.3,
+   128,
+   47.6,
+   95.3
+  ],
+  "textures": 8
+ },
+ "net-zero-school": {
+  "w": 399.2,
+  "d": 449.1,
+  "sea": false,
+  "ground": 0,
+  "tris": 1995440,
+  "kb": 15698,
+  "project": [
+   -189.6,
+   -4.4,
+   -214.6,
+   189.6,
+   8.8,
+   214.6
+  ],
+  "textures": 1
+ },
+ "tranquil-river": {
+  "w": 34.4,
+  "d": 36.1,
+  "sea": false,
+  "ground": 0,
+  "tris": 142952,
+  "kb": 1483,
+  "project": [
+   -9.2,
+   -7.8,
+   -10.1,
+   9.2,
+   9.8,
+   10.1
+  ],
+  "textures": 4
+ },
+ "north-beach-youth-center": {
+  "w": 131.7,
+  "d": 151.4,
+  "sea": false,
+  "ground": 0,
+  "tris": 2184042,
+  "kb": 5452,
+  "project": [
+   -57.8,
+   -34,
+   -67.7,
+   57.8,
+   19.7,
+   67.7
+  ],
+  "textures": 0
+ },
+ "museum-of-emotions": {
+  "w": 74.8,
+  "d": 166.9,
+  "sea": false,
+  "ground": 0,
+  "tris": 477011,
+  "kb": 2643,
+  "project": [
+   -29.4,
+   -1.2,
+   -75.4,
+   29.4,
+   41.9,
+   75.4
+  ],
+  "textures": 0
+ },
+ "museum-study-2": {
+  "w": 129.9,
+  "d": 141.8,
+  "sea": false,
+  "ground": 0,
+  "tris": 887505,
+  "kb": 6114,
+  "project": [
+   -56.9,
+   -7.6,
+   -62.9,
+   56.9,
+   17.2,
+   62.9
+  ],
+  "textures": 0
+ },
+ "museum-study-3": {
+  "w": 68,
+  "d": 68,
+  "sea": false,
+  "ground": 0,
+  "tris": 136703,
+  "kb": 773,
+  "project": [
+   -26,
+   -10.4,
+   -26,
+   26,
+   39.9,
+   26
+  ],
+  "textures": 0
+ },
+ "london-2": {
+  "w": 242.6,
+  "d": 179.9,
+  "sea": false,
+  "ground": 0,
+  "tris": 474870,
+  "kb": 2903,
+  "project": [
+   -103.3,
+   0,
+   -72,
+   103.3,
+   109.5,
+   72
+  ],
+  "textures": 0
+ },
+ "wheels-on-water": {
+  "w": 55.4,
+  "d": 34.3,
+  "sea": false,
+  "ground": 4.25,
+  "tris": 784038,
+  "kb": 5735,
+  "project": [
+   -27.7,
+   -1,
+   -17.2,
+   27.7,
+   10,
+   17.2
+  ]
+ },
+ "venice-apartments": {
+  "w": 374,
+  "d": 450,
+  "sea": true,
+  "ground": 1.78,
+  "tris": 456106,
+  "kb": 1267,
+  "project": [
+   -145,
+   1.5,
+   -93,
+   -116.2,
+   18.6,
+   -58.6
+  ]
+ },
+ "allure-waterways": {
+  "w": 67.2,
+  "d": 365.8,
+  "sea": false,
+  "ground": 43.75,
+  "tris": 386900,
+  "kb": 1268,
+  "project": [
+   -33.6,
+   -9,
+   -182.9,
+   33.6,
+   71.6,
+   182.9
+  ]
+ },
+ "london-1": {
+  "w": 407.5,
+  "d": 210.2,
+  "sea": false,
+  "ground": 0,
+  "tris": 1199804,
+  "kb": 5762,
+  "project": [
+   -193.8,
+   -1,
+   -95.1,
+   193.8,
+   158.9,
+   95.1
+  ],
+  "textures": 0
+ },
+ "phalanstery": {
+  "w": 1040,
+  "d": 1040,
+  "sea": false,
+  "ground": 0,
+  "tris": 162928,
+  "kb": 426,
+  "project": [
+   -475.5,
+   -19,
+   -476.1,
+   475.5,
+   182.2,
+   475.5
+  ]
+ },
+ "winter-station": {
+  "w": 24,
+  "d": 24,
+  "sea": false,
+  "ground": 0,
+  "tris": 822264,
+  "kb": 1238,
+  "project": [
+   -9,
+   0,
+   -9,
+   9,
+   4,
+   9
+  ]
+ }
+}

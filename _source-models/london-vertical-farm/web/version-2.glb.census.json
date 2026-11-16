@@ -1,0 +1,121 @@
+{
+ "census": [
+  {
+   "link": "host",
+   "cat": "Entourage",
+   "tris": 2173128
+  },
+  {
+   "link": "host",
+   "cat": "Generic Models",
+   "tris": 1726849
+  },
+  {
+   "link": "host",
+   "cat": "Mass",
+   "tris": 338028
+  },
+  {
+   "link": "host",
+   "cat": "Walls",
+   "tris": 223872
+  },
+  {
+   "link": "host",
+   "cat": "Curtain Wall Mullions",
+   "tris": 146256
+  },
+  {
+   "link": "host",
+   "cat": "Floors",
+   "tris": 92908
+  },
+  {
+   "link": "host",
+   "cat": "Curtain Panels",
+   "tris": 63840
+  },
+  {
+   "link": "host",
+   "cat": "Columns",
+   "tris": 16335
+  },
+  {
+   "link": "host",
+   "cat": "Site",
+   "tris": 1422
+  },
+  {
+   "link": "host",
+   "cat": "Mass Floor",
+   "tris": 860
+  },
+  {
+   "link": "host",
+   "cat": "Toposolid",
+   "tris": 696
+  },
+  {
+   "link": "host",
+   "cat": "Levels",
+   "tris": 528
+  },
+  {
+   "link": "host",
+   "cat": "Cameras",
+   "tris": 0
+  },
+  {
+   "link": "host",
+   "cat": "Curtain Systems",
+   "tris": 0
+  },
+  {
+   "link": "host",
+   "cat": "Curtain System Grids",
+   "tris": 0
+  },
+  {
+   "link": "host",
+   "cat": "Model Groups",
+   "tris": 0
+  },
+  {
+   "link": "host",
+   "cat": "Planting",
+   "tris": 0
+  }
+ ],
+ "box": {
+  "host": [
+   [
+    -1540.4044363707287,
+    -90.90660000000001,
+    -1692.2030533032173
+   ],
+   [
+    2031.7073796292716,
+    153.92400000908853,
+    472.6163436967827
+   ]
+  ],
+  "link": [
+   [
+    1e+18,
+    1e+18,
+    1e+18
+   ],
+   [
+    -1e+18,
+    -1e+18,
+    -1e+18
+   ]
+  ]
+ },
+ "cells": [
+  0.15,
+  1.2
+ ],
+ "source_triangles": 4784722,
+ "triangles": 927640
+}

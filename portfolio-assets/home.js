@@ -17,6 +17,8 @@ const MORE = [
   {title:'Museum of Emotions', sub:'Three studies · 3D', slug:'museum-of-emotions', gallery:'projects/museum-of-emotions/index.html', studies:true},
   {title:'Cantilever Barn', sub:'East Tennessee · drawings · 3D', slug:'east-tennessee-cantilever-barn', gallery:'projects/cantilever-barn/index.html'},
   {title:'Wheels on Water', sub:'3D model', slug:'wheels-on-water', gallery:'projects/wheels-on-water/index.html'},
+  {title:'London Vertical Farm · Version 1', sub:'3D model', slug:'london-vertical-farm-v1', gallery:'London-Vertical-Farm/story.html'},
+  {title:'London Vertical Farm · Version 2', sub:'3D model', slug:'london-vertical-farm-v2', gallery:'London-Vertical-Farm/story.html'},
   {title:'Bench Boat', sub:'Bench studies · 3D', slug:'bench-boat', gallery:'projects/bench-studies/index.html'},
   {title:'Bench D9', sub:'Bench studies · 3D', slug:'bench-d9', gallery:'projects/bench-studies/index.html'},
   {title:'A Moment in Monument', sub:'Winter Stations 2027 · interactive wall', slug:'winter-station-2027', gallery:'projects/winter-station-2027/index.html'}
@@ -48,11 +50,15 @@ const CATS = [
   ['fabrication','Fabrication','From drawings to objects and material studies.'],
   ['portfolio','Portfolio','Collected architectural work, organized by year.']
 ];
+/* Hidden Gems City entry (second card on desktop, first on phones) */
+const CITY_URL = 'city/index.html';
+const CITY = {title:'Hidden Gems City', sub:'Making the unseen seen. Walk one city built from every project.', href:CITY_URL, poster:'city/markup/city-poster.jpg'};
 const CARDS = [
   {title:'Architecture', sub:'Spatial studies, project stories, and interactive models.', href:'#arch', poster:'img/architecture-poster.jpg', video:'vid/architecture-reel.mp4', wide:true},
   {title:'Graphic Design', sub:'Branding, illustration, and graphic work.', href:'graphic-design/index.html', poster:'img/graphic-design.jpg', contain:true},
   {title:'Art ↗', sub:'Experimental forms and moving images.', href:'https://archiwatts-art.me/', poster:'img/art-poster.jpg', video:'vid/art-animation.mp4'}
 ];
+CARDS.splice(1, 0, CITY); CARDS.forEach(c => delete c.wide);
 
 /* ---------- templates ---------- */
 const img = (src, alt, extra = '') => `<img src="${src}" alt="${alt}" loading="lazy" decoding="async" ${extra}>`;
@@ -118,6 +124,7 @@ $('home').firstElementChild.innerHTML = svg;
 
 $('links').innerHTML = `<li><a href="#arch" data-r="arch">Architecture</a>
 <ul class="sub" aria-label="Architecture categories">${CATS.map(([id, t]) => `<li><a href="#arch/${id}" data-c="${id}">${t}</a></li>`).join('')}</ul></li>
+<li class="cityli"><a class="city" href="${CITY_URL}">Hidden Gems City <em>New</em></a></li>
 <li><a href="graphic-design/index.html">Graphic Design</a></li>
 <li><a href="https://archiwatts-art.me/">Art ↗</a></li>
 <li><a href="#about" data-r="about">About &amp; Contact</a></li>`;
@@ -265,4 +272,13 @@ addEventListener('pointermove', e => {
   sync();
 })();
 route();
+})();
+
+/* Hidden Gems City: mark the cards for the new layout, dress the city card, add the intro-screen entry */
+(() => { const url = 'city/index.html';
+  [...document.querySelectorAll('#cards .card')].forEach((c, i) => c.classList.add(['c-arch', 'c-city', 'c-gd', 'c-art'][i]));
+  const f = document.querySelector('#cards .c-city .frame');
+  if (f) { f.style.position = 'relative'; f.insertAdjacentHTML('beforeend', '<span class="citytag">New</span>'); }
+  const card = document.querySelector('#cards .c-city'); if (card) card.insertAdjacentHTML('beforeend', '<p class="citynote">Best on a computer for now. Phone controls are on the way.</p>');
+  document.body.insertAdjacentHTML('beforeend', '<a id="entercity" href="' + url + '"><img src="city/brand/gem-mark.png" alt="">Enter Hidden Gems City</a>');
 })();

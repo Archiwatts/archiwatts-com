@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>World with sites (rough mock) | ArchiWatts</title>
+<style>
+  :root{--bg:#141518;--panel:#1d1e23;--line:#34363d;--text:#f3f2ef;--dim:#a4a6ad;--pink:#e8457a}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font:14px/1.4 system-ui,"Segoe UI",Helvetica,Arial,sans-serif}
+  canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+  .ui{position:fixed;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+  #top{top:12px;left:50%;transform:translateX(-50%);padding:10px 14px;width:min(700px,calc(100vw - 24px));text-align:center}
+  #top small{display:block;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;font-size:11px;margin-bottom:4px}
+  #top p{margin:0;color:var(--dim);font-size:13px;text-wrap:balance}
+  #top b{color:var(--text)}
+  button{font:inherit;color:var(--text);background:#26282e;border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer}
+  button:hover{border-color:#6a6d76}
+  button[aria-pressed=true]{background:var(--pink);border-color:var(--pink);color:#fff;font-weight:600}
+  #list{top:104px;left:12px;width:200px;padding:10px;max-height:calc(100vh - 190px);overflow:auto}
+  #list h2,#card h2{margin:10px 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);font-weight:600}
+  #list h2:first-child,#card h2{margin-top:0}
+  #list button{display:block;width:100%;text-align:left;margin:0 0 4px;padding:6px 9px;font-size:13px}
+  #list button.on{background:#fff;color:#111;border-color:#fff;font-weight:600}
+  #card{top:104px;right:12px;width:250px;padding:12px}
+  #card img{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:8px;background:#0e0f11;display:block;margin-bottom:10px}
+  #card h3{margin:0 0 4px;font-size:18px}
+  #card p{margin:0 0 10px;color:var(--dim);font-size:13px}
+  #card a{display:block;text-align:center;background:var(--pink);color:#fff;text-decoration:none;font-weight:600;border-radius:8px;padding:9px;margin-bottom:6px}
+  #card button{width:100%}
+  #modes{bottom:14px;left:50%;transform:translateX(-50%);padding:8px;display:flex;gap:6px;align-items:center}
+  #hint{color:var(--dim);font-size:12px;padding:0 8px;max-width:40vw}
+  #found{bottom:76px;left:50%;transform:translateX(-50%);padding:10px 14px;display:flex;gap:12px;align-items:center;border-color:var(--pink)}
+  [hidden]{display:none!important}
+  @media (max-width:760px){#list{display:none}#card{top:auto;bottom:76px;right:12px;left:12px;width:auto}#card img{display:none}#hint{display:none}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="top" class="ui">
+  <small>ArchiWatts · one world with its sites · rough mock 2</small>
+  <p><b>White</b> is your project. <b>Grey</b> is a cut-out piece of its site. Placement is a first guess for you to correct.</p>
+</div>
+
+<div id="list" class="ui"></div>
+
+<div id="card" class="ui" hidden>
+  <h2>Selected</h2>
+  <img id="cimg" alt="">
+  <h3 id="cname"></h3>
+  <p id="csite"></p>
+  <a id="copen" href="#">Open project →</a>
+  <button id="cback" type="button">Back to the world</button>
+</div>
+
+<div id="found" class="ui" hidden><span>You found <b id="fname"></b></span><button id="fopen" type="button">Look closer</button></div>
+
+<div id="modes" class="ui">
+  <button id="mOrbit" type="button" aria-pressed="true">Orbit</button>
+  <button id="mWalk" type="button" aria-pressed="false">Walk</button>
+  <button id="mCtx" type="button" aria-pressed="true">Site context</button>
+  <span id="hint"></span>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+  // pos = [x, z]; water: floats at the waterline; r: fly-in distance
+  const P = [
+    {name:'Venice Apartments', group:'Venice', site:'Inside the Venice fabric, facing the quay.', kind:'court', pos:[0,8], url:'../interactive/venice-apartments/index.html', img:'../interactive/venice-apartments/preview.webp'},
+    {name:'Allure Waterways', group:'Venice', site:'Docked along the Venice quay.', kind:'ship', pos:[-6,31], water:1, r:70, url:'../interactive/allure-waterways/index.html', img:'../interactive/allure-waterways/preview.webp'},
+    {name:'Wheels on Water', group:'Venice', site:'Moored at the east end of the Venice quay.', kind:'boatbig', pos:[44,23], rot:.7, water:1, r:40, url:'../interactive/wheels-on-water/index.html', img:'../interactive/wheels-on-water/preview.webp'},
+    {name:'Hive', group:'Miami', site:'On the canal edge of a Miami neighbourhood.', kind:'hex', pos:[77,8], url:'../Hive/Hive.html', img:'../portfolio-assets/hive-card-model.webp'},
+    {name:'North Beach Youth Center', group:'Miami', site:'On the beach side of the Miami island.', kind:'lshape', pos:[122,28], rot:1.57, url:'../interactive/north-beach-youth-center/index.html', img:'../interactive/north-beach-youth-center/preview.webp'},
+    {name:'Winter Station 2027', group:'Miami', site:'On the sand (a guess: it is a beach installation).', kind:'pavilion', pos:[124,-8], r:36, url:'../interactive/winter-station-2027/index.html', img:'../interactive/winter-station-2027/preview.webp'},
+    {name:'Phalanstery', group:'Own islands', site:'Its own bounded island with the circular route.', kind:'slab', pos:[-92,-42], url:'../Phalanstery/Phalanstery.html', img:'../img/Phalanstery/renders/best-render-phalanstery-17.webp'},
+    {name:'Net Zero School', group:'Own islands', site:'A campus island with a field and trees.', kind:'school', pos:[-80,38], url:'../Net-Zero-School/Net-Zero-School.html', img:'../portfolio-assets/net-zero-school-review-cover.png'},
+    {name:'Tranquil River', group:'Own islands', site:'An oasis island around the hot spring.', kind:'river', pos:[8,74], url:'../Tranquil-River/Tranquil-River.html', img:'../portfolio-assets/tranquil-river-card-model.webp'},
+    {name:'Museum of Emotions', group:'Own islands', site:'A plaza island between the two cities.', kind:'blob', pos:[58,-66], url:'../interactive/museum-of-emotions/index.html', img:'../interactive/museum-of-emotions/preview.webp'}
+  ];
+
+  const canvas = document.getElementById('c');
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  const scene = new THREE.Scene(); scene.background = new THREE.Color(0xa9c3d1); scene.fog = new THREE.Fog(0xa9c3d1,300,700);
+  const camera = new THREE.PerspectiveCamera(50,1,.5,1500);
+  scene.add(new THREE.HemisphereLight(0xffffff,0x7c828c,.62));
+  const sun = new THREE.DirectionalLight(0xffffff,.5); sun.position.set(90,150,70); sun.castShadow = true;
+  sun.shadow.mapSize.set(2048,2048); Object.assign(sun.shadow.camera,{left:-190,right:190,top:190,bottom:-190,near:10,far:500}); scene.add(sun);
+
+  const mat = c => new THREE.MeshStandardMaterial({color:c, roughness:.95});
+  const clay = mat(0xffffff), grey = mat(0xb4b7bd), GROUND = 0xe2e0da;
+  const hitMat = new THREE.MeshBasicMaterial({transparent:true, opacity:0, depthWrite:false});
+  const world = new THREE.Group(), ctx = new THREE.Group(), projects = new THREE.Group(); scene.add(world, ctx, projects);
+  let seed = 7; const rnd = () => { seed = (seed*1664525 + 1013904223) >>> 0; return seed/4294967296; };
+
+  // ---------- project stand-ins ----------
+  function mass(kind){
+    const g = new THREE.Group(); let h = 8;
+    const add = (geo,x,y,z) => { const m = new THREE.Mesh(geo,clay); m.position.set(x,y,z); m.castShadow = m.receiveShadow = true; g.add(m); return m; };
+    const b = (w,hh,d,x=0,z=0,y=0,ry=0) => { const m = add(new THREE.BoxGeometry(w,hh,d),x,y+hh/2,z); m.rotation.y = ry; return m; };
+    const hip = (w,d,hh,x,z,y) => { const geo = new THREE.ConeGeometry(.72,1,4); geo.rotateY(Math.PI/4); const m = add(geo,x,y+hh/2,z); m.scale.set(w,hh,d); return m; };
+    const hull = (l,hh,w,y) => { const m = add(new THREE.SphereGeometry(1,24,12),0,y,0); m.scale.set(l,hh,w); return m; };
+    switch(kind){
+      case 'court': b(14,9,3,0,-5.5); b(14,9,3,0,5.5); b(3,9,8,-5.5,0); b(3,9,8,5.5,0); hip(15,4,2.5,0,-5.5,9); hip(15,4,2.5,0,5.5,9); h=12; break;
+      case 'hex': [[0,0,14],[5.2,0,9],[-5.2,0,11],[2.6,4.5,7],[-2.6,4.5,12],[2.6,-4.5,10],[-2.6,-4.5,6]].forEach(([x,z,hh])=>add(new THREE.CylinderGeometry(3,3,hh,6),x,hh/2,z)); h=14; break;
+      case 'slab': b(22,7,4,0,-4); b(4,7,10,-9,3); b(4,7,10,9,3); b(6,13,5,0,-4); add(new THREE.CylinderGeometry(4,4,5,32),0,2.5,6).scale.set(1.5,1,1); h=13; break;
+      case 'river': b(24,.6,5,0,0,0,.3); b(3,3,3,-7,-1); b(4,2.5,3,5,3); h=4; break;
+      case 'school': b(18,5,5,0,-4); b(18,5,5,2,4); b(14,.5,3,0,0,2.4).rotation.z=.25; h=7; break;
+      case 'blob': b(8,8,8,0,0,0,.4); b(6,12,6,4,3,0,-.3); b(7,5,9,-5,-2,0,.9); h=12; break;
+      case 'pavilion': add(new THREE.ConeGeometry(4.5,7,5,1,true),0,3.5,0).material = new THREE.MeshStandardMaterial({color:0xffffff,roughness:.95,side:THREE.DoubleSide}); h=7; break;
+      case 'boatbig': hull(8,1.6,3,1); b(8,2.5,3.5,0,0,1.5); h=5; break;
+      case 'lshape': b(16,6,6,0,-4); b(6,6,12,-5,3); b(18,.6,8,1,-4,6); h=7; break;
+      case 'ship': hull(24,3.2,5,.6); b(34,3,8,-1,0,1.5); b(28,2.6,7,-2,0,4.5); b(20,2.2,6,-3,0,7.1); b(3,3,2.5,-8,0,9.3); h=13; break;
+    }
+    g.userData.h = h; return g;
+  }
+
+  function label(text){
+    const cv = document.createElement('canvas'); cv.width = 512; cv.height = 112; const x = cv.getContext('2d');
+    x.font = '600 44px system-ui,Segoe UI,Arial'; const w = Math.min(500, x.measureText(text).width + 56), l = (512-w)/2;
+    x.fillStyle = 'rgba(20,21,24,.92)'; x.beginPath();
+    x.moveTo(l+28,12); x.arcTo(l+w,12,l+w,100,28); x.arcTo(l+w,100,l,100,28); x.arcTo(l,100,l,12,28); x.arcTo(l,12,l+w,12,28); x.fill();
+    x.fillStyle = '#fff'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(text,256,58,480);
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv), depthTest:false, transparent:true}));
+    s.scale.set(26,5.7,1); s.renderOrder = 10; return s;
+  }
+
+  // ---------- site pieces ----------
+  const put = (grp,geo,m,x,y,z) => { const o = new THREE.Mesh(geo,m); o.position.set(x,y,z); o.receiveShadow = true; grp.add(o); return o; };
+  const inside = (poly,x,z) => { let c = false; for (let i=0,j=poly.length-1;i<poly.length;j=i++){ const [xi,zi]=poly[i],[xj,zj]=poly[j]; if ((zi>z)!==(zj>z) && x<(xj-xi)*(z-zi)/(zj-zi)+xi) c=!c; } return c; };
+  function island(poly,color){ const s = new THREE.Shape(poly.map(p=>new THREE.Vector2(p[0],p[1]))); const geo = new THREE.ExtrudeGeometry(s,{depth:3,bevelEnabled:false}); geo.rotateX(Math.PI/2); return put(world,geo,mat(color),0,0,0); }
+  function patch(x0,z0,x1,z1,color,y=.06){ return put(world,new THREE.BoxGeometry(x1-x0,.12,z1-z0),mat(color),(x0+x1)/2,y,(z0+z1)/2); }
+  function disc(x,z,r,color,sx=1,y=.07){ const o = put(world,new THREE.CircleGeometry(r,48),mat(color),x,y,z); o.rotation.x = -Math.PI/2; o.scale.set(sx,1,1); return o; }
+  function bridge(a,b){ const dx=b[0]-a[0], dz=b[1]-a[1]; const o = put(world,new THREE.BoxGeometry(Math.hypot(dx,dz),.5,3.2),mat(0xffffff),(a[0]+b[0])/2,-.4,(a[1]+b[1])/2); o.rotation.y = -Math.atan2(dz,dx); }
+  function block(x,z,w,d,h){ const o = put(ctx,new THREE.BoxGeometry(w,h,d),grey,x,h/2,z); o.castShadow = true; return o; }
+  function tree(x,z,s=1,palm){ const t = put(ctx,new THREE.CylinderGeometry(.25*s,.3*s,(palm?5:2)*s,6),mat(0x8d7f6c),x,(palm?2.5:1)*s,z); const c = put(ctx,palm?new THREE.SphereGeometry(2*s,8,6):new THREE.ConeGeometry(1.8*s,4*s,8),mat(0x9dbb8e),x,(palm?5.2:4)*s,z); if (palm) c.scale.y = .45; t.castShadow = c.castShadow = true; }
+  function fill(poly,cell,gap,hmin,hmax,skip){
+    const xs = poly.map(p=>p[0]), zs = poly.map(p=>p[1]), w = cell-gap, m = w/2+1.5;
+    for (let x=Math.min(...xs)+cell/2; x<Math.max(...xs); x+=cell) for (let z=Math.min(...zs)+cell/2; z<Math.max(...zs); z+=cell){
+      if (skip(x,z) || ![[m,m],[m,-m],[-m,m],[-m,-m]].every(([a,c])=>inside(poly,x+a,z+c))) continue;
+      block(x,z,w*(.85+rnd()*.15),w*(.85+rnd()*.15),hmin+rnd()*(hmax-hmin));
+    }
+  }
+  const far = (x,z,p,r) => Math.hypot(x-p[0],z-p[1]) < r;
+
+  const water = put(world,new THREE.PlaneGeometry(1800,1800),mat(0x6f9bb3),0,-2.4,0); water.rotation.x = -Math.PI/2;
+
+  // Venice: dense fabric, a canal through it, the south quay where the ships dock
+  const VEN = [[-42,-38],[-10,-44],[30,-40],[46,-22],[44,10],[30,22],[-30,22],[-46,6],[-48,-20]];
+  island(VEN,GROUND); patch(-47,-15,46,-9,0x6f9bb3);
+  [-28,2,30].forEach(x => { const o = put(world,new THREE.BoxGeometry(3,.6,8),mat(0xffffff),x,.4,-12); });
+  fill(VEN,7.2,1.7,5,8.5,(x,z) => (z>-17.5 && z<-6.5) || far(x,z,[0,8],14) || z>16);
+  block(30,-30,3.2,3.2,24);
+
+  // Miami: low street grid, the canal edge for Hive, the beach for the Youth Center
+  const MIA = [[70,-30],[125,-30],[132,-20],[132,50],[70,50],[64,40],[64,-20]];
+  island(MIA,GROUND); patch(115,-24,131.5,49.5,0xe8dab2);
+  fill(MIA,9.5,4,2.6,4.2,(x,z) => x>112 || far(x,z,[77,8],15));
+  for (let z=-22;z<48;z+=9) tree(113.5,z,.9,true);
+
+  // Phalanstery: bounded island with its ring route
+  put(world,new THREE.CylinderGeometry(28,29.5,3,64),mat(GROUND),-92,-1.5,-42);
+  const route = put(world,new THREE.RingGeometry(21,23,64),mat(0xc9c5bb),-92,.07,-42); route.rotation.x = -Math.PI/2;
+  disc(-80,-52,5,0x8fc0d4);
+
+  // Net Zero School: campus with a field
+  const NZS = [[-112,22],[-60,18],[-52,30],[-56,62],[-104,66],[-116,50]];
+  island(NZS,GROUND); patch(-108,46,-86,62,0xb4cda4);
+  [[-108,28],[-100,26],[-62,24],[-58,40],[-60,54],[-70,60],[-112,40],[-80,58],[-66,32]].forEach(([x,z]) => tree(x,z,1+rnd()*.4));
+
+  // Tranquil River: oasis around the spring
+  const TRQ = Array.from({length:14},(_,i) => { const a = i/14*Math.PI*2, r = 22 + Math.sin(i*2.3)*4; return [8+Math.cos(a)*r*1.15, 74+Math.sin(a)*r*.85]; });
+  island(TRQ,0xdccfa9); disc(6,78,9,0x55c7c2,1.7);
+  [[-10,66],[-6,84],[24,66],[26,82],[10,60],[0,62],[18,88],[-12,76]].forEach(([x,z]) => tree(x,z,1+rnd()*.3,true));
+
+  // Museum of Emotions: plaza between the two cities
+  put(world,new THREE.CylinderGeometry(16,17,3,48),mat(GROUND),58,-1.5,-66);
+
+  [[[-44,-25],[-70,-36]], [[-44,8],[-58,26]], [[24,20],[12,56]], [[44,-6],[66,-4]], [[28,-38],[48,-58]], [[70,-58],[86,-28]]].forEach(([a,b]) => bridge(a,b));
+
+  P.forEach((p,i) => {
+    const m = mass(p.kind), grp = new THREE.Group(); m.rotation.y = p.rot||0; grp.add(m);
+    const s = label(p.name); s.position.y = m.userData.h + 6; grp.add(s);
+    const hit = new THREE.Mesh(new THREE.CylinderGeometry(p.kind==='ship'?20:10,p.kind==='ship'?20:10,m.userData.h+4,12),hitMat); hit.position.y = (m.userData.h+4)/2; grp.add(hit);
+    grp.position.set(p.pos[0], p.water ? -2.2 : 0, p.pos[1]); grp.userData.pi = i; projects.add(grp);
+  });
+
+  const ring = new THREE.Mesh(new THREE.RingGeometry(15,16.2,64), new THREE.MeshBasicMaterial({color:0xe8457a, side:THREE.DoubleSide}));
+  ring.rotation.x = -Math.PI/2; ring.visible = false; scene.add(ring);
+
+  // ---------- interaction ----------
+  let mode = 'orbit', selected = -1;
+  const HOME = {t:new THREE.Vector3(12,0,6), r:250};
+  const o = {th:1.25, ph:.5, r:330, t:HOME.t.clone()}, g = {th:1.25, ph:.9, r:HOME.r, t:HOME.t.clone()};
+  const walk = {pos:new THREE.Vector3(), yaw:0, pitch:0}, keys = {};
+  const $ = id => document.getElementById(id);
+
+  function select(i){
+    selected = i;
+    document.querySelectorAll('#list button').forEach((b,k) => b.classList.toggle('on', k===i));
+    $('card').hidden = i<0; ring.visible = i>=0;
+    if (i<0){ g.t.copy(HOME.t); g.r = HOME.r; g.ph = .9; return; }
+    const p = P[i];
+    $('cname').textContent = p.name; $('csite').textContent = p.site; $('copen').href = p.url; const im = $('cimg'); im.hidden = false; im.onerror = () => im.hidden = true; im.src = p.img;
+    ring.position.set(p.pos[0],.3,p.pos[1]); ring.scale.setScalar(p.kind==='ship' ? 1.7 : 1);
+    if (mode==='walk') setMode('orbit');
+    g.t.set(p.pos[0],3,p.pos[1]); g.r = p.r||56; g.ph = 1.08;
+  }
+  function setMode(m){
+    mode = m; $('mOrbit').setAttribute('aria-pressed', m==='orbit'); $('mWalk').setAttribute('aria-pressed', m==='walk');
+    $('hint').textContent = m==='orbit' ? 'Drag to orbit · scroll to zoom · click a project' : 'W A S D or arrow keys to move · drag to look · Shift to run';
+    $('found').hidden = true;
+    if (m==='walk'){ select(-1); mode = 'walk'; walk.pos.set(18,1.8,20); walk.yaw = .9; walk.pitch = 0; }
+  }
+
+  let grp = '';
+  P.forEach((p,i) => { if (p.group!==grp){ grp = p.group; const h = document.createElement('h2'); h.textContent = grp; $('list').appendChild(h); } const b = document.createElement('button'); b.type='button'; b.textContent = p.name; b.onclick = () => select(i); $('list').appendChild(b); });
+  $('cback').onclick = () => select(-1); $('mOrbit').onclick = () => setMode('orbit'); $('mWalk').onclick = () => setMode('walk');
+  $('mCtx').onclick = e => { ctx.visible = !ctx.visible; e.currentTarget.setAttribute('aria-pressed', ctx.visible); };
+  let near = -1; $('fopen').onclick = () => { if (near>=0) select(near); };
+
+  let down = null, moved = 0; const ray = new THREE.Raycaster(), v2 = new THREE.Vector2();
+  canvas.addEventListener('pointerdown', e => { down = [e.clientX,e.clientY]; moved = 0; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener('pointermove', e => {
+    if (!down) return; const dx = e.clientX-down[0], dy = e.clientY-down[1]; down = [e.clientX,e.clientY]; moved += Math.abs(dx)+Math.abs(dy);
+    if (mode==='orbit'){ g.th += dx*.006; g.ph = Math.min(1.48, Math.max(.15, g.ph - dy*.005)); }
+    else { walk.yaw -= dx*.004; walk.pitch = Math.min(1.2, Math.max(-1.2, walk.pitch - dy*.004)); }
+  });
+  canvas.addEventListener('pointerup', e => {
+    if (down && moved<6){
+      v2.set(e.clientX/innerWidth*2-1, -(e.clientY/innerHeight)*2+1); ray.setFromCamera(v2,camera);
+      const hit = ray.intersectObjects(projects.children,true)[0]; let n = hit && hit.object;
+      while (n && n.userData.pi===undefined) n = n.parent; select(n ? n.userData.pi : -1);
+    }
+    down = null;
+  });
+  canvas.addEventListener('wheel', e => { e.preventDefault(); if (mode==='orbit') g.r = Math.min(400, Math.max(22, g.r*(1+Math.sign(e.deltaY)*.12))); }, {passive:false});
+  addEventListener('keydown', e => { keys[e.code] = true; if (e.code==='Escape') select(-1); });
+  addEventListener('keyup', e => keys[e.code] = false);
+
+  function resize(){ renderer.setSize(innerWidth,innerHeight,false); camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix(); }
+  addEventListener('resize', resize); resize();
+
+  let last = performance.now();
+  function frame(now){
+    const dt = Math.min(.05,(now-last)/1000); last = now;
+    if (mode==='orbit'){
+      const k = 1-Math.exp(-dt*5); o.th += (g.th-o.th)*k; o.ph += (g.ph-o.ph)*k; o.r += (g.r-o.r)*k; o.t.lerp(g.t,k);
+      camera.position.set(o.t.x+o.r*Math.sin(o.ph)*Math.cos(o.th), o.t.y+o.r*Math.cos(o.ph), o.t.z+o.r*Math.sin(o.ph)*Math.sin(o.th)); camera.lookAt(o.t);
+    } else {
+      const f = (keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0), s = (keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0);
+      const sp = (keys.ShiftLeft||keys.ShiftRight?34:15)*dt, sy = Math.sin(walk.yaw), cy = Math.cos(walk.yaw);
+      walk.pos.x += (-sy*f + cy*s)*sp; walk.pos.z += (-cy*f - sy*s)*sp;
+      camera.position.copy(walk.pos); camera.rotation.set(walk.pitch,walk.yaw,0,'YXZ');
+      near = -1; let best = 24; P.forEach((p,i) => { const d = Math.hypot(p.pos[0]-walk.pos.x, p.pos[1]-walk.pos.z); if (d<best){best=d;near=i;} });
+      $('found').hidden = near<0; if (near>=0) $('fname').textContent = P[near].name;
+    }
+    renderer.render(scene,camera); requestAnimationFrame(frame);
+  }
+  setMode('orbit'); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

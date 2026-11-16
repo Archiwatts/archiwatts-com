@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Material Sheet | Hidden Gems City</title>
+<style>
+  :root{--bg:#141518;--panel:#1d1e23;--line:#34363d;--text:#f3f2ef;--dim:#a4a6ad;--pink:#e8457a;--gold:#e0b057}
+  *{box-sizing:border-box} html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/1.4 system-ui,"Segoe UI",sans-serif}
+  #app{display:grid;grid-template-columns:minmax(0,1fr) 420px;height:100%}
+  #view{position:relative;min-height:0} #view canvas{display:block;width:100%;height:100%}
+  #hint{position:absolute;left:12px;bottom:12px;color:var(--dim);font-size:12px;background:rgba(20,21,24,.8);padding:6px 10px;border-radius:8px}
+  aside{background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+  header{padding:14px 16px;border-bottom:1px solid var(--line)} header h1{margin:0 0 8px;font-size:16px;letter-spacing:.04em}
+  select,input,textarea,button{font:inherit;color:var(--text);background:#26282e;border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+  #proj{width:100%} #ref{display:block;width:100%;max-height:170px;object-fit:cover;border-radius:8px;margin-top:10px;background:#0e0f11}
+  #slots{overflow:auto;padding:8px 12px;flex:1}
+  .slot{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:8px 0;display:grid;grid-template-columns:auto 1fr;gap:6px 10px;cursor:pointer}
+  .slot.on{border-color:var(--pink)} .slot b{font-size:13px;word-break:break-word} .slot small{color:var(--dim)}
+  .slot input[type=color]{width:44px;height:44px;padding:2px;grid-row:span 2}
+  .slot .row{grid-column:2;display:flex;gap:6px} .slot .row select{flex:1} .slot textarea{grid-column:1/3;width:100%;min-height:34px;resize:vertical}
+  footer{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center}
+  #save{background:var(--pink);border-color:var(--pink);font-weight:600} #status{color:var(--dim);font-size:12px}
+  @media (max-width:800px){#app{grid-template-columns:1fr;grid-template-rows:45vh 1fr}aside{border-left:0;border-top:1px solid var(--line)}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head>
+<body>
+<div id="app">
+  <div id="view"><div id="hint">Drag to orbit · scroll to zoom · click a material on the right to highlight it</div></div>
+  <aside>
+    <header><h1>Material sheet · Hidden Gems City</h1>
+      <select id="proj"></select><img id="ref" alt=""></header>
+    <div id="slots"></div>
+    <footer><button id="save" type="button">Save for Claude</button><button id="reset" type="button">Reset project</button><span id="status"></span></footer>
+  </aside>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+const $ = id => document.getElementById(id);
+const PROJECTS = [
+  ['london-1', 'London Vertical Farm · V1', '../img/London-Vertical-Farm/renders/best-render.webp'],
+  ['london-2', 'London Vertical Farm · V2', '../interactive/london-vertical-farm-v2/preview.webp'],
+  ['north-beach-youth-center', 'North Beach Youth Center', '../interactive/north-beach-youth-center/preview.webp'],
+  ['net-zero-school', 'Net Zero School', '../portfolio-assets/net-zero-school-review-cover.png'],
+  ['hive', 'Hive', '../portfolio-assets/hive-card-model.webp'],
+  ['museum-of-emotions', 'Museum of Emotions', '../interactive/museum-of-emotions/preview.webp'],
+  ['museum-study-2', 'Museum of Emotions · Study 2', '../interactive/museum-of-emotions/studies/study-2/preview.webp'],
+  ['museum-study-3', 'Museum of Emotions · Study 3', '../interactive/museum-of-emotions/studies/study-3/preview.webp'],
+  ['tranquil-river', 'Tranquil River', '../portfolio-assets/tranquil-river-card-model.webp'],
+  ['winter-station', 'Winter Station 2027', '../interactive/winter-station-2027/preview.webp'],
+  ['venice-apartments', 'Venice Apartments', '../interactive/venice-apartments/preview.webp'],
+  ['allure-waterways', 'Allure Waterways', '../interactive/allure-waterways/preview.webp'],
+  ['wheels-on-water', 'Wheels on Water', '../interactive/wheels-on-water/preview.webp']
+];
+const FINISH = ['(keep as is)', 'concrete', 'white concrete', 'plaster / render', 'stucco', 'brick', 'stone', 'terrazzo', 'timber (light)', 'timber (dark)', 'CLT', 'bamboo', 'glass (clear)', 'glass (tinted)', 'glass (frosted)', 'metal (dark)', 'metal (brushed)', 'metal (perforated screen)', 'copper / bronze', 'paint (gloss)', 'fabric / membrane', 'grass / green roof', 'planting', 'soil / gravel', 'sand', 'water', 'asphalt', 'paving'];
+const KEY = 'hgc-material-sheet';
+let store = {}; try { store = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
+const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} };
+
+const view = $('view'), renderer = new THREE.WebGLRenderer({antialias:true}); renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.toneMapping = THREE.ACESFilmicToneMapping; view.prepend(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xdfe3e6); scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), .04).texture;
+const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(1, 1.6, .8); scene.add(sun, new THREE.HemisphereLight(0xffffff, 0x8a8f98, .6));
+const camera = new THREE.PerspectiveCamera(40, 1, .5, 20000), controls = new OrbitControls(camera, renderer.domElement); controls.enableDamping = true;
+const resize = () => { const r = view.getBoundingClientRect(); renderer.setSize(r.width, r.height, false); camera.aspect = r.width / r.height; camera.updateProjectionMatrix(); }; addEventListener('resize', resize); resize();
+const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+let model = null, slots = [], focus = null;
+
+PROJECTS.forEach(([k, n]) => { const o = document.createElement('option'); o.value = k; o.textContent = n; $('proj').appendChild(o); });
+$('proj').onchange = () => open($('proj').value);
+
+async function open(slug){
+  $('status').textContent = 'Loading…'; const P = PROJECTS.find(p => p[0] === slug); $('ref').src = P[2]; $('ref').hidden = false; $('ref').onerror = () => $('ref').hidden = true;
+  if (model){ scene.remove(model); model.traverse(o => o.geometry && o.geometry.dispose()); }
+  const g = await loader.loadAsync('models/' + slug + '.glb'); model = g.scene; scene.add(model);
+  const box = new THREE.Box3().setFromObject(model), size = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3()), r = Math.max(size.x, size.y, size.z);
+  controls.target.copy(c); camera.position.copy(c).add(new THREE.Vector3(r*.8, r*.6, r*.9)); camera.near = r/1000; camera.far = r*20; camera.updateProjectionMatrix();
+  const map = new Map();   // material slots (shared materials count once), with how much of the model each covers
+  model.traverse(o => { if (!o.isMesh) return; (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => {
+    const t = (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count)/3*(o.isInstancedMesh ? o.count : 1);
+    if (!map.has(m.uuid)) map.set(m.uuid, {m, name: m.name || '(unnamed)', tris: 0, meshes: [], orig: {color: m.color.clone(), rough: m.roughness, metal: m.metalness, opacity: m.opacity, transparent: m.transparent}});
+    const s = map.get(m.uuid); s.tris += t; s.meshes.push(o); }); });
+  slots = [...map.values()].sort((a, b) => b.tris - a.tris); const total = slots.reduce((a, s) => a + s.tris, 0);
+  store[slug] = store[slug] || {};
+  $('slots').innerHTML = '';
+  slots.forEach(s => { const saved = store[slug][s.name] || {}, el = document.createElement('div'); el.className = 'slot';
+    const hex = '#' + (saved.color ? saved.color.slice(1) : s.orig.color.getHexString(THREE.SRGBColorSpace));
+    el.innerHTML = `<input type="color" value="${hex}"><b>${s.name}</b><small>${(s.tris/total*100).toFixed(1)}% of the model${s.m.map ? ' · has a texture' : ''}</small>
+      <div class="row"><select>${FINISH.map(f => `<option${f === (saved.finish || FINISH[0]) ? ' selected' : ''}>${f}</option>`).join('')}</select></div>
+      <textarea placeholder="Notes: what is this in the real project? (e.g. board-formed concrete, accent only, frosted glass…)">${saved.note || ''}</textarea>`;
+    const [col] = el.getElementsByTagName('input'), sel = el.querySelector('select'), note = el.querySelector('textarea');
+    const apply = () => { const v = store[slug][s.name] = {color: col.value, finish: sel.value, note: note.value, original: '#' + s.orig.color.getHexString(THREE.SRGBColorSpace)};
+      s.m.color.set(col.value); const f = sel.value; if (/glass/.test(f)){ s.m.transparent = true; s.m.opacity = /frosted/.test(f) ? .7 : .35; s.m.roughness = /frosted/.test(f) ? .5 : .05; }
+      else if (f !== FINISH[0]){ s.m.transparent = s.orig.transparent; s.m.opacity = s.orig.opacity; s.m.metalness = /metal|copper/.test(f) ? .7 : 0; s.m.roughness = /gloss|metal \(brushed\)/.test(f) ? .3 : /metal|copper/.test(f) ? .45 : .85; }
+      s.m.needsUpdate = true; persist(); $('status').textContent = 'Changed · not sent yet'; void v; };
+    col.oninput = apply; sel.onchange = apply; note.oninput = apply; if (saved.color || saved.finish) apply();
+    el.onclick = e => { if (e.target.closest('input,select,textarea')) return; highlight(s, el); };
+    $('slots').appendChild(el); });
+  $('status').textContent = slots.length + ' materials'; persist();
+}
+function highlight(s, el){   // the chosen material in pink, everything else pale, for a moment
+  document.querySelectorAll('.slot').forEach(x => x.classList.toggle('on', x === el));
+  if (focus) clearTimeout(focus.t);
+  const all = slots.map(x => [x, x.m.color.getHex(), x.m.emissive ? x.m.emissive.getHex() : 0]);
+  slots.forEach(x => { if (x !== s){ x.m.color.set(0xeeeeee); } else if (x.m.emissive) x.m.emissive.set(0xe8457a); });
+  focus = {t: setTimeout(() => { all.forEach(([x, c, e]) => { x.m.color.setHex(c); if (x.m.emissive) x.m.emissive.setHex(e); }); }, 1600)};
+}
+$('reset').onclick = () => { const slug = $('proj').value; delete store[slug]; persist(); open(slug); };
+$('save').onclick = async () => { try { const r = await fetch('/__put?name=materials.json', {method:'POST', body: JSON.stringify(store, null, 1)}); $('status').textContent = r.ok ? 'Saved · tell Claude it is ready' : 'Could not save (is the local server running?)'; } catch (e) { $('status').textContent = 'Could not save (is the local server running?)'; } };
+(function loop(){ requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
+open(PROJECTS[0][0]);
+</script>
+</body>
+</html>

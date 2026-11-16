@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Markers and HUD mock | Hidden Gems City</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;600&family=Roboto+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#161516;--panel:#1d1c1e;--gold:#c9a063;--paper:#cfc3b2;--line:#3a383b;--text:#f4f1ec;--dim:#a7a29b;--pink:#e8457a}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ink);color:var(--text);font:300 16px/1.55 "Josefin Sans",system-ui,sans-serif;padding:34px 3.2% 130px}
+  h1{font-weight:300;font-size:clamp(26px,3vw,40px);letter-spacing:.14em;text-transform:uppercase;margin:14px 0 6px;text-wrap:balance}
+  h1 b{color:var(--gold);font-weight:300}
+  h2{font-weight:400;font-size:15px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin:60px 0 4px}
+  p{margin:0 0 10px;max-width:68ch;color:#d9d4cc}
+  .how{border:1px solid var(--gold);padding:12px 16px;max-width:760px;margin-top:14px}
+  .mono{font-family:"Roboto Mono",monospace;font-weight:300}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;margin-top:16px}
+  .opt{border:1px solid var(--line);background:var(--panel);padding:0 0 16px;cursor:crosshair}
+  .opt h3{font-weight:400;letter-spacing:.14em;text-transform:uppercase;font-size:15px;margin:14px 18px 4px;pointer-events:none}
+  .opt p{margin:0 18px;font-size:14px;color:var(--dim);pointer-events:none}
+  /* street scene behind each marker */
+  .street{position:relative;height:380px;overflow:hidden;background:linear-gradient(#a9c3d1 0 52%,#d9d2c4 52% 100%);pointer-events:none}
+  .street::before{content:"";position:absolute;left:0;right:0;top:30%;height:22%;background:linear-gradient(90deg,#e7dcc6 0 18%,#c98e6a 18% 30%,#efe6d6 30% 52%,#b9c4c9 52% 66%,#e4d2b4 66% 100%);opacity:.75}
+  .person{position:absolute;bottom:16px;width:16px;height:112px;background:#2b2a2d;border-radius:8px 8px 3px 3px}
+  .person::before{content:"";position:absolute;left:-1px;top:-22px;width:18px;height:18px;border-radius:50%;background:#2b2a2d}
+  .eye{position:absolute;left:8%;right:8%;bottom:118px;border-top:1px dashed rgba(22,21,22,.35)}
+  .eye span{position:absolute;right:0;top:-18px;font:300 11px "Roboto Mono",monospace;color:#3b393c}
+  /* marker 1: gold-framed plate */
+  .m1{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);width:150px}
+  .m1 .plate{background:var(--ink);border:1.5px solid var(--gold);outline:1px solid var(--gold);outline-offset:-7px;padding:20px 16px 18px;text-align:center;color:#fff}
+  .m1 img{width:38px;display:block;margin:0 auto 10px}
+  .m1 b{display:block;font-weight:300;letter-spacing:.2em;text-transform:uppercase;font-size:13px;line-height:1.5}
+  .m1 i{display:block;font-style:normal;color:var(--gold);font-size:9px;letter-spacing:.24em;text-transform:uppercase;margin-top:8px}
+  .m1 .post{width:8px;height:70px;background:var(--ink);margin:0 auto;border-left:1px solid var(--gold)}
+  /* marker 2: letterhead stele */
+  .m2{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);width:120px;height:210px;background:var(--paper);color:var(--ink);padding:16px 14px 14px 26px;box-shadow:6px 0 0 #b3a794}
+  .m2::before{content:"";position:absolute;left:12px;top:16px;bottom:16px;border-left:1.5px solid var(--ink)}
+  .m2::after{content:"";position:absolute;left:7px;top:10px;width:10px;height:10px;border-radius:50%;background:var(--gold);border:1.5px solid var(--ink)}
+  .m2 .dot{position:absolute;left:8px;bottom:10px;width:8px;height:8px;border-radius:50%;border:1.5px solid var(--ink);background:var(--paper)}
+  .m2 img{width:34px;filter:invert(1);display:block;margin-bottom:10px}
+  .m2 b{display:block;font-weight:400;letter-spacing:.16em;text-transform:uppercase;font-size:13px;line-height:1.45}
+  .m2 i{position:absolute;left:26px;bottom:14px;font:300 9px "Roboto Mono",monospace;font-style:normal}
+  /* marker 3: arch window */
+  .m3{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);width:128px;height:236px;border:3px solid #fff;border-radius:64px 64px 0 0;background:#161516 center/cover;overflow:hidden}
+  .m3 .v{position:absolute;top:34px;bottom:44px;display:flex;flex-direction:column;justify-content:space-between;font-weight:300;font-size:15px;line-height:1;text-align:center;width:16px;text-shadow:0 1px 3px #000}
+  .m3 .v.a{left:28px;color:var(--gold)}.m3 .v.b{right:28px;color:#fff}
+  .m3 .tag{position:absolute;right:0;bottom:0;background:var(--ink);border:1px solid var(--gold);border-right:0;border-bottom:0;padding:5px 8px 3px}
+  .m3 .tag img{width:20px;display:block}
+  /* HUD */
+  .shot{position:relative;margin-top:16px;border:1px solid var(--line);aspect-ratio:16/8.4;min-height:560px;background:#222 center/cover;overflow:hidden;cursor:crosshair}
+  .shot>*{pointer-events:none}
+  .shot .dim{position:absolute;inset:0;background:linear-gradient(90deg,rgba(22,21,22,0) 30%,rgba(22,21,22,.55))}
+  .hud{position:absolute;background:rgba(22,21,22,.94);border:1.5px solid var(--gold);color:#fff}
+  .hud::before{content:"";position:absolute;inset:7px;border:1px solid rgba(201,160,99,.45)}
+  .hud .in{position:relative;padding:26px 28px 24px}
+  .kick{display:flex;align-items:center;gap:10px;color:var(--gold);font-size:11px;letter-spacing:.26em;text-transform:uppercase}
+  .kick img{width:22px}
+  .hud h3{font-weight:300;font-size:clamp(22px,2.2vw,32px);letter-spacing:.16em;text-transform:uppercase;margin:10px 0 2px;line-height:1.25}
+  .hud .tabs{display:flex;gap:18px;margin:14px 0 12px;border-bottom:1px solid var(--line);font-size:12px;letter-spacing:.18em;text-transform:uppercase}
+  .hud .tabs span{padding:0 0 8px;color:var(--dim)}.hud .tabs span.on{color:#fff;border-bottom:1.5px solid var(--gold)}
+  .facts{display:grid;grid-template-columns:auto 1fr;gap:5px 16px;font:300 12.5px "Roboto Mono",monospace;margin:0 0 14px}
+  .facts dt{color:var(--gold)}.facts dd{margin:0;color:#e9e4dc}
+  .hud p{font-size:14.5px;color:#d9d4cc;margin:0 0 16px}
+  .btns{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{border:1px solid var(--gold);padding:10px 14px 8px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#fff}
+  .btn.pri{background:var(--gold);color:var(--ink);font-weight:600}
+  .x{position:absolute;right:18px;top:16px;font:300 20px "Roboto Mono",monospace;color:var(--gold)}
+  .key{font:300 11px "Roboto Mono",monospace;color:var(--dim);margin-top:14px}
+  .h1{right:3%;top:6%;bottom:6%;width:min(430px,44%)}
+  .rail{position:absolute;left:-13px;top:40px;bottom:40px;border-left:1.5px solid var(--gold)}
+  .rail::before,.rail::after{content:"";position:absolute;left:-6px;width:9px;height:9px;border-radius:50%;border:1.5px solid var(--gold);background:var(--ink)}
+  .rail::before{top:-6px;background:var(--gold)}.rail::after{bottom:-6px}
+  .h2{left:3%;right:3%;bottom:5%;display:grid;grid-template-columns:150px 1fr auto;gap:0 26px;align-items:center}
+  .h2 .in{display:contents}
+  .h2 .arch{margin:22px 0 22px 26px;width:124px;height:168px;border:2.5px solid #fff;border-radius:62px 62px 0 0;background:#222 center/cover}
+  .h2 .mid{padding:22px 0}.h2 .side{padding:22px 28px 22px 0;display:flex;flex-direction:column;gap:8px;min-width:230px}
+  .h2 h3{margin-top:6px}.h2 .facts{grid-template-columns:repeat(5,auto);gap:2px 22px;margin:8px 0 0}
+  .h2 .facts div{display:flex;flex-direction:column}
+  .prompt{position:absolute;left:50%;bottom:9%;transform:translateX(-50%);background:rgba(22,21,22,.92);border:1px solid var(--gold);padding:9px 16px 7px;font-size:12px;letter-spacing:.18em;text-transform:uppercase}
+  .prompt b{color:var(--gold);font-weight:400}
+  ol{max-width:74ch;color:#d9d4cc;padding-left:22px}ol li{margin:8px 0}
+</style>
+</head>
+<body>
+<img src="brand/hidden-gems-wordmark.png" alt="Hidden Gems, making the unseen seen" style="width:min(300px,60%)">
+<h1>Project markers and the <b>in-game panel</b></h1>
+<p>Step 2. Each project in Hidden Gems City gets a marker beside it. Walk up, press E or click it, and a panel opens inside the game. Everything here uses your Hidden Gems packet: near-black, gold hairlines, cream paper, the gem mark, the arch and the circuit line.</p>
+<div class="how"><b style="font-weight:600">To mark up:</b> press Annotate (bottom left) and click any option. Tell me which you like, and what to change. Mixing is fine.</div>
+
+<h2>A · The marker beside each project</h2>
+<p>Shown beside a person for size, with eye level dashed.</p>
+<div class="grid">
+  <div class="opt"><div class="street"><div class="eye"><span>eye level</span></div><div class="person" style="left:24%"></div>
+    <div class="m1"><div class="plate"><img src="brand/gem-mark.png" alt=""><b>Net Zero School</b><i>Press E</i></div><div class="post"></div></div></div>
+    <h3>1 · Gold-framed plate</h3><p>The business card as an object: black plate, double gold hairline, gem mark. Small and quiet; reads as a museum label.</p></div>
+  <div class="opt"><div class="street"><div class="eye"><span>eye level</span></div><div class="person" style="left:24%"></div>
+    <div class="m2"><img src="brand/gem-mark.png" alt=""><b>Net Zero School</b><i>N° 07</i><span class="dot"></span></div></div>
+    <h3>2 · Letterhead stele</h3><p>The cream stationery as a standing slab, with the circuit line and nodes down its edge. Easiest to spot against a dark or busy street.</p></div>
+  <div class="opt"><div class="street"><div class="eye"><span>eye level</span></div><div class="person" style="left:22%"></div>
+    <div class="m3" style="background-image:url(../portfolio-assets/net-zero-school-review-cover.png)"><div class="v a"><span>N</span><span>E</span><span>T</span><span>·</span><span>Z</span><span>E</span><span>R</span><span>O</span></div><div class="v b"><span>S</span><span>C</span><span>H</span><span>O</span><span>O</span><span>L</span></div><div class="tag"><img src="brand/gem-mark.png" alt=""></div></div></div>
+    <h3>3 · Arch window</h3><p>The arched frame from your posters, with a picture of the project inside and the name stacked vertically. The most visible from far away.</p></div>
+</div>
+
+<h2>B · The prompt when you are near</h2>
+<div class="shot" style="aspect-ratio:16/5;min-height:240px;background-image:url(markup/city-poster.jpg)"><div class="prompt">Net Zero School · press <b>E</b> to look closer</div></div>
+
+<h2>C · The panel, option 1: side file</h2>
+<p>Opens on the right and the city stays visible and walkable behind it. Tabs let you read the story and see drawings without leaving the game.</p>
+<div class="shot" style="background-image:url(markup/city-poster.jpg)"><div class="dim"></div>
+  <div class="hud h1"><span class="rail"></span><span class="x">×</span><div class="in">
+    <div class="kick"><img src="brand/gem-mark.png" alt="">Hidden Gems · project file N° 07</div>
+    <h3>Net Zero School</h3>
+    <div class="tabs"><span class="on">Overview</span><span>Story</span><span>Drawings</span></div>
+    <dl class="facts"><dt>Year</dt><dd>[Add year]</dd><dt>Place</dt><dd>[Add location]</dd><dt>Type</dt><dd>K–12 school</dd><dt>Size</dt><dd>[Add size]</dd><dt>Role</dt><dd>[Add your role]</dd></dl>
+    <p>[Two or three sentences on the idea behind the project. Placeholder until you write it.]</p>
+    <div class="btns"><span class="btn pri">Open the 3D model</span><span class="btn">Read the story</span><span class="btn">Drawings and renders</span></div>
+    <div class="key">E or Esc closes · the 3D model opens the project's own page</div>
+  </div></div>
+</div>
+
+<h2>C · The panel, option 2: bottom card</h2>
+<p>More game-like: a strip along the bottom with the project in an arch, facts in a row and the buttons on the right. Keeps more of the view clear.</p>
+<div class="shot" style="background-image:url(markup/city-poster.jpg)">
+  <div class="hud h2"><span class="x">×</span>
+    <div class="arch" style="background-image:url(../portfolio-assets/net-zero-school-review-cover.png)"></div>
+    <div class="mid"><div class="kick"><img src="brand/gem-mark.png" alt="">Hidden Gems · project file N° 07</div><h3>Net Zero School</h3>
+      <div class="facts"><div><dt>Year</dt><dd>[Add]</dd></div><div><dt>Place</dt><dd>[Add]</dd></div><div><dt>Type</dt><dd>K–12 school</dd></div><div><dt>Size</dt><dd>[Add]</dd></div><div><dt>Role</dt><dd>[Add]</dd></div></div></div>
+    <div class="side"><span class="btn pri">Open the 3D model</span><span class="btn">Read the story</span><span class="btn">Drawings and renders</span></div>
+  </div>
+</div>
+
+<h2>Questions for this step</h2>
+<ol>
+  <li><b>Marker:</b> which of the three, and should every project use the same one or should the kind of marker vary with the project?</li>
+  <li><b>Panel:</b> side file or bottom card?</li>
+  <li><b>Gold or pink:</b> your site uses pink as its accent and Hidden Gems uses gold. Inside the city, should gold replace pink completely, or should pink stay for "New" and for the thing you have selected?</li>
+  <li><b>Name:</b> the brand reads "Hidden Gems" (plural). Should the city be "Hidden Gems City" or "Hidden Gems City"?</li>
+  <li><b>Numbers:</b> I numbered projects like files (N° 07). Should the numbers follow the tour order, the year, or be dropped?</li>
+</ol>
+</body>
+</html>

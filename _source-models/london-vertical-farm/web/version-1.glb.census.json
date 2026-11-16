@@ -1,0 +1,161 @@
+{
+ "census": [
+  {
+   "link": "host",
+   "cat": "Columns",
+   "tris": 249037702
+  },
+  {
+   "link": "host",
+   "cat": "Furniture Systems",
+   "tris": 15431040
+  },
+  {
+   "link": "host",
+   "cat": "Mass",
+   "tris": 3595226
+  },
+  {
+   "link": "host",
+   "cat": "Top Rails",
+   "tris": 550496
+  },
+  {
+   "link": "host",
+   "cat": "Generic Models",
+   "tris": 467536
+  },
+  {
+   "link": "host",
+   "cat": "Walls",
+   "tris": 394255
+  },
+  {
+   "link": "host",
+   "cat": "Doors",
+   "tris": 256968
+  },
+  {
+   "link": "host",
+   "cat": "Entourage",
+   "tris": 116337
+  },
+  {
+   "link": "London V-Farm_Site model",
+   "cat": "Generic Models",
+   "tris": 78904
+  },
+  {
+   "link": "host",
+   "cat": "Site",
+   "tris": 63791
+  },
+  {
+   "link": "host",
+   "cat": "Railings",
+   "tris": 51876
+  },
+  {
+   "link": "host",
+   "cat": "Stairs",
+   "tris": 36756
+  },
+  {
+   "link": "host",
+   "cat": "Floors",
+   "tris": 27474
+  },
+  {
+   "link": "host",
+   "cat": "Runs",
+   "tris": 26000
+  },
+  {
+   "link": "host",
+   "cat": "Supports",
+   "tris": 6884
+  },
+  {
+   "link": "host",
+   "cat": "Landings",
+   "tris": 3872
+  },
+  {
+   "link": "host",
+   "cat": "Mass Floor",
+   "tris": 3258
+  },
+  {
+   "link": "host",
+   "cat": "Toposolid",
+   "tris": 696
+  },
+  {
+   "link": "host",
+   "cat": "Levels",
+   "tris": 684
+  },
+  {
+   "link": "London V-Farm_Site model",
+   "cat": "Levels",
+   "tris": 24
+  },
+  {
+   "link": "host",
+   "cat": "Cameras",
+   "tris": 0
+  },
+  {
+   "link": "host",
+   "cat": "Lines",
+   "tris": 0
+  },
+  {
+   "link": "host",
+   "cat": "Shaft Openings",
+   "tris": 0
+  },
+  {
+   "link": "host",
+   "cat": "Model Groups",
+   "tris": 0
+  },
+  {
+   "link": "host",
+   "cat": "RVT Links",
+   "tris": 0
+  }
+ ],
+ "box": {
+  "host": [
+   [
+    -203.71610493164064,
+    -91.2876,
+    -582.52995
+   ],
+   [
+    1378.4169234375001,
+    158.69215546875,
+    45.982178905484936
+   ]
+  ],
+  "link": [
+   [
+    -1525.7714642085066,
+    -1.1177438040802046,
+    -1682.309804743216
+   ],
+   [
+    2046.3403517914935,
+    101.44498307969135,
+    482.509592256784
+   ]
+  ]
+ },
+ "cells": [
+  0.35,
+  1.2
+ ],
+ "source_triangles": 270149779,
+ "triangles": 2403694
+}

@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>City Plan Markup</title>
+<style>
+  :root{--ink:#28349f;--paper:#fafaf6;--line:#d9dbe6;--panel:#ffffff;--text:#1d1f2a;--muted:#6b6f80}
+  *{box-sizing:border-box} html,body{margin:0;height:100%;background:var(--paper);color:var(--text);font:13px/1.35 system-ui,-apple-system,Segoe UI,sans-serif;overflow:hidden}
+  #c{position:fixed;inset:0;display:block;cursor:crosshair;touch-action:none}
+  .bar{position:fixed;left:12px;top:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;width:236px;max-height:calc(100% - 24px);overflow:auto;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+  .bar h1{font-size:14px;margin:0 0 2px} .bar p{margin:0 0 8px;color:var(--muted);font-size:12px}
+  .grp{margin:10px 0 0} .grp b{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+  .row{display:flex;flex-wrap:wrap;gap:5px}
+  button{font:inherit;border:1px solid var(--line);background:#fff;border-radius:7px;padding:5px 8px;cursor:pointer;color:var(--text)}
+  button.on{border-color:var(--ink);background:#eef0fb;color:var(--ink);font-weight:600}
+  .sw{display:flex;align-items:center;gap:7px;width:100%;text-align:left;padding:4px 7px}
+  .sw i{width:14px;height:14px;border-radius:3px;flex:none}
+  .lay{display:flex;align-items:center;gap:6px;font-size:12px;margin:2px 0} .lay input{margin:0}
+  #status{position:fixed;right:12px;bottom:12px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--muted)}
+  #note{position:fixed;display:none;z-index:5} #note input{font:inherit;padding:4px 6px;border:1px solid var(--ink);border-radius:5px;width:220px}
+  kbd{font:11px ui-monospace,monospace;border:1px solid var(--line);border-radius:3px;padding:0 3px}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="bar">
+  <h1>City plan markup</h1>
+  <p>Draw on the plan; colours tell me what each mark is. Save writes your marks straight to the project.</p>
+  <div class="grp"><b>Tool</b><div class="row" id="tools"></div></div>
+  <div class="grp"><b>What you are drawing</b><div id="kinds"></div></div>
+  <div class="grp"><b>Line</b><div class="row" id="widths"></div></div>
+  <div class="grp"><b>File</b><div class="row">
+    <button id="save">Save</button><button id="undo">Undo</button><button id="redo">Redo</button><button id="clear">Clear marks</button></div></div>
+  <div class="grp"><b>Plan layers</b><div id="layers"></div></div>
+  <div class="grp"><b>Keys</b><p style="margin:0">Wheel zoom · drag with <kbd>Space</kbd> or right button to pan · <kbd>Enter</kbd>/double-click ends a polyline · <kbd>Esc</kbd> cancels · <kbd>Ctrl Z</kbd> undo</p></div>
+</div>
+<div id="status">Loading plan…</div>
+<div id="note"><input id="noteIn" placeholder="Type a note, Enter to place"></div>
+<script>
+const KINDS = [
+  {k:'road',     name:'Road / street',      col:'#ff7a00'},
+  {k:'building', name:'Building',           col:'#1e5bff'},
+  {k:'property', name:'Property line',      col:'#e01b24'},
+  {k:'green',    name:'Green space / park', col:'#21a346'},
+  {k:'water',    name:'Water / canal',      col:'#00a6d6'},
+  {k:'fence',    name:'Fence / gate',       col:'#8a2be2'},
+  {k:'remove',   name:'Remove this',        col:'#111111', dash:true},
+  {k:'note',     name:'Note (text)',        col:'#111111'}];
+const TOOLS = [['pen','Freehand'],['poly','Polyline'],['rect','Rectangle'],['text','Text'],['erase','Erase'],['pan','Pan']];
+const WIDTHS = [['thin',1.5],['medium',3],['thick',6]];
+const STYLE = {   // how the plan layers are drawn
+  'WATER':{fill:'#e6eefa',stroke:'#28349f',w:1}, 'LAND-EDGE':{stroke:'#28349f',w:1.2}, 'PARK':{fill:'#e3f1df'}, 'SCHOOL-GROUNDS':{fill:'#eef2e2'},
+  'SITE-PARCEL':{fill:'#e8ecfa',stroke:'#28349f',w:1}, 'ROAD-EDGE':{fill:'#ffffff',stroke:'#9aa0b8',w:.6}, 'ROAD-BLVD-EDGE':{stroke:'#28349f',w:.8},
+  'ROAD-BLVD-CL':{stroke:'#8fb27f',w:1.4}, 'ROAD-STREET-CL':{stroke:'#c9cde0',w:.5}, 'BRIDGE':{fill:'#ffffff',stroke:'#28349f',w:1},
+  'BLDG-TOWN':{fill:'#28349f'}, 'BLDG-LARGE':{fill:'#3a49b8'}, 'BLDG-GARAGE':{fill:'#6a2bb0'}, 'PROJECT-FOOTPRINT':{fill:'#0d1660'},
+  'DOCK-SQUARE':{fill:'#f0e6c8',stroke:'#28349f',w:.8}, 'CRUISE-QUAY':{fill:'#f3ecdc',stroke:'#28349f',w:.8}, 'FENCE-NZ':{stroke:'#8a2be2',w:1.6,dash:[6,4]},
+  'SITE-PLOT':{stroke:'#e01b24',w:.8,dash:[4,4]}};
+const ORDER = ['WATER','LAND-EDGE','PARK','SCHOOL-GROUNDS','SITE-PARCEL','BRIDGE','DOCK-SQUARE','CRUISE-QUAY','BLDG-TOWN','BLDG-LARGE','BLDG-GARAGE','ROADS','PROJECT-FOOTPRINT','FENCE-NZ','SITE-PLOT'];
+const LAYER_LIST = ['WATER','LAND-EDGE','PARK','SCHOOL-GROUNDS','SITE-PARCEL','ROAD-BLVD','ROAD-STREET','BRIDGE','DOCK-SQUARE','CRUISE-QUAY','BLDG-TOWN','BLDG-LARGE','BLDG-GARAGE','PROJECT-FOOTPRINT','FENCE-NZ','SITE-PLOT'];
+const HIDDEN_DEFAULT = new Set(['SITE-PLOT']);
+const $ = id => document.getElementById(id), cv = $('c'), cx = cv.getContext('2d');
+let plan = null, paths = {}, view = {x:500, y:-800, z:.6}, tool = 'pen', kind = KINDS[0], width = 3;
+let marks = [], redo = [], cur = null, panning = null, spaceDown = false, dirty = false, hidden = new Set(HIDDEN_DEFAULT);
+const LS = 'archiwatts-city-markup';
+const st = t => $('status').textContent = t;
+
+function resize(){ cv.width = innerWidth * devicePixelRatio; cv.height = innerHeight * devicePixelRatio; draw(); }
+const toWorld = (sx, sy) => ({x: (sx - innerWidth/2) / view.z + view.x, y: -(sy - innerHeight/2) / view.z + view.y});
+function setT(){ const d = devicePixelRatio; cx.setTransform(view.z*d, 0, 0, -view.z*d, (innerWidth/2 - view.x*view.z)*d, (innerHeight/2 + view.y*view.z)*d); }
+
+function build(){
+  paths = {};
+  for (const p of plan.polylines){
+    const P = paths[p.layer] || (paths[p.layer] = new Path2D()); const a = p.pts; if (a.length < 2) continue;
+    P.moveTo(a[0][0], a[0][1]); for (let i = 1; i < a.length; i++) P.lineTo(a[i][0], a[i][1]); if (p.closed) P.closePath();
+  }
+}
+function draw(){
+  const d = devicePixelRatio; cx.setTransform(1,0,0,1,0,0); cx.fillStyle = '#fafaf6'; cx.fillRect(0, 0, cv.width, cv.height);
+  if (!plan) return; setT();
+  for (const L of ORDER){
+    if (L === 'ROADS'){ drawRoads(); continue; }
+    const P = paths[L], s = STYLE[L]; if (!P || hidden.has(L) || !s) continue;
+    if (s.fill){ cx.fillStyle = s.fill; cx.fill(P, 'evenodd'); }
+    if (s.stroke){ cx.strokeStyle = s.stroke; cx.lineWidth = s.w / view.z; cx.setLineDash(s.dash ? s.dash.map(v => v / view.z) : []); cx.stroke(P); }
+  }
+  cx.setLineDash([]);
+  if (!hidden.has('TEXT')){   // labels stay upright and readable
+    cx.save(); cx.setTransform(d,0,0,d,0,0); cx.font = '600 12px Georgia,serif'; cx.textAlign = 'center';
+    for (const t of plan.texts){ if (t.layer !== 'TEXT') continue; const sx = (t.x - view.x)*view.z + innerWidth/2, sy = -(t.y - view.y)*view.z + innerHeight/2;
+      cx.lineWidth = 3; cx.strokeStyle = '#fafaf6'; cx.strokeText(t.text, sx, sy); cx.fillStyle = '#28349f'; cx.fillText(t.text, sx, sy); }
+    cx.restore(); setT();
+  }
+  for (const m of marks.concat(cur ? [cur] : [])) drawMark(m);
+}
+function drawRoads(){   // the road network at true width: kerb line, paved road, planted median on boulevards
+  const RW = (plan && plan.roadWidths) || {'ROAD-BLVD':8.5, 'ROAD-STREET':6};
+  const Ls = ['ROAD-STREET','ROAD-BLVD'].filter(L => paths[L] && !hidden.has(L)); cx.lineJoin = cx.lineCap = 'round';
+  for (const L of Ls){ cx.strokeStyle = '#28349f'; cx.lineWidth = RW[L] + 1.4 / view.z * 1.2; cx.stroke(paths[L]); }
+  for (const L of Ls){ cx.strokeStyle = '#ffffff'; cx.lineWidth = RW[L]; cx.stroke(paths[L]); }
+  if (paths['ROAD-BLVD'] && !hidden.has('ROAD-BLVD')){ cx.strokeStyle = '#97c483'; cx.lineWidth = 1.7; cx.stroke(paths['ROAD-BLVD']); }
+}
+function drawMark(m){
+  const K = KINDS.find(k => k.k === m.kind) || KINDS[0];
+  cx.strokeStyle = K.col; cx.fillStyle = K.col; cx.lineWidth = m.w / view.z; cx.lineJoin = cx.lineCap = 'round'; cx.setLineDash(K.dash ? [8/view.z, 6/view.z] : []);
+  if (m.type === 'text'){ const d = devicePixelRatio; cx.save(); cx.setTransform(d,0,0,d,0,0); const sx = (m.pts[0][0]-view.x)*view.z + innerWidth/2, sy = -(m.pts[0][1]-view.y)*view.z + innerHeight/2;
+    cx.font = 'bold 14px system-ui'; cx.lineWidth = 4; cx.strokeStyle = '#fff'; cx.strokeText(m.text, sx, sy); cx.fillStyle = K.col; cx.fillText(m.text, sx, sy); cx.restore(); setT(); return; }
+  const a = m.pts; if (!a.length) return; cx.beginPath(); cx.moveTo(a[0][0], a[0][1]); for (let i = 1; i < a.length; i++) cx.lineTo(a[i][0], a[i][1]);
+  if (m.closed) cx.closePath();
+  if (m.closed && (m.kind === 'building' || m.kind === 'green' || m.kind === 'water')){ cx.globalAlpha = .18; cx.fill(); cx.globalAlpha = 1; }
+  cx.stroke(); cx.setLineDash([]);
+}
+function simplify(pts, tol){   // Ramer-Douglas-Peucker, keeps freehand files small
+  if (pts.length < 3) return pts; const [a, b] = [pts[0], pts[pts.length-1]]; let dmax = 0, idx = 0;
+  for (let i = 1; i < pts.length-1; i++){ const p = pts[i], dx = b[0]-a[0], dy = b[1]-a[1], L = Math.hypot(dx, dy) || 1e-9;
+    const dd = Math.abs(dy*p[0] - dx*p[1] + b[0]*a[1] - b[1]*a[0]) / L; if (dd > dmax){ dmax = dd; idx = i; } }
+  return dmax > tol ? simplify(pts.slice(0, idx+1), tol).slice(0, -1).concat(simplify(pts.slice(idx), tol)) : [a, b];
+}
+const r2 = p => [Math.round(p[0]*100)/100, Math.round(p[1]*100)/100];
+function commit(m){ if (!m) return; marks.push(m); redo = []; dirty = true; persist(); st(`${marks.length} marks · unsaved`); }
+function persist(){ try { localStorage.setItem(LS, JSON.stringify(marks)); } catch(e){} }
+
+cv.addEventListener('contextmenu', e => e.preventDefault());
+cv.addEventListener('pointerdown', e => {
+  cv.setPointerCapture(e.pointerId); const w = toWorld(e.clientX, e.clientY);
+  if (e.button === 2 || e.button === 1 || spaceDown || tool === 'pan'){ panning = {sx:e.clientX, sy:e.clientY, x:view.x, y:view.y}; return; }
+  if (tool === 'pen') cur = {type:'line', kind:kind.k, w:width, pts:[[w.x, w.y]]};
+  else if (tool === 'rect') cur = {type:'rect', kind:kind.k, w:width, closed:true, pts:[[w.x,w.y],[w.x,w.y],[w.x,w.y],[w.x,w.y]], o:[w.x,w.y]};
+  else if (tool === 'poly'){ if (!cur) cur = {type:'line', kind:kind.k, w:width, pts:[[w.x,w.y]]}; cur.pts.push([w.x, w.y]); }
+  else if (tool === 'text'){ const n = $('note'); n.style.left = e.clientX + 'px'; n.style.top = e.clientY + 'px'; n.style.display = 'block'; n.dataset.x = w.x; n.dataset.y = w.y; $('noteIn').value = ''; setTimeout(() => $('noteIn').focus(), 0); }
+  else if (tool === 'erase') eraseAt(w);
+  draw();
+});
+cv.addEventListener('pointermove', e => {
+  const w = toWorld(e.clientX, e.clientY);
+  if (panning){ view.x = panning.x - (e.clientX - panning.sx)/view.z; view.y = panning.y + (e.clientY - panning.sy)/view.z; draw(); return; }
+  if (!cur) { st(`x ${w.x.toFixed(1)} m, y ${w.y.toFixed(1)} m · ${marks.length} marks${dirty ? ' · unsaved' : ''}`); return; }
+  if (tool === 'pen'){ const l = cur.pts[cur.pts.length-1]; if (Math.hypot(w.x-l[0], w.y-l[1]) * view.z > 2) cur.pts.push([w.x, w.y]); }
+  else if (tool === 'rect'){ const [x0, y0] = cur.o; cur.pts = [[x0,y0],[w.x,y0],[w.x,w.y],[x0,w.y]]; }
+  else if (tool === 'poly'){ cur.pts[cur.pts.length-1] = [w.x, w.y]; }
+  draw();
+});
+cv.addEventListener('pointerup', () => {
+  if (panning){ panning = null; return; }
+  if (tool === 'pen' && cur){ cur.pts = simplify(cur.pts, .6/view.z).map(r2); if (cur.pts.length > 1) commit(cur); cur = null; draw(); }
+  if (tool === 'rect' && cur){ delete cur.o; cur.pts = cur.pts.map(r2); commit(cur); cur = null; draw(); }
+});
+cv.addEventListener('dblclick', () => finishPoly());
+function finishPoly(){ if (tool === 'poly' && cur){ cur.pts.pop(); if (cur.pts.length > 1){ cur.pts = cur.pts.map(r2); commit(cur); } cur = null; draw(); } }
+cv.addEventListener('wheel', e => { e.preventDefault(); const w = toWorld(e.clientX, e.clientY), f = Math.exp(-e.deltaY * .0015);
+  view.z = Math.min(40, Math.max(.15, view.z * f)); const w2 = toWorld(e.clientX, e.clientY); view.x += w.x - w2.x; view.y += w.y - w2.y; draw(); }, {passive:false});
+function eraseAt(w){ let best = -1, bd = 12 / view.z;
+  marks.forEach((m, i) => { for (let k = 0; k < m.pts.length; k++){ const p = m.pts[k], q = m.pts[Math.min(k+1, m.pts.length-1)];
+    const dx = q[0]-p[0], dy = q[1]-p[1], L2 = dx*dx + dy*dy || 1e-9, t = Math.max(0, Math.min(1, ((w.x-p[0])*dx + (w.y-p[1])*dy)/L2));
+    const d = Math.hypot(w.x - (p[0]+t*dx), w.y - (p[1]+t*dy)); if (d < bd){ bd = d; best = i; } } });
+  if (best >= 0){ redo.push(marks.splice(best, 1)[0]); dirty = true; persist(); draw(); }
+}
+$('noteIn').addEventListener('keydown', e => { if (e.key === 'Enter'){ const n = $('note'), v = e.target.value.trim(); n.style.display = 'none';
+  if (v) commit({type:'text', kind:'note', w:1, text:v, pts:[r2([+n.dataset.x, +n.dataset.y])]}); draw(); } if (e.key === 'Escape') $('note').style.display = 'none'; });
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.code === 'Space'){ spaceDown = true; e.preventDefault(); }
+  if (e.key === 'Enter') finishPoly();
+  if (e.key === 'Escape'){ cur = null; draw(); }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z'){ e.preventDefault(); e.shiftKey ? doRedo() : doUndo(); }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's'){ e.preventDefault(); save(); }
+});
+addEventListener('keyup', e => { if (e.code === 'Space') spaceDown = false; });
+function doUndo(){ if (marks.length){ redo.push(marks.pop()); dirty = true; persist(); draw(); } }
+function doRedo(){ if (redo.length){ marks.push(redo.pop()); dirty = true; persist(); draw(); } }
+async function save(){
+  const body = JSON.stringify({plan:'plan-B3.json', units:'m', saved:new Date().toISOString(), legend:Object.fromEntries(KINDS.map(k => [k.k, k.name])), marks}, null, 1);
+  try {
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    for (const n of ['markup-latest.json', `markup-${stamp}.json`]){ const r = await fetch('/__markup?name=' + n, {method:'POST', body}); if (!r.ok) throw new Error(r.status); }
+    dirty = false; st(`Saved ${marks.length} marks to game/markup/markups/markup-latest.json`);
+  } catch (err){   // no local save server: download the file instead
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([body], {type:'application/json'})); a.download = 'markup-latest.json'; a.click(); st('Save server not running: downloaded markup-latest.json instead');
+  }
+}
+$('save').onclick = save; $('undo').onclick = doUndo; $('redo').onclick = doRedo;
+$('clear').onclick = () => { if (marks.length && confirm('Remove all marks?')){ redo = marks.slice().reverse(); marks = []; dirty = true; persist(); draw(); } };
+TOOLS.forEach(([k, n]) => { const b = document.createElement('button'); b.textContent = n; b.dataset.k = k; b.onclick = () => { tool = k; cur = null; [...$('tools').children].forEach(x => x.classList.toggle('on', x === b)); cv.style.cursor = k === 'pan' ? 'grab' : 'crosshair'; }; $('tools').append(b); });
+$('tools').firstChild.classList.add('on');
+KINDS.forEach(K => { const b = document.createElement('button'); b.className = 'sw'; b.innerHTML = `<i style="background:${K.col}"></i>${K.name}`; b.onclick = () => { kind = K; [...$('kinds').children].forEach(x => x.classList.toggle('on', x === b)); if (K.k === 'note') $('tools').querySelector('[data-k=text]').click(); }; $('kinds').append(b); });
+$('kinds').firstChild.classList.add('on');
+WIDTHS.forEach(([n, w]) => { const b = document.createElement('button'); b.textContent = n; b.onclick = () => { width = w; [...$('widths').children].forEach(x => x.classList.toggle('on', x === b)); }; if (w === width) b.classList.add('on'); $('widths').append(b); });
+addEventListener('resize', resize);
+addEventListener('beforeunload', e => { if (dirty){ e.preventDefault(); e.returnValue = ''; } });
+(async () => {
+  try { plan = await (await fetch('plan-B3.json', {cache:'no-store'})).json(); } catch(e){ st('Could not load plan-B3.json'); return; }
+  build();
+  const [x0, y0, x1, y1] = plan.extent; view.x = (x0 + x1)/2; view.y = (y0 + y1)/2; view.z = Math.min((innerWidth - 270) / (x1 - x0), innerHeight / (y1 - y0)) * .94; view.x -= 125 / view.z;   // keep the plan clear of the side panel
+  for (const L of LAYER_LIST.concat(['TEXT'])){ const lab = document.createElement('label'); lab.className = 'lay';
+    lab.innerHTML = `<input type="checkbox" ${hidden.has(L) ? '' : 'checked'}> ${L.toLowerCase().replace(/-/g, ' ')}`;
+    lab.firstChild.onchange = e => { e.target.checked ? hidden.delete(L) : hidden.add(L); draw(); }; $('layers').append(lab); }
+  try { const r = await fetch('markups/markup-latest.json', {cache:'no-store'}); if (r.ok) marks = (await r.json()).marks || []; } catch(e){}
+  if (!marks.length){ try { marks = JSON.parse(localStorage.getItem(LS) || '[]'); } catch(e){} }
+  resize(); st(`${plan.polylines.length} plan lines · ${marks.length} marks loaded`);
+})();
+</script>
+</body>
+</html>

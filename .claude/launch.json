@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "game",
+      "runtimeExecutable": "C:\\Users\\herna\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "runtimeArgs": ["-m", "http.server", "8123", "--bind", "127.0.0.1"],
+      "port": 8123
+    },
+    {
+      "name": "markup",
+      "runtimeExecutable": "C:\\Users\\herna\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "runtimeArgs": ["game/markup/serve_markup.py"],
+      "port": 8125
+    }
+  ]
+}
