@@ -114,7 +114,7 @@
   <div class="row"><button id="wWalk" type="button" aria-pressed="true">Start running</button><button id="wOrbit" type="button">Orbit the city from above</button></div>
 </div>
 <div id="hud" class="side" hidden><button id="hx" type="button" aria-label="Close">×</button><div class="arch" id="harch"></div>
-  <div class="mid"><div class="kick"><img src="../city/brand/gem-mark.png" alt=""><span id="hkick"></span></div><h3 id="hname"></h3>
+  <div class="mid"><div class="kick"><img src="brand/gem-mark.png" alt=""><span id="hkick"></span></div><h3 id="hname"></h3>
     <div class="tabs" id="htabs"><button type="button" data-t="over">Overview</button><button type="button" data-t="story">Story</button><button type="button" data-t="draw">Drawings</button></div><div id="hbody"></div></div>
   <div class="btns" id="hbtns"></div>
 </div>
@@ -129,7 +129,10 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { buildPlanCity, buildRoads } from './city2.js';
+import { buildPlanCity, buildRoads, buildTrees } from './city2.js';
+import { applyPageLook } from './project-looks.js';
+import { buildFurniture } from './furniture.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const $ = id => document.getElementById(id);
 const SEA = -.15, LAND = 1.2, BLOCK = 60;
@@ -171,7 +174,8 @@ const SITES = [
 ];
 const RIVERS = [];
 const GROW = 30, HARBOUR = {x:-9999, z:0, hx:1, hz:1};
-const GROUND_FIX = {};
+const GROUND_FIX = {'museum-study-3':-11.8, 'museum-of-emotions':-10.6};   // MOE #1: its park roof (stone top, 12.5 m) sits at street level, as in the section — the museum is underground   // the study's landscape (where its ramps start) sits ~12.3 m above the model origin
+const LAKE = {x:604, z:858.5, rx:30, rz:78};   // the lake in Tranquil River's park
 const GLOBE = new THREE.Vector3(-276+AX, LAND, AZ), ARCH_X = -266+AX, ARCH_Z = AZ, START = [-296+AX, AZ], INSIDE = new THREE.Vector3(0, 0, -16000);
 const RIVER_SEGS = RIVERS.flatMap(([pts, r]) => { const c = new THREE.CatmullRomCurve3(pts.map(([x,z]) => new THREE.Vector3(x,0,z))), n = pts.length*8, out = [];
   let p = c.getPoint(0); for (let i = 1; i <= n; i++){ const q = c.getPoint(i/n); out.push([p.x,p.z,q.x,q.z,r]); p = q; } return out; });
@@ -201,20 +205,27 @@ async function buildGrid(manifest){
   const cv = document.createElement('canvas'); cv.width = NX; cv.height = NZ; const cx = cv.getContext('2d', {willReadFrequently:true}); cx.drawImage(img, 0, 0);
   const px = cx.getImageData(0, 0, NX, NZ).data;                            // R ground type, G land
   const own = new Uint8Array(NX*NZ*4), land = new Uint8Array(NX*NZ*4);
-  for (let k = 0; k < NX*NZ*4; k += 4){ land[k] = px[k+1]; land[k+3] = 255; own[k+3] = px[k]; }   // own: no plot claims (projects are drawn whole); alpha: ground type
+  for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++){ const x = X0 + (i+.5)*TEX - LAKE.x, z = Z0 + (j+.5)*TEX - LAKE.z, th = Math.atan2(z, x);
+    const rr = 1 + .08*Math.sin(3*th) + .05*Math.sin(5*th + 1); if ((x*x)/(LAKE.rx*LAKE.rx) + (z*z)/(LAKE.rz*LAKE.rz) < rr*rr) px[(j*NX+i)*4+1] = 0; }
+  for (let k = 0; k < NX*NZ*4; k += 4){ land[k] = px[k+1]; land[k+3] = 255; own[k+2] = px[k+2]; own[k+3] = px[k]; }   // blue: project grounds (the city slabs step aside there)   // own: no plot claims (projects are drawn whole); alpha: ground type
   ownTex = new THREE.DataTexture(own, NX, NZ); ownTex.needsUpdate = true;
+  { let a = new Float32Array(NX*NZ), b = new Float32Array(NX*NZ); for (let i = 0; i < NX*NZ; i++) a[i] = own[i*4+3] === 2 ? 1 : 0;
+    for (let pass = 0; pass < 2; pass++){                               // separable box blur, radius 2 px (about 1.7 m), twice
+      for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++){ let s = 0; for (let k = -2; k <= 2; k++) s += a[j*NX + Math.min(NX-1, Math.max(0, i+k))]; b[j*NX+i] = s/5; }
+      for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++){ let s = 0; for (let k = -2; k <= 2; k++) s += b[Math.min(NZ-1, Math.max(0, j+k))*NX + i]; a[j*NX+i] = s/5; } }
+    for (let i = 0; i < NX*NZ; i++) land[i*4+1] = Math.round(a[i]*255); }   // lawn mask in the land texture's green channel: sampled smooth (bilinear), so lawn edges are not stair-stepped
   landTex = new THREE.DataTexture(land, NX, NZ); landTex.magFilter = landTex.minFilter = THREE.LinearFilter; landTex.needsUpdate = true;
-  window.__world.grid = {own, land, X0, Z0, NX, NZ, TEX};
+  landTex.needsUpdate = true; window.__world.grid = {own, land, X0, Z0, NX, NZ, TEX};
   cityUniforms = {uOwn:{value:ownTex}, uLand:{value:landTex}, uGrid:{value:new THREE.Vector4(X0,Z0,NX*TEX,NZ*TEX)}};
 }
 // own >= 0: a site piece (drawn only on its own blocks); -1: the shared ground (streets in invented blocks); -2: not clipped (Venice).
 // ctx: context meshes, painted in a varied palette (walls by plot, terracotta or grey roofs) while PAINT is on; y: the piece's ground height
 const PAINT = {value:1}, NIGHTU = {value:0};   // NIGHTU: 0 day .. 1 night (lit windows)
 // ---------- generated surface textures (tileable, metre-scaled, sampled by world position) ----------
-const TEXS = (() => {   // game/textures/: clay roof tiles + lawn (see CREDITS.txt); the rest from city/textures. CC0 photo textures from ambientCG (packed by _source-models/tools/world/pack_textures.py); grey: R plaster, G concrete, B asphalt
+const TEXS = (() => {   // game/textures/: clay roof tiles + lawn (see CREDITS.txt); the rest are city textures copied here. CC0 photo textures from ambientCG (packed by _source-models/tools/world/pack_textures.py); grey: R plaster, G concrete, B asphalt
   const L = new THREE.TextureLoader(), out = {};
   [['tGrey','grey'],['tBrk','brick'],['tBrkN','brick_n'],['tPav','paving'],['tPavN','paving_n'],['tRoof','../game/textures/roof_clay'],['tRoofN','../game/textures/roof_clay_n'],['tGrass','../game/textures/grass_lawn'],['tGrassN','../game/textures/grass_lawn_n'],['tWood','wood'],['tStone','stone'],['tStoneN','stone_n']].forEach(([k,f]) => {
-    const t = L.load((f.startsWith('../') ? f.slice(8) : '../city/textures/' + f) + '.jpg'); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; out[k] = t; });
+    const t = L.load((f.startsWith('../') ? f.slice(8) : 'textures/' + f) + '.jpg'); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; out[k] = t; });
   return out;
 })();
 const TRI_GLSL = `vec4 triS(sampler2D t, vec3 p, vec3 n, float s){ vec2 uv = abs(n.y) > .7 ? p.xz : (abs(n.x) > abs(n.z) ? vec2(p.z, p.y) : vec2(p.x, p.y)); return texture2D(t, uv / s); }
@@ -223,14 +234,15 @@ vec3 triN(sampler2D t, vec3 p, vec3 n, float s, float k){ vec3 m = triS(t, p, n,
   return (T * m.x + B * m.y) * k; }\n`;
 const TEX_UNI = Object.fromEntries(Object.entries(TEXS).map(([k,v]) => [k, {value:v}]));
 const TEX_DECL = 'uniform sampler2D ' + Object.keys(TEXS).join(', ') + ';\n';
-function texKind(n=''){ return /brick|masonry/i.test(n) ? 1 : /wood|timber|oak|cedar|pine|plank|bamboo|clt|lumber/i.test(n) ? 2 : /concrete|cement|precast|stone/i.test(n) ? 3 : 0; }
+function texKind(n=''){ if (/NZS field|terrain_bank|lawn|grass|turf|planting/i.test(n)) return 4;   // project lawns use the same lawn as the city
+  return /brick|masonry/i.test(n) ? 1 : /wood|timber|oak|cedar|pine|plank|bamboo|clt|lumber/i.test(n) ? 2 : /concrete|cement|precast|stone/i.test(n) ? 3 : 0; }
 function cityMaterial(mat, own, ctx=0, y=0, layer=0){   // layer (own -1 only): 0 pavement slab with road holes, 1 road asphalt, 2 fill under everything
   if (own > -1.5 && typeof cityDepth === 'function') mat.userData.cityDepth = cityDepth(own);
   if (/glass|glazing/i.test(mat.name)) { mat.roughness = .06; mat.metalness = .2; mat.envMapIntensity = 1; } else if (mat.envMapIntensity === 1) mat.envMapIntensity = .45;   // glass picks up the sky
   mat.onBeforeCompile = sh => {
-    Object.assign(sh.uniforms, cityUniforms, {cityOwn:{value:own}, cityCtx:{value:ctx}, cityY:{value:y}, cityPaint:PAINT, cityNight:NIGHTU, cityTex:{value:mat.map ? 0 : texKind(mat.name)}, cityLayer:{value:layer}, uRoad:ROADU, uRoadG:ROADG, cityAsph:ASPH}, TEX_UNI);
-    sh.vertexShader = 'varying vec3 vCityP;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n vec4 cwp = vec4(transformed, 1.0);\n #ifdef USE_INSTANCING\n cwp = instanceMatrix * cwp;\n #endif\n vCityP = (modelMatrix * cwp).xyz;');
-    sh.fragmentShader = `varying vec3 vCityP; uniform sampler2D uOwn, uLand; uniform vec4 uGrid; uniform float cityOwn, cityCtx, cityY, cityPaint, cityNight, cityTex, cityLayer; uniform sampler2D uRoad; uniform vec4 uRoadG; uniform vec3 cityAsph;
+    Object.assign(sh.uniforms, cityUniforms, {cityOwn:{value:own}, cityCtx:{value:ctx}, cityY:{value:y}, cityPaint:PAINT, cityNight:NIGHTU, cityTex:{value:texKind(mat.name) === 4 ? 4 : 0}, cityLayer:{value:layer}, uRoad:ROADU, uRoadG:ROADG, cityAsph:ASPH}, TEX_UNI);
+    sh.vertexShader = 'varying vec3 vCityP;\nvarying vec3 vCityN;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n vec4 cwp = vec4(transformed, 1.0);\n vec3 cwn = objectNormal;\n #ifdef USE_INSTANCING\n cwp = instanceMatrix * cwp; cwn = mat3(instanceMatrix) * cwn;\n #endif\n vCityP = (modelMatrix * cwp).xyz; vCityN = normalize(mat3(modelMatrix) * cwn);');
+    sh.fragmentShader = `varying vec3 vCityP; varying vec3 vCityN; uniform sampler2D uOwn, uLand; uniform vec4 uGrid; uniform float cityOwn, cityCtx, cityY, cityPaint, cityNight, cityTex, cityLayer; uniform sampler2D uRoad; uniform vec4 uRoadG; uniform vec3 cityAsph;
       ${TEX_DECL}${TRI_GLSL}
       float cn2(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f); vec2 k = vec2(127.1, 311.7);
         return mix(mix(fract(sin(dot(i,k))*43758.5), fract(sin(dot(i+vec2(1.,0.),k))*43758.5), f.x), mix(fract(sin(dot(i+vec2(0.,1.),k))*43758.5), fract(sin(dot(i+vec2(1.),k))*43758.5), f.x), f.y); }
@@ -256,25 +268,31 @@ function cityMaterial(mat, own, ctx=0, y=0, layer=0){   // layer (own -1 only): 
         vec3 cPert = vec3(0.);   // world-space normal tilt from a photo normal map, applied after the colour
         if (cityTex > .5 && cityCtx < .5) {   // surface pattern from the Revit material name: 1 brick, 2 timber, 3 concrete
           vec3 tn = normalize(cross(dFdx(vCityP), dFdy(vCityP)));
-          if (cityTex < 1.5) { vec3 b = triS(tBrk, vCityP, tn, 1.5).rgb; diffuseColor.rgb = b * b; cPert = triN(tBrkN, vCityP, tn, 1.5, .9); }
+          if (cityTex > 3.5) { vec3 l = lawn(vCityP.xz); diffuseColor.rgb = l * l * mix(1., .38, cityNight); }                              // one lawn everywhere
+          else if (cityTex < 1.5) { vec3 b = triS(tBrk, vCityP, tn, 1.5).rgb; diffuseColor.rgb = b * b; cPert = triN(tBrkN, vCityP, tn, 1.5, .9); }
           else if (cityTex < 2.5) { vec3 w = triS(tWood, vCityP, tn, 2.).rgb * 1.35; diffuseColor.rgb = w * w * (diffuseColor.rgb / max(.05, dot(diffuseColor.rgb, vec3(.33)))) * .45 + w * w * .55; }
           else diffuseColor.rgb *= triS(tGrey, vCityP, tn, 2.).g * 2.; }
         if (cityCtx > .5 && cityPaint > .5) {
-          vec3 cn = normalize(cross(dFdx(vCityP), dFdy(vCityP))); float ch = vCityP.y - cityY;
+          vec3 cn = normalize(vCityN); float ch = vCityP.y - cityY;
           float cr = fract(sin(dot(floor(vCityP.xz / 16.), vec2(12.9898, 78.233))) * 43758.5453);
           vec3 cw = cr < .17 ? vec3(.97,.78,.80) : cr < .33 ? vec3(.66,.89,.85) : cr < .5 ? vec3(.98,.89,.74) : cr < .63 ? vec3(.81,.74,.94) : cr < .8 ? vec3(.97,.96,.93) : vec3(.68,.86,.95);   // Miami art-deco pastels
           vec3 cf = cr < .55 ? vec3(.72,.45,.34) : vec3(.62,.63,.64);
-          if (ch > 1.2) { vec3 cc;
-            if (abs(cn.y) > .75 && ch < 4.) { cc = triS(tPav, vCityP, cn, 2.).rgb; cPert = triN(tPavN, vCityP, cn, 2., .8); }               // raised plazas and terraces are paved
-            else if (abs(cn.y) > .75) { if (cr < .55 || abs(cn.y) < .985) { vec2 ru = roofUV(vCityP, cn); vec3 rt = texture2D(tRoof, ru).rgb; float rl = dot(rt, vec3(.333)); cc = clamp(rt * (.394 + (rl - .394) * 2.) / max(rl, .05), 0., 1.) * 1.08;   // the photo is low-contrast: brightness x2, hue kept; the normal map carries the barrel rows   // clay barrel tiles (pitched roofs always tiled)
+          if (ch > 1.2 || cityCtx > 1.5) { vec3 cc;
+            if (abs(cn.y) > .75 && ch < 4. && cityCtx < 1.5) { cc = triS(tPav, vCityP, cn, 2.).rgb; cPert = triN(tPavN, vCityP, cn, 2., .8); }               // raised plazas and terraces are paved
+            else if (abs(cn.y) > .75) { if (abs(cn.y) < .985) { vec2 ru = roofUV(vCityP, cn); vec3 rt = texture2D(tRoof, ru).rgb; float rl = dot(rt, vec3(.333)); cc = clamp(rt * (.394 + (rl - .394) * 2.) / max(rl, .05), 0., 1.) * 1.08;   // the photo is low-contrast: brightness x2, hue kept; the normal map carries the barrel rows   // clay barrel tiles (pitched roofs always tiled)
               vec3 rn = texture2D(tRoofN, ru).xyz * 2. - 1.; vec2 rd = length(cn.xz) > .05 ? normalize(cn.xz) : vec2(0., 1.); cPert = (vec3(-rd.y, 0., rd.x) * rn.x + vec3(rd.x, 0., rd.y) * rn.y) * 2.2; } else cc = cf * triS(tGrey, vCityP, cn, 2.).g * 2.; }   // terracotta tiles or concrete roofs
             else cc = cw * (.3 + 1.4 * triS(tGrey, vCityP, cn, 2.5).r);                                                                // plaster render
-            if (abs(cn.y) <= .75 && ch > 3.) { vec2 pt = normalize(vec2(-cn.z, cn.x)); vec2 pf = fract(vec2(dot(vCityP.xz, pt) / 3.4, ch / 3.3));   // windows: glass, frame, sill
-              if (pf.x > .22 && pf.x < .78 && pf.y > .3 && pf.y < .78) { cc = mix(vec3(.11,.13,.16), vec3(.48,.58,.68), smoothstep(.32, .78, pf.y) * (.55 + .45 * cn2(vCityP.xz * .07 + 3.)));
-                if (abs(pf.x - .5) < .012 || abs(pf.y - .6) < .012) cc = vec3(.82,.81,.78); }                                      // mullion and transom
-              else if (pf.x > .2 && pf.x < .8 && pf.y > .28 && pf.y < .8) cc = vec3(.84,.83,.8);                                    // frame
-              else if (pf.x > .18 && pf.x < .82 && pf.y > .24 && pf.y < .28) cc = vec3(.78,.76,.72); }                              // stone sill
-            if (abs(cn.y) <= .75 && fract((vCityP.y - cityY) / 3.3) < .06) cc *= .82;                                        // floor lines
+            if (abs(cn.y) <= .75 && ch > 3.) { vec2 pt = normalize(vec2(-cn.z, cn.x)); vec2 pq = vec2(dot(vCityP.xz, pt) / 3.4, ch / 3.3), pf = fract(pq), fw = max(fwidth(pq), vec2(1e-4)) * 1.2;   // windows, filtered: no shimmer up close, no moire far away
+              #define BOX(a, b, x, w) (smoothstep((a) - (w), (a) + (w), x) - smoothstep((b) - (w), (b) + (w), x))
+              float win = BOX(.22, .78, pf.x, fw.x) * BOX(.3, .78, pf.y, fw.y), frm = clamp(BOX(.2, .8, pf.x, fw.x) * BOX(.28, .8, pf.y, fw.y) - win, 0., 1.), sill = BOX(.18, .82, pf.x, fw.x) * BOX(.24, .28, pf.y, fw.y);
+              float reveal = 1. - .45 * (1. - smoothstep(.3, .4, pf.y)) - .25 * (1. - smoothstep(.22, .29, pf.x));   // the wall's thickness shades the top and side of the glass: depth
+              vec3 glass = mix(vec3(.11,.13,.16), vec3(.48,.58,.68), smoothstep(.32, .78, pf.y) * (.55 + .45 * cn2(vCityP.xz * .07 + 3.))) * reveal;
+              float mul = (1. - smoothstep(.012, .012 + fw.x, abs(pf.x - .5))) + (1. - smoothstep(.012, .012 + fw.y, abs(pf.y - .6)));
+              vec3 det = mix(cc, vec3(.84,.83,.8), frm); det = mix(det, vec3(.78,.76,.72), sill); det = mix(det, mix(glass, vec3(.82,.81,.78), clamp(mul, 0., 1.)), win);
+              float far = smoothstep(.12, .4, max(fw.x, fw.y));   // windows smaller than a pixel: the facade's average colour
+              cc = mix(det, mix(cc, vec3(.3,.35,.4), .2), far); }
+            if (abs(cn.y) <= .75 && ch > 1.) { float fl = fract((vCityP.y - cityY) / 3.3), fwl = fwidth((vCityP.y - cityY) / 3.3); cc *= 1. - .18 * (1. - smoothstep(.06 - fwl, .06 + fwl, fl)) * (1. - smoothstep(.15, .45, fwl)); }
+            if (cityCtx > 1.5 && abs(cn.y) <= .75 && ch < .75) cc = cw * .62 * (.6 + .8 * triS(tGrey, vCityP, cn, 2.5).r);                                        // floor lines
             diffuseColor.rgb = cc * cc; }
           else { if (dot(diffuseColor.rgb, vec3(.33)) < .25) diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.62,.60,.56), .75);
             else if (min(diffuseColor.r, min(diffuseColor.g, diffuseColor.b)) > .7) { vec3 pv = triS(tPav, vCityP, cn, 2.).rgb * .85; diffuseColor.rgb = pv * pv; cPert = triN(tPavN, vCityP, cn, 2., .8); }   // bright context ground becomes paving slabs
@@ -282,6 +300,9 @@ function cityMaterial(mat, own, ctx=0, y=0, layer=0){   // layer (own -1 only): 
         if (abs(cityOwn + 1.) < .1) { vec3 col; float gt = floor(cC.a * 255. + .5);
           vec3 up = vec3(0.,1.,0.); vec3 pav = triS(tPav, vCityP, up, 2.).rgb;
           if (cityLayer > .5) gt = cityLayer > 1.5 ? 1. : 3.; else if (gt > 2.5 && gt < 3.5) gt = 1.;                                   // roads come from the vector layer now
+          if (cityLayer < .5 && gt > .5 && gt < 2.5) {                                                                                  // lawn or paving: smooth edges, not grid steps
+            gt = texture2D(uLand, cuv).g > .5 ? 2. : 1.;
+            if (texture2D(uRoad, (vCityP.xz - uRoadG.xy) / uRoadG.zw).g > .5) gt = 1.; }                                               // a paved strip along every road, following its curve
           if (gt > 2.5 && gt < 3.5) {                                                                                                   // asphalt, tinted to match Net Zero's own roads
             float asp = triS(tGrey, vCityP, up, 3.).b, wear = .82 + .3 * cn2(vCityP.xz * .045) + .1 * cn2(vCityP.xz * .5);
             col = cityAsph * (.55 + 1.1 * asp) * wear; }
@@ -294,7 +315,7 @@ function cityMaterial(mat, own, ctx=0, y=0, layer=0){   // layer (own -1 only): 
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += gemWindows(vCityP, cityY) * cityNight * step(.5, cityCtx) * 1.2;');   // window glow, 25% lower than before
   };
   mat.userData.own = own;   // the game's collisions clip each piece the same way the shader does
-  mat.customProgramCacheKey = () => 'city15'; return mat;
+  mat.customProgramCacheKey = () => 'city19'; return mat;
 }
 
 // ---------- projects ----------
@@ -318,12 +339,12 @@ const PROJECTS = [
 // where each piece's centre goes: [x, z, rotation, height]
 const PLACE = {   // Option B: plan sites (reference px x 0.85 m)
   'net-zero-school':[1011.5,680,0,PY], 'hive':[654.5,153,0,PY], 'london-1':[671.5,1343,0,PY], 'london-2':[986,1062.5,0,PY],
-  'museum-of-emotions':[858.5,306,Math.PI/2,PY], 'museum-study-2':[586.5,352.75,0,PY], 'museum-study-3':[556.75,484.5,0,PY],
-  'tranquil-river':[692.75,858.5,0,PY], 'winter-station':[488.75,447.95,0,PY],
-  'north-beach-youth-center':[310.25,399.5,Math.PI/4,PY],   // turned 45 degrees, as drawn
-  'venice-apartments':[5.4,633.95,Math.PI,0],               // only the project buildings and the statue are shown, on the west bank opposite the dock square
+  'museum-of-emotions':[935,300,Math.PI/2,PY], 'museum-study-2':[560,400,0,PY], 'museum-study-3':[470,580,0,PY],   // placement mock (2026-11-17): every project 60 m from the next
+  'tranquil-river':[692.75,858.5,0,PY], 'winter-station':[360,600,0,PY],
+  'north-beach-youth-center':[250.25,399.5,Math.PI/4,PY],   // moved 60 m inland, off the water's edge   // turned 45 degrees, as drawn
+  'venice-apartments':[79.16,787.11,Math.PI,0],   // moved clear of Wheels on Water (placement mock)               // only the project buildings and the statue are shown, on the west bank opposite the dock square
   'allure-waterways':[197.2,1330.25,Math.PI,0],             // on the cruise quay, south-west shore
-  'wheels-on-water':[198,742,Math.PI/2,-3.4]                // the ferry, moored along the river beside the arrival pier
+  'wheels-on-water':[198,678,Math.PI/2,-3.4]                // the ferry, moored along the river beside the arrival pier
 };
 
 // ---------- scene ----------
@@ -366,6 +387,14 @@ const ripple = (() => { const N = 256, d = new Uint8Array(N*N*4), W = [[3,1,.9],
     const l = Math.hypot(dx,dy,1), i = (y*N+x)*4; d[i] = (-dx/l*.5+.5)*255; d[i+1] = (-dy/l*.5+.5)*255; d[i+2] = (1/l*.5+.5)*255; d[i+3] = 255; }
   const t = new THREE.DataTexture(d,N,N); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1600,1600); t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; t.needsUpdate = true; return t; })();
 const sea = new THREE.Mesh(new THREE.PlaneGeometry(40000,40000), std(0x6f9bb3,{roughness:.12, metalness:.05, envMapIntensity:1, normalMap:ripple, normalScale:new THREE.Vector2(.35,.35)})); sea.rotation.x = -Math.PI/2; sea.position.y = SEA; sea.receiveShadow = true; scene.add(sea);
+const SEA_MASK = {value:new THREE.DataTexture(new Uint8Array(4),1,1)}, SEA_MASK_BOX = {value:new THREE.Vector4(0,0,1,1)}; SEA_MASK.value.needsUpdate = true;   // dried-out sunken project spaces (filled by sinkDirt)
+sea.material.onBeforeCompile = sh => { sh.uniforms.uSeaMask = SEA_MASK; sh.uniforms.uSeaMaskBox = SEA_MASK_BOX;   // no water inside the Youth Center's sunken skate bowl (its floor is ~5 m below sea level): a box in the Youth Center's own frame
+  sh.vertexShader = 'varying vec3 vSeaW;\n' + sh.vertexShader.replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\n vSeaW = (modelMatrix * vec4(transformed, 1.)).xyz;');
+  sh.fragmentShader = 'varying vec3 vSeaW; uniform sampler2D uSeaMask; uniform vec4 uSeaMaskBox;\n' + sh.fragmentShader.replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
+    { vec2 mu = (vSeaW.xz - uSeaMaskBox.xy) / uSeaMaskBox.zw; if (mu.x > 0. && mu.y > 0. && mu.x < 1. && mu.y < 1. && texture2D(uSeaMask, mu).r > .5) discard; }
+    { vec2 d = vSeaW.xz - vec2(265.6087, 334.9527); vec2 l = vec2(.7071*d.x - .7071*d.y, .7071*d.x + .7071*d.y); if (abs(l.x + 68.95) < 20.6 && abs(l.y - 34.9) < 13.4) discard; }`);
+};
+sea.material.customProgramCacheKey = () => 'sea-yc-bowl-mask';
 const ring = new THREE.Mesh(new THREE.RingGeometry(.96,1,96), new THREE.MeshBasicMaterial({color:0xe8457a, side:THREE.DoubleSide})); ring.rotation.x = -Math.PI/2; ring.visible = false; scene.add(ring);
 
 function label(text){
@@ -452,7 +481,7 @@ function buildArch(){
 function buildDock(){
   const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64; const x = cv.getContext('2d');
   for (let i = 0; i < 8; i++){ const v = 92 + ((i*37)%5)*10; x.fillStyle = `rgb(${v+34},${v+2},${v-36})`; x.fillRect(i*32,0,31,64); x.fillStyle = 'rgba(38,24,12,.6)'; x.fillRect(i*32+31,0,1,64); x.fillRect(i*32,(i*23)%64,31,1); }
-  const tex = new THREE.TextureLoader().load('../city/textures/wood.jpg'); tex.colorSpace = THREE.SRGBColorSpace; tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.anisotropy = 8; tex.rotation = Math.PI/2;   // photo timber decking (CC0)
+  const tex = new THREE.TextureLoader().load('textures/wood.jpg'); tex.colorSpace = THREE.SRGBColorSpace; tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.anisotropy = 8; tex.rotation = Math.PI/2;   // photo timber decking (CC0)
   const x0 = -306 + AX, x1 = -286.3 + AX, len = x1-x0, top = LAND+.3;   // a 20 m timber pier out over the river   // the timber dock ends where the stone quay in front of the arch begins (no overlap) tex.repeat.set(6, len/2);
   const wood = new THREE.MeshStandardMaterial({map:tex, roughness:.92}), dark = std(0x4a3524,{roughness:.9}), iron = std(0x2a2b30,{roughness:.6});
   const dk = new THREE.Group(); dk.position.z = AZ; scene.add(dk);
@@ -470,39 +499,53 @@ function buildDock(){
 
 function buildCity(CITY){
   // the ground: one slab, painted by the plan raster (asphalt, pavements, grass, plazas); the water shows through where there is no land
-  const R = buildRoads({THREE, CITY, ROAD, TOP, X0, Z0, W:NX*TEX, H:NZ*TEX, isLand});   // smooth vector roads: mask, kerbs, markings, medians
-  const rt = new THREE.DataTexture(R.mask, R.mw, R.mh, THREE.RedFormat); rt.magFilter = rt.minFilter = THREE.LinearFilter; rt.needsUpdate = true;
+  const R = buildRoads({THREE, CITY, ROAD, TOP, X0, Z0, W:NX*TEX, H:NZ*TEX, isLand,
+    avoid:[],   // the checked street plan already keeps clear of the arrival square
+    asphMat:worldTexMat(NZ_TEX.asphalt, 4, 4, 0xa2a8b2, .95, 'deck'), deckMat:std(0xd4d0c6,{roughness:.85, side:THREE.DoubleSide})});   // smooth vector roads: mask, kerbs, markings, medians
+  window.__world.roadChains = R.chains;   // traffic drives exactly the drawn roads
+  const rt = new THREE.DataTexture(R.rg, R.mw, R.mh, THREE.RGFormat); rt.magFilter = rt.minFilter = THREE.LinearFilter; rt.needsUpdate = true;
   ROADU.value = rt; ROADG.value.set(X0, Z0, R.mw*R.px, R.mh*R.px); window.__world.roadAt = R.roadAt;
-  const slab = (top, layer) => { const m = new THREE.Mesh(new THREE.BoxGeometry(NX*TEX,4,NZ*TEX), cityMaterial(std(0xffffff),-1,0,0,layer)); m.position.set(X0+NX*TEX/2, top-2, Z0+NZ*TEX/2);
+  const slab = (top, layer) => { const m = new THREE.Mesh(new THREE.BoxGeometry(NX*TEX,4,NZ*TEX), groundMaterial(layer)); m.position.set(X0+NX*TEX/2, top-2, Z0+NZ*TEX/2);
     m.receiveShadow = true; m.userData.shd = 1; scene.add(m); return m; };
   const base = slab(TOP, 0); base.material.userData.own = -3;            // pavements, lawns, plazas (game.js: solid except over the roads)
-  slab(ROAD, 1); slab(.55, 2);                                            // the asphalt under the holes; a deep fill under project grounds
-  [R.kerbs, R.marks, R.medians].forEach(m => m && scene.add(m));
-  const wallMat = cityMaterial(std(0xffffff,{side:THREE.DoubleSide}), -2, 1, TOP);
+  slab(ROAD, 1); slab(.55, 2);                                           // the asphalt under the holes; a deep fill under project grounds (below their ground at PY = .82, so it never paints over a site plan)
+  [R.kerbs, R.marks, R.medians, R.bridgeTop, R.bridgeBody].forEach(m => m && scene.add(m));
+  const wallMat = cityMaterial(std(0xffffff,{side:THREE.DoubleSide}), -2, 2, TOP);
   const P = buildPlanCity({THREE, CITY, base:TOP, road:ROAD, wallMat, trimMat:std(0xf3efe6,{roughness:.7, side:THREE.DoubleSide}), stoneMat:std(0xd9d2c3,{roughness:.85}), ironMat:std(0x2d3a33,{roughness:.6, metalness:.4})});
-  [P.buildings, P.trim, P.bridges, P.fence, P.gatePillars].forEach(m => m && scene.add(m));
+  [P.buildings, P.trim, P.fence, P.gatePillars].forEach(m => m && scene.add(m));   // bridges now come from the road curves (buildRoads)
   filler = P.buildings;
   // lamp posts along the boulevards
-  const M = new THREE.Matrix4(), lampAt = P.lampAt.filter(([x,z]) => isLand(x,z));
+  if (CITY.lamps){ const FU = buildFurniture({THREE, CITY, TOP, ROAD}); scene.add(FU.group); streetLamps = FU.lampHeads || null; }   // street lights, stop signs, markets, skate parks, building sites
+  else { const M = new THREE.Matrix4(), lampAt = P.lampAt.filter(([x,z]) => isLand(x,z));
   streetLamps = new THREE.InstancedMesh(new THREE.SphereGeometry(.35,8,6), new THREE.MeshBasicMaterial({color:0x8d8473}), lampAt.length);
   const poles = new THREE.InstancedMesh(new THREE.CylinderGeometry(.08,.1,6,6), std(0x2a2b30), lampAt.length);
   streetLamps.userData.noCollide = poles.userData.noCollide = true;
-  lampAt.forEach(([x,z],i) => { M.makeTranslation(x, LAND+5.6, z); streetLamps.setMatrixAt(i,M); M.makeTranslation(x, LAND+2.6, z); poles.setMatrixAt(i,M); }); scene.add(streetLamps, poles);
+  lampAt.forEach(([x,z],i) => { M.makeTranslation(x, LAND+5.6, z); streetLamps.setMatrixAt(i,M); M.makeTranslation(x, LAND+2.6, z); poles.setMatrixAt(i,M); }); scene.add(streetLamps, poles); }
+  fetch('models/yc-skate.json?v=3').then(r => r.json()).then(D => D.meshes.forEach(m => {   // the Youth Center's own skate park (its Revit "Skate" elements): a sunken bowl the game model left out
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(m.p, 3)); g.computeVertexNormals(); g.computeBoundingSphere();
+    const c = new THREE.Color(m.rgb[0]/255, m.rgb[1]/255, m.rgb[2]/255).multiplyScalar(.86).lerp(new THREE.Color(0xc9c4b9), .35);
+    const mesh = new THREE.Mesh(g, new THREE.MeshStandardMaterial({color:c, roughness:.85, side:THREE.DoubleSide})); mesh.name = 'yc-skate'; mesh.position.x = -60;   // follows the Youth Center's move
+    mesh.castShadow = mesh.receiveShadow = true; scene.add(mesh); })).catch(e => console.warn('[yc-skate]', e));
   // two free-standing ad boards by the dock square
   adSpots.push([-250+AX, LAND+11.5, -36+AZ, 20, 10, -Math.PI/2, 7], [-250+AX, LAND+10.5, 36+AZ, 17, 8.5, -Math.PI/2, 6.5]);
-  const trees = CITY.trees;
-  // palm trees: a slim ringed trunk and a drooping crown of fronds (an open, star-shaped umbrella)
-  const crown = (() => { const pos = [], idx = [], F = 11, SEG = 6;   // eleven fronds, each a tapering blade that rises, arches over and droops
-    for (let f = 0; f < F; f++){ const a = f/F*Math.PI*2 + (f%2)*.2, ca = Math.cos(a), sa = Math.sin(a), L = 1.5 + (f%3)*.2, base = pos.length/3;
-      for (let s = 0; s <= SEG; s++){ const t = s/SEG, r = t*L, y = .35*Math.sin(Math.PI*t*.7) - t*t*1.1, w = .32*Math.sin(Math.PI*Math.min(1, t*1.15 + .05));
-        pos.push(ca*r - sa*w, y - w*.25, sa*r + ca*w,  ca*r + sa*w, y - w*.25, sa*r - ca*w); if (s) { const b = base + (s-1)*2; idx.push(b, b+1, b+2, b+1, b+3, b+2); } } }
-    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return g; })();
-  const trunk = new THREE.CylinderGeometry(.11,.19,1,7); trunk.translate(0,.5,0);
-  const tm = new THREE.InstancedMesh(crown, std(0xffffff,{flatShading:true, side:THREE.DoubleSide}), trees.length), tk = new THREE.InstancedMesh(trunk, std(0x8a7254), trees.length);
-  const GREENS = ['#3f7d3a','#4c8a3f','#35703a','#5b9a48','#2f6a35'].map(c => new THREE.Color(c));
-  trees.forEach(([x,z,s],i) => { const h = s*2.6 + hash(i,4,4)*2; M.makeScale(s*.85,s*.9,s*.85).setPosition(x,TOP+h,z); tm.setMatrixAt(i,M); tm.setColorAt(i, GREENS[i % GREENS.length]);
-    M.makeScale(1,h,1).setPosition(x,TOP,z); tk.setMatrixAt(i,M); });
-  tm.userData.noCollide = true; scene.add(tm, tk);
+  scene.add(buildTrees({THREE, trees:CITY.trees.filter(t => isLand(t[0], t[1]) && isLand(t[0]+2, t[1]) && isLand(t[0]-2, t[1]) && isLand(t[0], t[1]+2) && isLand(t[0], t[1]-2)), TOP}));
+  { // every street tree grows from a planting bed: a grass circle with a low stone edge (no palm stands on concrete)
+    const T = CITY.trees.filter(t => isLand(t[0], t[1])), n = T.length;
+    const gm = new THREE.MeshStandardMaterial({color:0xffffff, roughness:1});
+    gm.onBeforeCompile = sh => { sh.uniforms.tGrass = {value:TEXS.tGrass};
+      sh.vertexShader = `varying vec3 vBedW;
+` + sh.vertexShader.replace('#include <project_vertex>', `#include <project_vertex>
+ vBedW = (modelMatrix * instanceMatrix * vec4(transformed, 1.)).xyz;`);
+      sh.fragmentShader = `uniform sampler2D tGrass; varying vec3 vBedW;
+` + sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+ vec3 gq = texture2D(tGrass, vBedW.xz / 3.1).rgb; diffuseColor.rgb = gq * gq * 1.25;`); };
+    const bed = new THREE.InstancedMesh(new THREE.CircleGeometry(1.7, 20).rotateX(-Math.PI/2), gm, n);
+    const ring = new THREE.InstancedMesh(new THREE.TorusGeometry(1.78, .09, 4, 24).rotateX(Math.PI/2), std(0xc9c4b8, {roughness:.85}), n);
+    const M = new THREE.Matrix4();
+    const Sc = new THREE.Matrix4(); T.forEach(([x, z, , r = 1.7], k) => { const f = r / 1.7; Sc.makeScale(f, 1, f); M.makeTranslation(x, TOP + .02, z).multiply(Sc); bed.setMatrixAt(k, M); M.makeTranslation(x, TOP + .05, z).multiply(Sc); ring.setMatrixAt(k, M); });   // each bed sized to stay off the road (city.json trees[3])
+    bed.receiveShadow = true; bed.userData.noCollide = ring.userData.noCollide = true; scene.add(bed, ring); }
+  { const lake = new THREE.Mesh(new THREE.CircleGeometry(1, 64), sea.material); lake.rotation.x = -Math.PI/2; lake.scale.set(LAKE.rx*1.2, LAKE.rz*1.2, 1); lake.position.set(LAKE.x, TOP - .3, LAKE.z);
+    lake.receiveShadow = true; lake.userData.shd = 1; lake.userData.noCollide = true; scene.add(lake); }   // the lake surface, just under its banks
   buildDock();                                                                     // the arrival pier: you step off the ferry onto it
   buildArch();
   const ped = new THREE.Mesh(new THREE.CylinderGeometry(.42,.52,1.05,24), std(0x8b8478,{roughness:.8})); ped.position.set(GLOBE.x,LAND+.5,GLOBE.z); scene.add(ped);
@@ -574,6 +617,66 @@ function stepSnow(pts, dt, shaking){
   pts.geometry.attributes.position.needsUpdate = true;
 }
 
+
+// ---------- Net Zero School: materials matched to the project renders (buff brick, warm timber, blue-grey drive) ----------
+// CC0 textures from ambientCG in game/textures (see CREDITS.txt), mapped in world space so the Revit model needs no UVs
+const NZ_TEX = (() => { const L = new THREE.TextureLoader(), ld = (f, srgb) => { const t = L.load('textures/' + f); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; if (srgb) t.colorSpace = THREE.SRGBColorSpace; return t; };
+  return {brick:[ld('nz_brick.jpg', 1), ld('nz_brick_n.jpg')], timber:[ld('nz_timber.jpg', 1), ld('nz_timber_n.jpg')], asphalt:[ld('nz_asphalt.jpg', 1), ld('nz_asphalt_n.jpg')]}; })();
+function worldTexMat([col, nrm], sx, sy, tint, rough, key){   // sx, sy: metres per repeat across / up
+  const m = new THREE.MeshStandardMaterial({color:tint, roughness:rough, side:THREE.DoubleSide, envMapIntensity:.45});
+  m.onBeforeCompile = sh => { sh.uniforms.tC = {value:col}; sh.uniforms.tN = {value:nrm}; sh.uniforms.tS = {value:new THREE.Vector2(sx, sy)};
+    sh.vertexShader = 'varying vec3 vWP;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n vWP = (modelMatrix * vec4(transformed, 1.)).xyz;');
+    sh.fragmentShader = 'varying vec3 vWP; uniform sampler2D tC, tN; uniform vec2 tS;\n vec2 tuv(vec3 p, vec3 n){ return abs(n.y) > .7 ? p.xz : (abs(n.x) > abs(n.z) ? vec2(p.z, p.y) : vec2(p.x, p.y)); }\n' + sh.fragmentShader
+      .replace('#include <color_fragment>', '#include <color_fragment>\n vec3 gn = normalize(cross(dFdx(vWP), dFdy(vWP))); vec2 uv = tuv(vWP, gn) / tS; diffuseColor.rgb *= texture2D(tC, uv).rgb;')
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        { vec3 m3 = texture2D(tN, uv).xyz * 2. - 1.; vec3 Tt = abs(gn.y) > .7 ? vec3(1.,0.,0.) : (abs(gn.x) > abs(gn.z) ? vec3(0.,0.,1.) : vec3(1.,0.,0.)); vec3 Bb = abs(gn.y) > .7 ? vec3(0.,0.,1.) : vec3(0.,1.,0.);
+          normal = normalize((viewMatrix * vec4(normalize(gn + (Tt * m3.x + Bb * m3.y) * .8), 0.)).xyz); }`); };
+  m.customProgramCacheKey = () => 'worldtex-' + key; return m; }
+function nzMaterials(root){
+  const M = {'NZS wall':worldTexMat(NZ_TEX.brick, 1.6, .8, 0xffffff, .9, 'brick'), 'NZS timber':worldTexMat(NZ_TEX.timber, 2.4, 2.4, 0xffffff, .65, 'timber'),
+             'NZS road':worldTexMat(NZ_TEX.asphalt, 3, 3, 0xb4bcc6, .95, 'asphalt'), 'NZS concrete':new THREE.MeshStandardMaterial({color:0xe9e6dc, roughness:.9, side:THREE.DoubleSide, envMapIntensity:.45})};
+  root.traverse(o => { if (o.isMesh && M[o.material.name]){ const n = o.material.name; o.material = M[n]; o.material.name = n; } });
+}
+
+
+// ---------- the city ground: asphalt roads, concrete sidewalks, lawn, plaza concrete (its own small material) ----------
+// layer 0: sidewalk / lawn / plaza slab with the roads cut out; 1: asphalt under the cuts; 2: lawn fill under project grounds
+function groundMaterial(layer){
+  const m = new THREE.MeshStandardMaterial({color:0xffffff, roughness:.95, envMapIntensity:.15});
+  const cut = layer === 0 ? 'if (gO.b > .5 || gR.r > .5) discard;' : layer === 1 ? 'if (gO.b > .5 && gR.r < .5) discard;' : 'if (gO.a * 255. > 4.5) discard;';   // ground type 5: a project's own sunken ground (Youth Center skate park): no fill over it
+  const paint = layer === 1 ? `
+        vec3 ga = texture2D(tAsph, vWP.xz / 4.).rgb; gc = ga * vec3(.36, .39, .44) * (.85 + .3 * gn2(vWP.xz * .05));
+        vec3 gan = texture2D(tAsphN, vWP.xz / 4.).xyz * 2. - 1.; gPert = vec3(gan.x, 0., gan.y) * .7;` : layer === 2 ? `
+        gc = glawn(vWP.xz);` : `
+        float gt = floor(gO.a * 255. + .5), cg = texture2D(tGrey, vWP.xz / 2.5).g;
+        if (gt > 3.5) { vec2 q = fract(vWP.xz / 3.); float j = min(min(q.x, 1. - q.x), min(q.y, 1. - q.y)) * 3.;
+          gc = vec3(.42, .405, .375) * (.7 + .6 * cg) * (j < .012 ? .8 : 1.); }
+        else if (gL.g > .5 && gR.g < .5) { gc = glawn(vWP.xz); vec3 gg = texture2D(tGrassN, vWP.xz / 3.1).xyz * 2. - 1.; gPert = vec3(gg.x, 0., gg.y) * .5; }
+        else gc = vec3(.36, .355, .34) * (.7 + .6 * cg) * (.92 + .16 * gn2(vWP.xz * .08));`;
+  m.onBeforeCompile = sh => {
+    Object.assign(sh.uniforms, {uOwn:cityUniforms.uOwn, uLand:cityUniforms.uLand, uGrid:cityUniforms.uGrid, uRoad:ROADU, uRoadG:ROADG, gNight:NIGHTU,
+      tGrass:TEX_UNI.tGrass, tGrassN:TEX_UNI.tGrassN, tGrey:TEX_UNI.tGrey, tAsph:{value:NZ_TEX.asphalt[0]}, tAsphN:{value:NZ_TEX.asphalt[1]}});
+    sh.vertexShader = 'varying vec3 vWP;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n vWP = (modelMatrix * vec4(transformed, 1.)).xyz;');
+    sh.fragmentShader = `varying vec3 vWP; uniform sampler2D uOwn, uLand, uRoad, tGrass, tGrassN, tGrey, tAsph, tAsphN; uniform vec4 uGrid, uRoadG; uniform float gNight;
+      vec3 gPert = vec3(0.);
+      float gn2(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f); vec2 k = vec2(127.1, 311.7);
+        return mix(mix(fract(sin(dot(i,k))*43758.5), fract(sin(dot(i+vec2(1.,0.),k))*43758.5), f.x), mix(fract(sin(dot(i+vec2(0.,1.),k))*43758.5), fract(sin(dot(i+vec2(1.),k))*43758.5), f.x), f.y); }
+      vec3 glawn(vec2 q){ float a = .65, c = cos(a), s = sin(a); vec3 g1 = texture2D(tGrass, q / 3.1).rgb, g2 = texture2D(tGrass, mat2(c, -s, s, c) * q / 7.3).rgb;
+        vec3 g = mix(g1, g2, gn2(q * .045)); float gl = dot(g, vec3(.333)); g = clamp(g * (.261 + (gl - .261) * 2.4) / max(gl, .03), 0., 1.) * 1.12 * mix(.82, 1.12, gn2(q * .013 + 7.));
+        g = mix(g, g * vec3(1.18, 1.05, .72), smoothstep(.62, .86, gn2(q * .021 + 3.)) * .45); return g * g; }\n` + sh.fragmentShader
+      .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
+        vec2 cuv = (vWP.xz - uGrid.xy) / uGrid.zw; if (cuv.x < 0. || cuv.y < 0. || cuv.x > 1. || cuv.y > 1.) discard;
+        vec4 gL = texture2D(uLand, cuv); if (gL.r < .5) discard;
+        vec4 gO = texture2D(uOwn, cuv), gR = texture2D(uRoad, (vWP.xz - uRoadG.xy) / uRoadG.zw);
+        ${cut}`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        vec3 gc;${paint}
+        diffuseColor.rgb = gc * mix(1., .38, gNight);`)
+      .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n if (dot(gPert, gPert) > 0.) normal = normalize((viewMatrix * vec4(normalize(vec3(0., 1., 0.) + gPert), 0.)).xyz);');
+  };
+  m.customProgramCacheKey = () => 'ground-d' + layer; m.userData.own = -1; return m;
+}
+
 // ---------- loading ----------
 async function load(){
   const manifest = await (await fetch('models/manifest.json?v=' + Date.now())).json();   // the game's own uncut project models (build-game.cjs)
@@ -589,10 +692,12 @@ async function load(){
     gltf.scene.traverse(o => { if (!o.isMesh) return;
       o.material.side = THREE.DoubleSide; if (!o.geometry.attributes.normal) { o.material.flatShading = true; o.geometry.computeVertexNormals(); }   // shadows need a normal on every vertex
       if (/^water/.test(o.name)) { o.material.roughness = .6; o.position.y += .02; if (slug === 'hive') o.visible = false; }
-      if (slug === 'venice-apartments' && !/^project/.test(o.name)) { o.visible = false; o.userData.noCollide = o.userData.hideAlways = true; }   // Venice: just the project buildings   // Hive's canals are redrawn as the city's rivers
+      if (slug === 'museum-study-2' && o.material.name === 'Landscape') o.material.name = 'Landscape lawn';   // the study's park ground is lawn
+      if (slug === 'venice-apartments' && !/^(project|context)/.test(o.name)) { o.visible = false; o.userData.noCollide = o.userData.hideAlways = true; }   // Venice: the project and its own quarter (trimmed to whole buildings in veniceQuarter)   // Venice: just the project buildings   // Hive's canals are redrawn as the city's rivers
       const isCtx = /^context/.test(o.name); if (isCtx) { o.userData.color = o.material.color.clone(); contexts.push(o); }
       if (ci >= 0 || painted) cityMaterial(o.material, -2, isCtx ? 1 : 0, gy);   // projects are drawn whole: nothing is clipped to blocks any more
     });
+    await applyPageLook(slug, gltf.scene, THREE);   // the same materials as the project's own 3D page (project-looks.js)
     if (slug === 'phalanstery'){
       const mini = gltf.scene.clone(true), s = 15/Math.max(m.w,m.d); mini.scale.setScalar(s); mini.position.y = 6; shaker.add(mini);
       const big = gltf.scene; big.position.y = LAND; inside.add(big); inside.add(brass);
@@ -602,14 +707,203 @@ async function load(){
       pieces[slug] = {slug, m, g:inside, col:big};
     } else {
       const P = PLACE[slug] || [0,0,0,LAND], g = new THREE.Group(); g.add(gltf.scene); g.position.set(P[0],P[3] + (GROUND_FIX[slug] || 0),P[1]); g.rotation.y = P[2]; scene.add(g);
-      if (/^museum-study/.test(slug)){ const sl = new THREE.Mesh(new THREE.BoxGeometry(m.w+20,10,m.d+20), std(0xd9d6cf)); sl.position.y = -5.4; g.add(sl); }
       pieces[slug] = {slug, m, g};
+      if (slug === 'museum-of-emotions') await addMoeSite(gltf.scene, g, loader, gy);
+      if (slug === 'venice-apartments') veniceQuarter(gltf.scene, g);   // user-approved mock: whole buildings within 85 m, none standing in the water, city roof colours   // its circular park: lawns, paths and pond from the viewer model
     }
+    if (slug === 'net-zero-school') nzMaterials(gltf.scene);   // matched to the renders (user-approved mock)
     if (slug === 'net-zero-school') gltf.scene.traverse(o => { if (o.isMesh && /site_road/i.test(o.name) && o.material.color) ASPH.value.copy(o.material.color); });   // city asphalt = Net Zero's road colour
     if (DESK) shadowAll(); $('load').textContent = 'Loading models… ' + (++done) + ' / ' + slugs.length;
   }));
+  studyHill('museum-study-2', CITY);   // user-approved mock: one smooth mound around Study 2 instead of its cut-off hill
+  sinkDirt(['museum-of-emotions','museum-study-2','museum-study-3']);
+  slopeSkirt(['museum-study-3'], CITY);   // no cliffs: the studies' raised ground eases down to the street (user-approved mock)
   return nFill;
 }
+function trimDisc(o, cx, cz, r){   // drop the triangles of a mesh whose centre lies outside a world-space circle
+  o.updateMatrixWorld(true); const g = o.geometry, P = g.attributes.position, I = g.index, v = new THREE.Vector3(), keep = [];
+  const n = I ? I.count : P.count, at = k => I ? I.getX(k) : k;
+  for (let k = 0; k < n; k += 3){ let x = 0, z = 0; for (let j = 0; j < 3; j++){ v.fromBufferAttribute(P, at(k+j)).applyMatrix4(o.matrixWorld); x += v.x/3; z += v.z/3; }
+    if (Math.hypot(x - cx, z - cz) <= r) keep.push(at(k), at(k+1), at(k+2)); }
+  g.setIndex(keep); g.computeBoundingSphere(); g.computeBoundingBox();
+}
+
+// Venice's own quarter (user-approved mock v2): whole buildings only, never sliced. A building is kept when its centre lies within 85 m of the
+// apartments and on land; flat ground pieces are kept and trimmed only beyond 120 m. Roofs take the city's pale concrete.
+function veniceQuarter(root, g){
+  g.updateMatrixWorld(true); const pb = new THREE.Box3(); root.traverse(o => { if (o.isMesh && /^project/.test(o.name)) pb.expandByObject(o); }); if (pb.isEmpty()) return;
+  const C = pb.getCenter(new THREE.Vector3()), R = 85, RG = 120, v = new THREE.Vector3();
+  root.traverse(o => { if (!o.isMesh || !/^context/.test(o.name)) return;
+    const geo = o.geometry, P = geo.attributes.position, n = P.count, I = geo.index ? geo.index.array : Uint32Array.from({length:n}, (_, i) => i);
+    const key = new Map(), rep = new Int32Array(n); for (let i = 0; i < n; i++){ const k = Math.round(P.getX(i)*100) + ',' + Math.round(P.getY(i)*100) + ',' + Math.round(P.getZ(i)*100); let r = key.get(k); if (r === undefined){ r = i; key.set(k, i); } rep[i] = r; }
+    const par = Int32Array.from({length:n}, (_, i) => i), f = x => { while (par[x] !== x){ par[x] = par[par[x]]; x = par[x]; } return x; };
+    for (let t = 0; t < I.length; t += 3){ const a = f(rep[I[t]]), b = f(rep[I[t+1]]), c = f(rep[I[t+2]]); if (a !== b) par[a] = b; const b2 = f(b); if (f(c) !== b2) par[f(c)] = b2; }
+    const comp = new Map(); for (let i = 0; i < n; i++){ const r = f(rep[i]); let s = comp.get(r); if (!s){ s = {x:0, z:0, n:0, y0:1e9, y1:-1e9}; comp.set(r, s); } v.fromBufferAttribute(P, i).applyMatrix4(o.matrixWorld); s.x += v.x; s.z += v.z; s.n++; s.y0 = Math.min(s.y0, v.y); s.y1 = Math.max(s.y1, v.y); }
+    const keep = new Set(), flat = new Set(); for (const [r, s] of comp){ const cx = s.x/s.n, cz = s.z/s.n; if (s.y1 - s.y0 < 1.5) flat.add(r); else if (Math.hypot(cx - C.x, cz - C.z) <= R && isLand(cx, cz)) keep.add(r); }
+    const out = [], a = new THREE.Vector3(), b = new THREE.Vector3();   // whole buildings on land; flat ground only where the city has land under it (nothing over the water)
+    for (let t = 0; t < I.length; t += 3){ const r = f(rep[I[t]]);
+      if (keep.has(r)) { out.push(I[t], I[t+1], I[t+2]); continue; }
+      if (!flat.has(r)) continue;
+      v.fromBufferAttribute(P, I[t]).applyMatrix4(o.matrixWorld); a.fromBufferAttribute(P, I[t+1]).applyMatrix4(o.matrixWorld); b.fromBufferAttribute(P, I[t+2]).applyMatrix4(o.matrixWorld);
+      if (isLand(v.x, v.z) && isLand(a.x, a.z) && isLand(b.x, b.z)) out.push(I[t], I[t+1], I[t+2]); }
+    geo.setIndex(out); geo.computeBoundingSphere();
+  });
+}
+
+// MOE #1's park (dropped from the game model): Landscape, Paths and Water from the viewer's model, aligned on the obelisk
+async function addMoeSite(scene0, g, loader, gy){
+  const site = (await loader.loadAsync('models/moe-site.glb?v=1')).scene, box = (n) => { let b = null; n.updateMatrixWorld(true); n.traverse(o => { if (o.isMesh && /^Monument/.test(o.name) && !/_lod/.test(o.name)) b = new THREE.Box3().setFromObject(o); }); return b; };
+  const holder = new THREE.Group(); holder.add(site); g.add(holder); g.updateMatrixWorld(true);
+  const a = box(scene0), v = box(site); if (!a || !v) { g.remove(holder); return; }
+  const d = a.min.clone().sub(v.min), w0 = g.getWorldPosition(new THREE.Vector3()); holder.position.copy(g.worldToLocal(w0.add(d)));
+  const drop = []; scene0.traverse(o => { if (o.isMesh && /^Stone/.test(o.name)) drop.push(o); }); drop.forEach(o => o.parent.remove(o));   // the game's Stone was cropped to the building; the viewer's is the whole paved site
+  site.traverse(o => { if (!o.isMesh) return;
+    if (!/^(Landscape|Paths|Water|Stone)/.test(o.name)) { o.visible = false; o.userData.noCollide = o.userData.hideAlways = true; return; }
+    o.material = o.material.clone(); o.material.side = THREE.DoubleSide;
+    o.userData.box = [840, 225, 1030, 375];   // the museum's own park, cut to its rectangular site (no ring)
+    if (/^Landscape/.test(o.name)) o.material.name = 'Landscape lawn';   // the museum's own park, cut to its rectangular site (no ring)   // stop the site's lawn apron at the park edge, so the ring road keeps its kerb and pavement
+    if (/^Stone/.test(o.name)) { o.material.polygonOffset = true; o.material.polygonOffsetFactor = -2; o.material.polygonOffsetUnits = -4; }   // the park paving wins over roof edges at the same level (no flickering seams)
+    if (/^Water/.test(o.name)) { o.material.roughness = .15; o.material.color.set(0x5c9fc2); }
+    else cityMaterial(o.material, -2, 0, gy);
+    if (o.userData.box && !/^Water/.test(o.name)){ const [ax, az, bx, bz] = o.userData.box, prev = o.material.onBeforeCompile, key = o.material.customProgramCacheKey ? o.material.customProgramCacheKey.bind(o.material) : () => '';
+      o.material.onBeforeCompile = (sh, rr) => { prev && prev(sh, rr); sh.fragmentShader = sh.fragmentShader.replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
+        if (vCityP.x < ${ax.toFixed(1)} || vCityP.x > ${bx.toFixed(1)} || vCityP.z < ${az.toFixed(1)} || vCityP.z > ${bz.toFixed(1)}) discard;`); };
+      o.material.customProgramCacheKey = () => key() + '-box'; }
+  });
+}
+
+// ---------- grass slopes (user-approved mock): a project's raised ground falls to street level at 1:2, steepening to 1:1 near a street so it never covers one
+function slopeSkirt(slugs, CITY){
+  const GRADE = TOP, K = .5, PAD = 40, R = renderer;
+  slugs.forEach(slug => { const p = pieces[slug]; if (!p) return;
+    const b = new THREE.Box3().setFromObject(p.g), tx0 = Math.floor(b.min.x), tz0 = Math.floor(b.min.z), tw = Math.ceil(b.max.x)-tx0, th = Math.ceil(b.max.z)-tz0;
+    const cam = new THREE.OrthographicCamera(tx0, tx0+tw, -tz0, -(tz0+th), .1, 1000); cam.position.set(0,300,0); cam.up.set(0,0,-1); cam.lookAt(0,0,0); cam.updateProjectionMatrix(); cam.layers.enableAll();
+    const mat = new THREE.ShaderMaterial({side:THREE.DoubleSide, vertexShader:'varying float wy; void main(){ vec4 w = modelMatrix*vec4(position,1.); wy = w.y; gl_Position = projectionMatrix*viewMatrix*w; }', fragmentShader:'varying float wy; void main(){ gl_FragColor = vec4(wy,1.,0.,1.); }'});
+    const rt = new THREE.WebGLRenderTarget(tw, th, {type:THREE.FloatType}), vis = new Map();
+    scene.traverse(o => { if (o.isMesh || o.isInstancedMesh || o.isPoints || o.isLine || o.isSprite){ vis.set(o, o.visible); o.visible = false; } });
+    p.g.traverse(o => { if (o.isMesh && !/_lod$/.test(o.name) && !o.userData.hideAlways) o.visible = true; });
+    const bg = scene.background, fog = scene.fog; scene.background = null; scene.fog = null; scene.overrideMaterial = mat;
+    R.setRenderTarget(rt); R.setClearColor(0,0); R.clear(); R.render(scene, cam); const buf = new Float32Array(tw*th*4); R.readRenderTargetPixels(rt,0,0,tw,th,buf); R.setRenderTarget(null);
+    scene.overrideMaterial = null; scene.background = bg; scene.fog = fog; for (const [o,v] of vis) o.visible = v; rt.dispose();
+    const w = tw+2*PAD, h = th+2*PAD, x0 = tx0-PAD, z0 = tz0-PAD, H = new Float32Array(w*h).fill(-1e9), F = new Uint8Array(w*h), cap = new Float32Array(w*h).fill(1e9);
+    for (let j = 0; j < th; j++) for (let i = 0; i < tw; i++){ const k = ((th-1-j)*tw + i)*4; if (buf[k+1] > 0){ const q = (j+PAD)*w + i + PAD; F[q] = 1; H[q] = buf[k]; } }
+    // smooth the hill's outline (an opening of 7 m removes the crop's saw teeth); the trimmed teeth become slope, and the hill's lawn is cut along the smooth outline
+    let lawn0 = null; p.g.traverse(o => { if (!lawn0 && o.isMesh && /^Landscape/.test(o.name)){ lawn0 = o.material.clone(); lawn0.onBeforeCompile = o.material.onBeforeCompile; lawn0.customProgramCacheKey = o.material.customProgramCacheKey; } });   // the slope's lawn: same look, without the hill trim
+    { const r = 7, mo = (src, grow) => { const o = new Uint8Array(w*h); for (let j = 0; j < h; j++) for (let i = 0; i < w; i++){ let v = grow ? 0 : 1;
+        for (let dj = -r; dj <= r && v === (grow ? 0 : 1); dj++) for (let di = -r; di <= r; di++){ if (di*di+dj*dj > r*r) continue; const ii = i+di, jj = j+dj, sv = (ii<0||jj<0||ii>=w||jj>=h) ? 0 : src[jj*w+ii]; if (grow && sv){ v = 1; break; } if (!grow && !sv){ v = 0; break; } } o[j*w+i] = v; } return o; };
+      const Fo = mo(mo(F, 0), 1), mask = new Uint8Array(w*h*4);
+      for (let q = 0; q < w*h; q++){ if (F[q] && !Fo[q]){ F[q] = 0; H[q] = -1e9; } if (Fo[q]) mask[q*4] = 255; }
+      // re-seed the slope from the smooth edge's heights
+      for (let j = 1; j < h-1; j++) for (let i = 1; i < w-1; i++){ const q = j*w+i; if (!F[q]) continue; if (!F[q-1] || !F[q+1] || !F[q-w] || !F[q+w]) H[q] = H[q]; }
+      const tex = new THREE.DataTexture(mask, w, h); tex.needsUpdate = true;
+      p.g.traverse(o => { if (!o.isMesh || !/^Landscape/.test(o.name) || o.material.userData.hill) return; const m0 = o.material; m0.userData.hill = 1; const prev = m0.onBeforeCompile, key = m0.customProgramCacheKey ? m0.customProgramCacheKey.bind(m0) : () => '';
+        m0.onBeforeCompile = (sh, rr) => { prev && prev(sh, rr); sh.uniforms.uHill = {value:tex}; sh.uniforms.uHillBox = {value:new THREE.Vector4(x0, z0, w, h)}; if (sh.fragmentShader.includes('uHillBox;')) return;
+          sh.fragmentShader = 'uniform sampler2D uHill; uniform vec4 uHillBox;'+String.fromCharCode(10) + sh.fragmentShader.replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
+          { vec2 hu = (vCityP.xz - uHillBox.xy) / uHillBox.zw; if (hu.x > 0. && hu.y > 0. && hu.x < 1. && hu.y < 1. && texture2D(uHill, hu).r < .5) discard; }`); };
+        m0.customProgramCacheKey = () => key() + '-hill-' + slug; m0.needsUpdate = true; }); }
+    // streets: height cap = grade at the kerb, rising 1:1 away from it
+    const RW = {street:5.5, blvd:10.6};
+    CITY.roads.filter(r => r.c !== 'site').forEach(r => { for (let n = 0; n < r.pts.length-1; n++){ const [ax, az] = r.pts[n], [bx, bz] = r.pts[n+1], L = Math.hypot(bx-ax, bz-az), hw = RW[r.c] || 5.5;
+      for (let t = 0; t <= L; t += .7){ const cx = ax + (bx-ax)*t/L, cz = az + (bz-az)*t/L;
+        for (let dj = -hw-1; dj <= hw+1; dj++) for (let di = -hw-1; di <= hw+1; di++){ const i = Math.round(cx+di-x0), j = Math.round(cz+dj-z0); if (i<0||j<0||i>=w||j>=h) continue; const d = Math.max(0, Math.hypot(di,dj)-hw); if (d < 1) cap[j*w+i] = GRADE; } } } });
+    const prop = (A, k, up) => { for (let pass = 0; pass < 3; pass++){
+      for (let j = 1; j < h-1; j++) for (let i = 1; i < w-1; i++){ const q = j*w+i; if (F[q]) continue; let v = A[q]; for (const [a,c,d] of [[-1,0,1],[0,-1,1],[-1,-1,1.414],[1,-1,1.414]]) v = up ? Math.min(v, A[q+c*w+a]+k*d) : Math.max(v, A[q+c*w+a]-k*d); A[q] = v; }
+      for (let j = h-2; j > 0; j--) for (let i = w-2; i > 0; i--){ const q = j*w+i; if (F[q]) continue; let v = A[q]; for (const [a,c,d] of [[1,0,1],[0,1,1],[1,1,1.414],[-1,1,1.414]]) v = up ? Math.min(v, A[q+c*w+a]+k*d) : Math.max(v, A[q+c*w+a]-k*d); A[q] = v; } } };
+    prop(H, K, false); prop(cap, 1, true);
+    for (let q = 0; q < w*h; q++) if (!F[q]) H[q] = Math.max(GRADE, Math.min(H[q], cap[q]));
+    // blend across the hill's saw-toothed crop edge: a 4 m band either side gets a smoothed height and the slope is drawn over it
+    const E = 4, band = new Uint8Array(w*h), D = new Float32Array(w*h);
+    for (let j = 1; j < h-1; j++) for (let i = 1; i < w-1; i++){ const q = j*w+i; if (F[q] !== F[q+1] || F[q] !== F[q+w]) for (let dj = -E; dj <= E; dj++) for (let di = -E; di <= E; di++){ const ii = i+di, jj = j+dj; if (ii>=0 && jj>=0 && ii<w && jj<h && di*di+dj*dj <= E*E) band[jj*w+ii] = 1; } }
+    let S0 = Float32Array.from(H);
+    for (let it = 0; it < 3; it++){ const S1 = new Float32Array(w*h); for (let j = 0; j < h; j++) for (let i = 0; i < w; i++){ let s = 0, n = 0; for (let dj = -2; dj <= 2; dj++) for (let di = -2; di <= 2; di++){ const ii = i+di, jj = j+dj; if (ii>=0 && jj>=0 && ii<w && jj<h){ s += S0[jj*w+ii]; n++; } } S1[j*w+i] = s/n; } S0 = S1; }
+    for (let q = 0; q < w*h; q++){ D[q] = 0; if (band[q]){ const v = Math.min(S0[q], cap[q]); if (!F[q]) H[q] = Math.max(GRADE, v); else if (v > H[q] - 2.5){ D[q] = 1; H[q] = Math.max(H[q], v); } } }   // band cells on the hill are re-drawn only where the hill is a thin crop edge, not a real feature
+    const pos = [], idx = [], vid = new Map(), V = (i, j) => { const k = j*(w+1)+i; if (vid.has(k)) return vid.get(k); let s = 0, n = 0;
+      for (const [a,c] of [[0,0],[-1,0],[0,-1],[-1,-1]]){ const ii = i+a, jj = j+c; if (ii>=0 && jj>=0 && ii<w && jj<h){ s += H[jj*w+ii]; n++; } }
+      const vy = s/n; pos.push(x0+i, vy <= GRADE+.05 ? GRADE-.06 : vy+.02, z0+j); vid.set(k, pos.length/3-1); return vid.get(k); };
+    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++){ const q = j*w+i; if (F[q] && !D[q]) continue; const a = V(i,j), bb = V(i+1,j), c = V(i+1,j+1), d = V(i,j+1); if (Math.max(pos[a*3+1], pos[bb*3+1], pos[c*3+1], pos[d*3+1]) <= GRADE+.08) continue; idx.push(a,d,bb, bb,d,c); }
+    if (!idx.length) return;
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3)); geo.setIndex(idx); geo.computeVertexNormals();
+    const lawn = lawn0;
+    const m = new THREE.Mesh(geo, lawn || std(0x6a9a3a)); m.name = 'slope-' + slug; m.receiveShadow = true; scene.add(m);   // walkable: the player can climb it
+  });
+}
+
+// ---------- Study 2's hill (user-approved mock): the building sits in one smooth mound that follows its own landscape near the building,
+// fades to street level within ~65 m, is never steeper than 1:2.5, never covers a road or pavement, and leaves the building's openings open.
+// The model's cut-off landscape is hidden; the site ground outside the mound goes back to the city lawn.
+function studyHill(slug, CITY){
+  const p = pieces[slug]; if (!p) return; const GRADE = TOP, R = renderer;
+  const bb = new THREE.Box3(); p.g.traverse(o => { if (o.isMesh && /Plaster|Dark_timber/.test(o.name) && !/_lod/.test(o.name)) bb.expandByObject(o); }); if (bb.isEmpty()) return;
+  const cx = (bb.min.x + bb.max.x)/2, cz = (bb.min.z + bb.max.z)/2, N = 360, x0 = Math.floor(cx - N/2), z0 = Math.floor(cz - N/2);
+  const cam = new THREE.OrthographicCamera(x0, x0+N, -z0, -(z0+N), .1, 1000); cam.position.set(0,300,0); cam.up.set(0,0,-1); cam.lookAt(0,0,0); cam.updateProjectionMatrix(); cam.layers.enableAll();
+  const mk = id => new THREE.ShaderMaterial({side:THREE.DoubleSide, vertexShader:'varying float wy; void main(){ vec4 w = modelMatrix*vec4(position,1.); wy = w.y; gl_Position = projectionMatrix*viewMatrix*w; }', fragmentShader:'varying float wy; void main(){ gl_FragColor = vec4(wy,' + id + '.,0.,1.); }'});
+  const mL = mk(1), mB = mk(2), rt = new THREE.WebGLRenderTarget(N, N, {type:THREE.FloatType}), vis = new Map(), mats = new Map();
+  scene.traverse(o => { if (o.isMesh || o.isInstancedMesh || o.isPoints || o.isLine || o.isSprite){ vis.set(o, o.visible); o.visible = false; } });
+  p.g.traverse(o => { if (o.isMesh && !/_lod$/.test(o.name) && !o.userData.hideAlways && o.name !== ''){ o.visible = true; mats.set(o, o.material); o.material = /^Landscape/.test(o.name) ? mL : mB; } });
+  const bg = scene.background, fog = scene.fog; scene.background = null; scene.fog = null;
+  R.setRenderTarget(rt); R.setClearColor(0,0); R.clear(); R.render(scene, cam); const buf = new Float32Array(N*N*4); R.readRenderTargetPixels(rt,0,0,N,N,buf); R.setRenderTarget(null);
+  scene.background = bg; scene.fog = fog; for (const [o,m] of mats) o.material = m; for (const [o,v] of vis) o.visible = v; rt.dispose();
+  const Hm = new Float32Array(N*N), ID = new Uint8Array(N*N);
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++){ const k = (j*N+i)*4, q = (N-1-j)*N+i; if (buf[k+1] > 0){ Hm[q] = buf[k]; ID[q] = Math.round(buf[k+1]); } }
+  let lawn = null; p.g.traverse(o => { if (o.isMesh && /^Landscape/.test(o.name)){ if (!lawn) lawn = o.material; o.visible = false; o.userData.noCollide = o.userData.hideAlways = true; } });
+  const bx0 = bb.min.x, bx1 = bb.max.x, bz0 = bb.min.z, bz1 = bb.max.z, dBox = (x, z) => Math.hypot(Math.max(bx0-x, 0, x-bx1), Math.max(bz0-z, 0, z-bz1));
+  let A = new Float32Array(N*N); for (let q = 0; q < N*N; q++) A[q] = ID[q] ? Hm[q] : GRADE;
+  for (let it = 0; it < 4; it++){ const B = new Float32Array(N*N); for (let j = 0; j < N; j++) for (let i = 0; i < N; i++){ let s = 0, n = 0; for (let dj = -3; dj <= 3; dj++) for (let di = -3; di <= 3; di++){ const ii = i+di, jj = j+dj; if (ii>=0 && jj>=0 && ii<N && jj<N){ s += A[jj*N+ii]; n++; } } B[j*N+i] = s/n; } A = B; }
+  const ss = (a, b, x) => { const t = Math.min(1, Math.max(0, (x-a)/(b-a))); return t*t*(3-2*t); };
+  // streets: the mound reaches grade at the back of the pavement and rises at most 1:2 from it
+  const RW = {street:5.5, blvd:10.6}, segs = []; CITY.roads.filter(r => r.c !== 'site').forEach(r => { for (let s = 0; s < r.pts.length-1; s++){ const [ax, az] = r.pts[s], [bx, bz] = r.pts[s+1]; if (Math.max(ax, bx) < x0-20 || Math.min(ax, bx) > x0+N+20 || Math.max(az, bz) < z0-20 || Math.min(az, bz) > z0+N+20) continue; segs.push([ax, az, bx, bz, RW[r.c] || 5.5]); } });
+  const rd = (x, z) => { let best = 1e9; for (const [ax, az, bx, bz, hw] of segs){ const dx = bx-ax, dz = bz-az, L2 = dx*dx+dz*dz || 1; let t = ((x-ax)*dx + (z-az)*dz)/L2; t = t < 0 ? 0 : t > 1 ? 1 : t; const d = Math.hypot(x-ax-t*dx, z-az-t*dz) - hw; if (d < best) best = d; } return best; };
+  const H = new Float32Array(N*N), RD = new Float32Array(N*N);
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++){ const x = x0+i+.5, z = z0+j+.5, q = j*N+i, w = 1 - ss(18, 65, dBox(x, z)); RD[q] = rd(x, z); H[q] = Math.min(GRADE + Math.max(0, A[q] - GRADE)*w, GRADE + Math.max(0, RD[q])*.5); }
+  const K = .4; for (let pass = 0; pass < 3; pass++){   // never steeper than 1:2.5
+    for (let j = 1; j < N-1; j++) for (let i = 1; i < N-1; i++){ const q = j*N+i; H[q] = Math.min(H[q], H[q-1]+K, H[q-N]+K, H[q-N-1]+K*1.414, H[q-N+1]+K*1.414); }
+    for (let j = N-2; j > 0; j--) for (let i = N-2; i > 0; i--){ const q = j*N+i; H[q] = Math.min(H[q], H[q+1]+K, H[q+N]+K, H[q+N+1]+K*1.414, H[q+N-1]+K*1.414); } }
+  const pos = [], idx = [], vid = new Map(), V = (i, j) => { const k = j*(N+1)+i; if (vid.has(k)) return vid.get(k); let s = 0, n = 0;
+    for (const [a, c] of [[0,0],[-1,0],[0,-1],[-1,-1]]){ const ii = i+a, jj = j+c; if (ii>=0 && jj>=0 && ii<N && jj<N){ s += H[jj*N+ii]; n++; } }
+    const y = s/n; pos.push(x0+i, y <= GRADE+.05 ? GRADE-.06 : y + .02, z0+j); vid.set(k, pos.length/3-1); return vid.get(k); };
+  for (let j = 0; j < N-1; j++) for (let i = 0; i < N-1; i++){ const q = j*N+i; if (ID[q] === 2 || RD[q] < 0) continue;
+    const a = V(i,j), b = V(i+1,j), c = V(i+1,j+1), d = V(i,j+1); if (Math.max(pos[a*3+1], pos[b*3+1], pos[c*3+1], pos[d*3+1]) <= GRADE+.08) continue; idx.push(a,d,b, b,d,c); }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3)); geo.setIndex(idx); geo.computeVertexNormals();
+  const m = new THREE.Mesh(geo, lawn || std(0x6a9a3a)); m.name = 'hill-' + slug; m.receiveShadow = m.castShadow = true; scene.add(m);   // solid: you can walk up it
+  // site ground outside the mound and the building goes back to the city (lawn, pavements), so there is no seam
+  const gr = window.__world.grid; if (!gr) return; let changed = 0;
+  for (let j = 0; j < gr.NZ; j++) for (let i = 0; i < gr.NX; i++){ const x = gr.X0 + (i+.5)*gr.TEX, z = gr.Z0 + (j+.5)*gr.TEX; if (x < x0 || z < z0 || x >= x0+N || z >= z0+N) continue;
+    const k = (j*gr.NX + i)*4; if (gr.own[k+2] < 128) continue; const q = Math.floor(z - z0)*N + Math.floor(x - x0);
+    if (ID[q] !== 2 && H[q] <= GRADE + .05 && dBox(x, z) > 2){ gr.own[k+2] = 0; gr.own[k+3] = 2; changed++; } }
+  if (changed) cityUniforms.uOwn.value.needsUpdate = true;
+}
+
+// ---------- dirt under sunken projects (user-approved mock): dirt fills each footprint from street level down, starting under the lowest surface, so basements and sunken courts stay empty; the sea is masked out over the footprint
+function sinkDirt(slugs){
+  const GRADE = .8, BASE = -14, R = renderer;
+  const boxes = slugs.map(s => pieces[s] && new THREE.Box3().setFromObject(pieces[s].g)).filter(Boolean); if (!boxes.length) return;
+  const all = boxes.reduce((a,b) => a.union(b), boxes[0].clone()), mx0 = Math.floor(all.min.x)-2, mz0 = Math.floor(all.min.z)-2, MW = Math.ceil(all.max.x)+2-mx0, MH = Math.ceil(all.max.z)+2-mz0, mask = new Uint8Array(MW*MH*4);
+  const mat = new THREE.ShaderMaterial({side:THREE.DoubleSide, vertexShader:'varying float wy; void main(){ vec4 w = modelMatrix*vec4(position,1.); wy = w.y; gl_Position = projectionMatrix*viewMatrix*w; }', fragmentShader:'varying float wy; void main(){ gl_FragColor = vec4(wy,1.,0.,1.); }'});
+  const dirtMat = new THREE.MeshStandardMaterial({color:0x6b4a2e, roughness:1}), geos = [];
+  slugs.forEach(slug => { const p = pieces[slug]; if (!p) return; const b = new THREE.Box3().setFromObject(p.g), x0 = Math.floor(b.min.x), z0 = Math.floor(b.min.z), w = Math.ceil(b.max.x)-x0, h = Math.ceil(b.max.z)-z0;
+    const cam = new THREE.OrthographicCamera(-(x0+w), -x0, -z0, -(z0+h), .1, 1000); cam.position.set(0,-300,0); cam.up.set(0,0,-1); cam.lookAt(0,0,0); cam.updateProjectionMatrix(); cam.layers.enableAll();   // looking up from below: the lowest surface
+    const rt = new THREE.WebGLRenderTarget(w,h,{type:THREE.FloatType}), vis = new Map();
+    scene.traverse(o => { if (o.isMesh || o.isInstancedMesh || o.isPoints || o.isLine || o.isSprite){ vis.set(o,o.visible); o.visible = false; } });
+    p.g.traverse(o => { if (o.isMesh && !/_lod$/.test(o.name) && !o.userData.hideAlways) o.visible = true; });
+    const bg = scene.background, fog = scene.fog; scene.background = null; scene.fog = null; scene.overrideMaterial = mat;
+    R.setRenderTarget(rt); R.setClearColor(0,0); R.clear(); R.render(scene,cam); const buf = new Float32Array(w*h*4); R.readRenderTargetPixels(rt,0,0,w,h,buf); R.setRenderTarget(null);
+    scene.overrideMaterial = null; scene.background = bg; scene.fog = fog; for (const [o,v] of vis) o.visible = v; rt.dispose();
+    const at = (i,j) => (h-1-j)*w + (w-1-i);   // world cell (x0+i, z0+j) -> pixel
+    let F = new Uint8Array(w*h); for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) F[j*w+i] = buf[at(i,j)*4+1] > 0 ? 1 : 0;
+    const morph = (src, grow, r) => { const o = new Uint8Array(w*h); for (let j = 0; j < h; j++) for (let i = 0; i < w; i++){ let v = grow ? 0 : 1;
+      for (let dj = -r; dj <= r && v === (grow ? 0 : 1); dj++) for (let di = -r; di <= r; di++){ if (di*di+dj*dj > r*r) continue; const x = i+di, y = j+dj, s = (x<0||y<0||x>=w||y>=h) ? 0 : src[y*w+x]; if (grow && s){ v = 1; break; } if (!grow && !s){ v = 0; break; } } o[j*w+i] = v; } return o; };
+    F = morph(morph(F,1,6),0,6);   // close the gaps between narrow paths and courts
+    const out = new Uint8Array(w*h).fill(1), st = []; for (let i = 0; i < w; i++) st.push(i,(h-1)*w+i); for (let j = 0; j < h; j++) st.push(j*w,j*w+w-1);
+    while (st.length){ const q = st.pop(); if (!out[q] || F[q]) continue; out[q] = 0; const x = q%w, y = (q/w)|0; if (x>0) st.push(q-1); if (x<w-1) st.push(q+1); if (y>0) st.push(q-w); if (y<h-1) st.push(q+w); }   // fill holes
+    for (let j = 0; j < h; j++){ let run = null; const flush = () => { if (!run) return; const g = new THREE.BoxGeometry(run.n, run.top-BASE, 1); g.translate(x0+run.i+run.n/2, (run.top+BASE)/2, z0+j+.5); geos.push(g); run = null; };
+      for (let i = 0; i <= w; i++){ let top = null; if (i < w && out[j*w+i]){ const k = at(i,j)*4; top = Math.round((buf[k+1] > 0 ? Math.min(buf[k]-.05, GRADE) : GRADE)*10)/10; if (top <= BASE) top = null; else mask[((z0+j-mz0)*MW + (x0+i-mx0))*4] = 255; }
+        if (run && top === run.top) run.n++; else { flush(); if (top !== null) run = {i, n:1, top}; } } }   // one box per run of equal depth along x
+  });
+  if (!geos.length) return; const geo = mergeGeometries(geos); geos.forEach(g => g.dispose());
+  const dirt = new THREE.Mesh(geo, dirtMat); dirt.name = 'sunk-dirt'; dirt.userData.noCollide = true; dirt.receiveShadow = true; dirt.layers.enableAll(); scene.add(dirt);
+  const t = new THREE.DataTexture(mask, MW, MH); t.needsUpdate = true; SEA_MASK.value = t; SEA_MASK_BOX.value.set(mx0, mz0, MW, MH); window.__world.seaMask = {t, box:SEA_MASK_BOX.value, n:mask.reduce((a,v,i)=>a+(i%4===0&&v>0),0)};
+}
+
 
 // ---------- interaction ----------
 let aim = -1, walkGoal = null, stamina = 1, winded = false, third = false;   // stamina drains while running; third: third-person view   // aim: the project the reticle points at; walkGoal: where a click-to-walk is heading
@@ -787,7 +1081,7 @@ function markerCanvas(style, pr, gem, pic){
 }
 async function buildMarkers(){
   await Promise.all([document.fonts.load('300 34px "Josefin Sans"'), document.fonts.load('300 22px "Roboto Mono"')]).catch(() => {});
-  const gem = await loadImg('../city/brand/gem-mark.png'); while (markers.children.length) markers.remove(markers.children[0]);
+  const gem = await loadImg('brand/gem-mark.png'); while (markers.children.length) markers.remove(markers.children[0]);
   for (const [i,pr] of PROJECTS.entries()){
     if (pr.piece === 'globe' || !pr.pos) continue;
     const style = markerMode === 'mixed' ? i % 3 : ['plate','stele','arch'].indexOf(markerMode), pic = style === 2 && pr.img ? await loadImg(pr.img) : null;
@@ -923,7 +1217,7 @@ $('mView').onclick = () => setThird(!third); addEventListener('keydown', e => { 
 
 // ---------- hook-up point for the HUD (hud.js): the city's state and the few actions the HUD may take ----------
 Object.assign(window.__world, {THREE, scene, camera, renderer, canvas, PROJECTS, markers, hits, globeHit, walk, sun, LAND, isLand, frameHooks:[], clickHooks:[],
-  keys, pieces, avatar, composer, bloom, hemi:scene.children.find(o => o.isHemisphereLight), ENV_NIGHT, ENV_DAY, sea, ring, globe, inside, SEA, INSIDE, ARCH_X, ARCH_Z, START, ROAD, TOP, ASPH, orbit:o, interact, setThird,
+  keys, pieces, avatar, composer, bloom, hemi:scene.children.find(o => o.isHemisphereLight), ENV_NIGHT, ENV_DAY, sea, ring, globe, inside, SEA, INSIDE, ARCH_X, ARCH_Z, START, ROAD, TOP, ASPH, orbit:o, goal:g, interact, setThird,
   setAim: i => { aim = i; }, select, setMode,
   setNight: n => { NIGHTU.value = n; scene.environment = n > .5 ? ENV_NIGHT : ENV_DAY; if (neon) neon.visible = n > .4; sea.material.color.set(0x6f9bb3).lerp(new THREE.Color(0x0d1a26), n); lamps.forEach(l => l.material.color.set(0x8d8473).lerp(new THREE.Color(0xffe1ad), n)); if (streetLamps) streetLamps.material.color.set(0x8d8473).lerp(new THREE.Color(0xffd29a), n); ads.forEach(m => m.color.setScalar(.4 + .6*n)); },
   teleport: (x,z) => { walkGoal = null; walk.pos.x = x; walk.pos.z = z; }, walkTo: (x,z) => { walkGoal = [x,z]; }});

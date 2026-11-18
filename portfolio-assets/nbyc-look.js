@@ -12,7 +12,7 @@
   var VAR = { Landscape: 'skate', Planting: 'grass', Stone: 'paving', Plaster: 'stain', Timber: 'grain', Context: 'paving' };
   function ready() { return window.newProjectViewer && window.newProjectViewer.ready && window.daylightContext && window.daylightContext.scene && window.sketchStyle && window.sketchStyle.patch; }
   var tries = 0;
-  (function wait() { if (ready()) { try { run(); } catch (e) { console.warn('Youth center look skipped', e); } } else if (tries++ < 600) setTimeout(wait, 150); })();
+  if (!window.LOOK_DATA_ONLY) (function wait() { if (ready()) { try { run(); } catch (e) { console.warn('Youth center look skipped', e); } } else if (tries++ < 600) setTimeout(wait, 150); })();   // the game loads this file for its palette only
   var FRAG_HEAD = 'varying vec3 vNbW;\n' +
     'float nbH(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }\n' +
     'float nbN(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(nbH(i),nbH(i+vec2(1.,0.)),f.x),mix(nbH(i+vec2(0.,1.)),nbH(i+vec2(1.,1.)),f.x),f.y); }\n';
@@ -46,6 +46,7 @@
       'else { float g1=nbN(vNbW.xz*.45), g2=nbN(vNbW.xz*2.6); diffuseColor.rgb *= vec3(.84+.30*g1+.12*g2, .86+.26*g1+.14*g2, .82+.2*g1); diffuseColor.rgb += vec3(.03,.02,-.02)*(g2-.5); }',
     grain: 'float gr=nbN(vec2((vNbW.x+vNbW.z)*1.3, vNbW.y*26.)); float pl=step(.5,fract((vNbW.x+vNbW.z)*3.2)); diffuseColor.rgb *= (.82+.3*gr)*(.94+.08*pl);'
   };
+  window.NBYC_LOOK = { PAL: PAL, VAR: VAR, CODE: CODE, FRAG_HEAD: FRAG_HEAD };   // shared with the game city (game/project-looks.js), so both look the same
   function run() {
     var ctx = window.daylightContext, scene = ctx.scene, done = new WeakSet();
     scene.traverse(function (o) {

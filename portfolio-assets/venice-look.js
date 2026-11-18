@@ -66,9 +66,10 @@
   }).join('\n');
   CODE.mainWall = CODE.mainPlaster;   // brick above the first string course, stone below, tiled roofs (no door guesses: the Revit model has real doors)
   CODE.mainPlaster += DOORGL;
+  window.VENICE_LOOK = { PAL: PAL, CODE: CODE, FRAG_HEAD: FRAG_HEAD };   // shared with the game city (game/project-looks.js), so both look the same
   var TIME = { value: 0 }; (function tick() { TIME.value = performance.now() / 1000; requestAnimationFrame(tick); })();
   function ready() { return window.newProjectViewer && window.newProjectViewer.ready && window.daylightContext && window.daylightContext.scene && window.sketchStyle && window.sketchStyle.patch; }
-  var tries = 0; (function wait() { if (ready()) { try { run(); } catch (e) { console.warn('Venice look skipped', e); } } else if (tries++ < 600) setTimeout(wait, 150); })();
+  var tries = 0; if (!window.LOOK_DATA_ONLY) (function wait() { if (ready()) { try { run(); } catch (e) { console.warn('Venice look skipped', e); } } else if (tries++ < 600) setTimeout(wait, 150); })();
   // The glazing comes out of the export as one mesh in which every window's pane and frame are fused. Broad sheets stay glass;
   // narrow strips, reveals and tiny faces become the frame, in its own material.
   function splitGlazing(o, frameMat) {

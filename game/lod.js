@@ -6,8 +6,8 @@ import { MeshoptSimplifier } from 'https://cdn.jsdelivr.net/npm/meshoptimizer@0.
 
 export async function init(W){
   const {THREE, camera, scene} = W;
-  const MIN_TRIS = 12000, RATIO = .1, ERROR = .012;
-  const NEAR = 150, FAR = 200;              // hysteresis (metres from the camera to the mesh surface)
+  const MIN_TRIS = 30000, RATIO = .35, ERROR = .002;   // gentle: the projects must look like their own viewers
+  const NEAR = 520, FAR = 600;              // hysteresis (metres from the camera to the mesh surface)
   const LOW_LAYER = 2;
   try { await MeshoptSimplifier.ready; } catch (e) { console.warn('[lod] simplifier unavailable', e); return; }
 
@@ -16,7 +16,7 @@ export async function init(W){
 
   function scan(){
     scene.traverse(o => {
-      if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || done.has(o) || o.userData.lodTwin) return;
+      if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || done.has(o) || o.userData.lodTwin || !o.visible || o.userData.hideAlways) return;
       const g = o.geometry; if (!g || !g.index || !g.attributes.position) return;
       const t = g.index.count/3; if (t < MIN_TRIS) { done.add(o); return; }
       done.add(o); queue.push(o);

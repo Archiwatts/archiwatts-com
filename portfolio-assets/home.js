@@ -51,8 +51,8 @@ const CATS = [
   ['portfolio','Portfolio','Collected architectural work, organized by year.']
 ];
 /* Hidden Gems City entry (second card on desktop, first on phones) */
-const CITY_URL = 'city/index.html';
-const CITY = {title:'Hidden Gems City', sub:'Making the unseen seen. Walk one city built from every project.', href:CITY_URL, poster:'city/markup/city-poster.jpg'};
+const CITY_URL = 'game/index.html';
+const CITY = {title:'Hidden Gems City', sub:'Making the unseen seen. Walk one city built from every project.', href:CITY_URL, poster:'game/brand/city-poster.jpg'};
 const CARDS = [
   {title:'Architecture', sub:'Spatial studies, project stories, and interactive models.', href:'#arch', poster:'img/architecture-poster.jpg', video:'vid/architecture-reel.mp4', wide:true},
   {title:'Graphic Design', sub:'Branding, illustration, and graphic work.', href:'graphic-design/index.html', poster:'img/graphic-design.jpg', contain:true},
@@ -275,10 +275,10 @@ route();
 })();
 
 /* Hidden Gems City: mark the cards for the new layout, dress the city card, add the intro-screen entry */
-(() => { const url = 'city/index.html';
+(() => { const url = 'game/index.html';
   [...document.querySelectorAll('#cards .card')].forEach((c, i) => c.classList.add(['c-arch', 'c-city', 'c-gd', 'c-art'][i]));
   const f = document.querySelector('#cards .c-city .frame');
   if (f) { f.style.position = 'relative'; f.insertAdjacentHTML('beforeend', '<span class="citytag">New</span>'); }
   const card = document.querySelector('#cards .c-city'); if (card) card.insertAdjacentHTML('beforeend', '<p class="citynote">Best on a computer for now. Phone controls are on the way.</p>');
-  document.body.insertAdjacentHTML('beforeend', '<a id="entercity" href="' + url + '"><img src="city/brand/gem-mark.png" alt="">Enter Hidden Gems City</a>');
+  document.body.insertAdjacentHTML('beforeend', '<a id="entercity" href="' + url + '"><img src="game/brand/gem-mark.png" alt="">Enter Hidden Gems City</a>');
 })();

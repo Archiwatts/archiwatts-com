@@ -1,3 +1,6 @@
 roof_clay*.jpg  : RoofingTiles014A from ambientCG.com, CC0 1.0 (public domain)
 grass_lawn*.jpg : Grass001 from ambientCG.com, CC0 1.0 (public domain)
 Resized to 1024 px JPEG for the web.
+nz_brick*.jpg   : Bricks105 from ambientCG.com, CC0 1.0 (public domain), 2K
+nz_timber*.jpg  : Wood092 from ambientCG.com, CC0 1.0 (public domain), 2K
+nz_asphalt*.jpg : Asphalt031 from ambientCG.com, CC0 1.0 (public domain), 2K

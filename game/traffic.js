@@ -8,9 +8,9 @@ export function init(W){
 
   function start(){
     // the street graph from the city plan: every road is a polyline; roads meet where their ends coincide
-    const roads = (W.city && W.city.roads || []).map(r => { const pts = r.pts, cum = [0];
+    const roads = (W.roadChains || W.city && W.city.roads || []).map(r => { const pts = r.pts, cum = [0];
       for (let i = 1; i < pts.length; i++) cum.push(cum[i-1] + Math.hypot(pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1]));
-      return {pts, cum, len:cum[cum.length-1], lane:r.c === 'blvd' ? 2.6 : 1.5, fast:r.c === 'blvd'}; }).filter(r => r.len > .5);
+      return {pts, cum, len:cum[cum.length-1], lane:r.c === 'blvd' ? 2.6 : 1.5, fast:r.c === 'blvd', slow:r.c === 'site'}; }).filter(r => r.len > .5);
     const key = p => Math.round(p[0]) + ',' + Math.round(p[1]), ends = new Map();
     const node = k => ends.get(k) || (ends.set(k, []), ends.get(k));
     roads.forEach((r, i) => { node(key(r.pts[0])).push([i, 1]); node(key(r.pts[r.pts.length-1])).push([i, -1]); });
@@ -43,7 +43,7 @@ export function init(W){
       lightM.color.setScalar(.35 + 1.4*night);
       const pl = W.mode === 'walk' ? W.game.P.pos : null;
       for (let k = 0; k < N; k++){
-        const c = fleet[k], r = roads[c.ri]; let target = r.fast ? c.v + 3 : c.v * .7;
+        const c = fleet[k], r = roads[c.ri]; let target = r.fast ? c.v + 3 : r.slow ? Math.min(6.7, c.v * .55) : c.v * .7;   // campus roads at 15 mph
         const along = c.dir > 0 ? c.s : r.len - c.s; pointAt(r, along, tmp);
         const ux = tmp[2]*c.dir, uz = tmp[3]*c.dir, x = tmp[0] - uz*r.lane, z = tmp[1] + ux*r.lane;    // keep right
         if (r.len - c.s < 6) target = Math.min(target, 5);                                            // slow into the junction
